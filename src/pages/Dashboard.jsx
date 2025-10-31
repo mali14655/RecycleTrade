@@ -214,12 +214,12 @@
 
 //   // Helper function to render order details
 //   const renderOrderDetails = (order) => {
-//     const buyerInfo = order.userId 
+//     const buyerInfo = order.userId
 //       ? `Customer: ${order.userId.name} (${order.userId.email}) - ${order.userId.phone || 'No phone'}`
 //       : `Guest: ${order.guestInfo?.name} (${order.guestInfo?.email}) - ${order.guestInfo?.phone || 'No phone'}`;
-    
-//     const address = order.userId 
-//       ? 'Address: Customer address from profile' 
+
+//     const address = order.userId
+//       ? 'Address: Customer address from profile'
 //       : `Address: ${order.guestInfo?.address || 'No address provided'}`;
 
 //     return (
@@ -760,8 +760,6 @@
 //   );
 // }
 
-
-
 import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
@@ -792,9 +790,12 @@ export default function Dashboard() {
 
   const fetchSellerOrders = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/orders/seller`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/orders/seller`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setSellerOrders(res.data);
     } catch (err) {
       console.log(err);
@@ -803,9 +804,12 @@ export default function Dashboard() {
 
   const fetchCompanyOrders = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/orders/all`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/orders/all`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setCompanyOrders(res.data);
     } catch (err) {
       console.log(err);
@@ -814,9 +818,12 @@ export default function Dashboard() {
 
   const fetchSellerCandidateOrders = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/orders/admin/seller-candidates`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/orders/admin/seller-candidates`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setSellerCandidateOrders(res.data);
     } catch (err) {
       console.log(err);
@@ -875,7 +882,9 @@ export default function Dashboard() {
   const processForm = async (id) => {
     try {
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/seller-company/admin/forms/${id}/process`,
+        `${
+          import.meta.env.VITE_API_URL
+        }/seller-company/admin/forms/${id}/process`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -977,13 +986,17 @@ export default function Dashboard() {
 
   // Helper function to render order details
   const renderOrderDetails = (order) => {
-    const buyerInfo = order.userId 
-      ? `Customer: ${order.userId.name} (${order.userId.email}) - ${order.userId.phone || 'No phone'}`
-      : `Guest: ${order.guestInfo?.name} (${order.guestInfo?.email}) - ${order.guestInfo?.phone || 'No phone'}`;
-    
-    const address = order.userId 
-      ? 'Address: Customer address from profile' 
-      : `Address: ${order.guestInfo?.address || 'No address provided'}`;
+    const buyerInfo = order.userId
+      ? `Customer: ${order.userId.name} (${order.userId.email}) - ${
+          order.userId.phone || "No phone"
+        }`
+      : `Guest: ${order.guestInfo?.name} (${order.guestInfo?.email}) - ${
+          order.guestInfo?.phone || "No phone"
+        }`;
+
+    const address = order.userId
+      ? "Address: Customer address from profile"
+      : `Address: ${order.guestInfo?.address || "No address provided"}`;
 
     return (
       <div className="text-sm text-gray-600 mt-1">
@@ -998,7 +1011,9 @@ export default function Dashboard() {
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-2xl p-8">
         <h1 className="text-3xl font-bold mb-2">Welcome back, {name}! 👋</h1>
-        <p className="text-green-100 capitalize">Role: {role.replace('_', ' ')}</p>
+        <p className="text-green-100 capitalize">
+          Role: {role.replace("_", " ")}
+        </p>
       </div>
 
       {/* Admin Panel */}
@@ -1009,13 +1024,25 @@ export default function Dashboard() {
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <svg
+                    className="w-6 h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
                   </svg>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Pending Sellers</p>
-                  <p className="text-2xl font-bold text-gray-800">{pendingSellers.length}</p>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {pendingSellers.length}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1023,13 +1050,25 @@ export default function Dashboard() {
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    className="w-6 h-6 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Seller Forms</p>
-                  <p className="text-2xl font-bold text-gray-800">{sellerForms.length}</p>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {sellerForms.length}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1037,13 +1076,25 @@ export default function Dashboard() {
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  <svg
+                    className="w-6 h-6 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                    />
                   </svg>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold text-gray-800">{companyOrders.length}</p>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {companyOrders.length}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1051,13 +1102,29 @@ export default function Dashboard() {
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  <svg
+                    className="w-6 h-6 text-orange-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
                   </svg>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Seller Candidates</p>
-                  <p className="text-2xl font-bold text-gray-800">{sellerCandidateOrders.filter(order => order.orderStatus === "Pending").length}</p>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {
+                      sellerCandidateOrders.filter(
+                        (order) => order.orderStatus === "Pending"
+                      ).length
+                    }
+                  </p>
                 </div>
               </div>
             </div>
@@ -1066,7 +1133,9 @@ export default function Dashboard() {
           {/* Admin Content */}
           <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200 px-6 py-4">
-              <h3 className="text-xl font-semibold text-gray-800">Admin Panel</h3>
+              <h3 className="text-xl font-semibold text-gray-800">
+                Admin Panel
+              </h3>
             </div>
             <div className="p-6">
               <button
@@ -1092,19 +1161,30 @@ export default function Dashboard() {
 
               {/* Pending Seller Candidates */}
               <div className="mb-8">
-                <h4 className="font-semibold text-lg mb-4 text-gray-800">Pending Seller Candidates</h4>
+                <h4 className="font-semibold text-lg mb-4 text-gray-800">
+                  Pending Seller Candidates
+                </h4>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-gray-50">
-                        <th className="p-3 text-left text-sm font-semibold text-gray-600">Name</th>
-                        <th className="p-3 text-left text-sm font-semibold text-gray-600">Email</th>
-                        <th className="p-3 text-left text-sm font-semibold text-gray-600">Actions</th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                          Name
+                        </th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                          Email
+                        </th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {pendingSellers.map((seller) => (
-                        <tr key={seller._id} className="border-b border-gray-200 hover:bg-gray-50">
+                        <tr
+                          key={seller._id}
+                          className="border-b border-gray-200 hover:bg-gray-50"
+                        >
                           <td className="p-3 text-gray-700">{seller.name}</td>
                           <td className="p-3 text-gray-700">{seller.email}</td>
                           <td className="p-3">
@@ -1132,32 +1212,55 @@ export default function Dashboard() {
 
               {/* Seller Forms */}
               <div>
-                <h4 className="font-semibold text-lg mb-4 text-gray-800">Submitted Seller Forms</h4>
+                <h4 className="font-semibold text-lg mb-4 text-gray-800">
+                  Submitted Seller Forms
+                </h4>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-gray-50">
-                        <th className="p-3 text-left text-sm font-semibold text-gray-600">Seller</th>
-                        <th className="p-3 text-left text-sm font-semibold text-gray-600">Product</th>
-                        <th className="p-3 text-left text-sm font-semibold text-gray-600">Quantity</th>
-                        <th className="p-3 text-left text-sm font-semibold text-gray-600">Price</th>
-                        <th className="p-3 text-left text-sm font-semibold text-gray-600">Status</th>
-                        <th className="p-3 text-left text-sm font-semibold text-gray-600">Action</th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                          Seller
+                        </th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                          Product
+                        </th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                          Quantity
+                        </th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                          Price
+                        </th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                          Status
+                        </th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                          Action
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {sellerForms.map((form) => (
-                        <tr key={form._id} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="p-3 text-gray-700">{form.sellerId.name}</td>
-                          <td className="p-3 text-gray-700">{form.productName}</td>
+                        <tr
+                          key={form._id}
+                          className="border-b border-gray-200 hover:bg-gray-50"
+                        >
+                          <td className="p-3 text-gray-700">
+                            {form.sellerId.name}
+                          </td>
+                          <td className="p-3 text-gray-700">
+                            {form.productName}
+                          </td>
                           <td className="p-3 text-gray-700">{form.quantity}</td>
                           <td className="p-3 text-gray-700">${form.price}</td>
                           <td className="p-3">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${
-                              form.status === 'pending' 
-                                ? 'bg-yellow-100 text-yellow-800' 
-                                : 'bg-green-100 text-green-800'
-                            }`}>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${
+                                form.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-green-100 text-green-800"
+                              }`}
+                            >
                               {form.status}
                             </span>
                           </td>
@@ -1185,36 +1288,65 @@ export default function Dashboard() {
             {/* Table 1: Admin New Orders */}
             <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div className="border-b border-gray-200 px-6 py-4 bg-green-50">
-                <h3 className="text-xl font-semibold text-green-800">🆕 New Orders (Admin)</h3>
-                <p className="text-sm text-green-600 mt-1">Orders that need to be processed</p>
+                <h3 className="text-xl font-semibold text-green-800">
+                  🆕 New Orders (Admin)
+                </h3>
+                <p className="text-sm text-green-600 mt-1">
+                  Orders that need to be processed
+                </p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Order ID</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Items</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Total</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Status</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Payment</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Customer Details</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Action</th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Order ID
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Items
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Total
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Status
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Payment
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Customer Details
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {companyOrders
                       .filter((order) => order.orderStatus === "Pending")
                       .map((order) => (
-                        <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="p-3 font-mono text-sm text-gray-700">{order._id.slice(-8)}</td>
+                        <tr
+                          key={order._id}
+                          className="border-b border-gray-200 hover:bg-gray-50"
+                        >
+                          <td className="p-3 font-mono text-sm text-gray-700">
+                            {order._id.slice(-8)}
+                          </td>
                           <td className="p-3">
                             {order.items.map((item, index) => (
-                              <div key={index} className="text-sm text-gray-600">
-                                {item.productId?.name} (Qty: {item.quantity}) - ${item.price}
+                              <div
+                                key={index}
+                                className="text-sm text-gray-600"
+                              >
+                                {item.productId?.name} (Qty: {item.quantity}) -
+                                ${item.price}
                               </div>
                             ))}
                           </td>
-                          <td className="p-3 font-semibold text-green-600">${order.total}</td>
+                          <td className="p-3 font-semibold text-green-600">
+                            ${order.total}
+                          </td>
                           <td className="p-3">
                             <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
                               {order.orderStatus}
@@ -1223,9 +1355,7 @@ export default function Dashboard() {
                           <td className="p-3 text-sm text-gray-600">
                             {order.paymentStatus} ({order.paymentMethod})
                           </td>
-                          <td className="p-3">
-                            {renderOrderDetails(order)}
-                          </td>
+                          <td className="p-3">{renderOrderDetails(order)}</td>
                           <td className="p-3">
                             <button
                               onClick={() => processOrder(order._id)}
@@ -1244,50 +1374,81 @@ export default function Dashboard() {
             {/* Table 2: Admin Processed Orders */}
             <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div className="border-b border-gray-200 px-6 py-4 bg-blue-50">
-                <h3 className="text-xl font-semibold text-blue-800">✅ Processed Orders (Admin)</h3>
-                <p className="text-sm text-blue-600 mt-1">Orders that have been processed</p>
+                <h3 className="text-xl font-semibold text-blue-800">
+                  ✅ Processed Orders (Admin)
+                </h3>
+                <p className="text-sm text-blue-600 mt-1">
+                  Orders that have been processed
+                </p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Order ID</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Items</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Total</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Status</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Payment</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Customer Details</th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Order ID
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Items
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Total
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Status
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Payment
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Customer Details
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {companyOrders
-                      .filter((order) => order.orderStatus === "Processing" || order.orderStatus === "Delivered")
+                      .filter(
+                        (order) =>
+                          order.orderStatus === "Processing" ||
+                          order.orderStatus === "Delivered"
+                      )
                       .map((order) => (
-                        <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="p-3 font-mono text-sm text-gray-700">{order._id.slice(-8)}</td>
+                        <tr
+                          key={order._id}
+                          className="border-b border-gray-200 hover:bg-gray-50"
+                        >
+                          <td className="p-3 font-mono text-sm text-gray-700">
+                            {order._id.slice(-8)}
+                          </td>
                           <td className="p-3">
                             {order.items.map((item, index) => (
-                              <div key={index} className="text-sm text-gray-600">
-                                {item.productId?.name} (Qty: {item.quantity}) - ${item.price}
+                              <div
+                                key={index}
+                                className="text-sm text-gray-600"
+                              >
+                                {item.productId?.name} (Qty: {item.quantity}) -
+                                ${item.price}
                               </div>
                             ))}
                           </td>
-                          <td className="p-3 font-semibold text-green-600">${order.total}</td>
+                          <td className="p-3 font-semibold text-green-600">
+                            ${order.total}
+                          </td>
                           <td className="p-3">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              order.orderStatus === 'Processing' 
-                                ? 'bg-blue-100 text-blue-800' 
-                                : 'bg-green-100 text-green-800'
-                            }`}>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                order.orderStatus === "Processing"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-green-100 text-green-800"
+                              }`}
+                            >
                               {order.orderStatus}
                             </span>
                           </td>
                           <td className="p-3 text-sm text-gray-600">
                             {order.paymentStatus} ({order.paymentMethod})
                           </td>
-                          <td className="p-3">
-                            {renderOrderDetails(order)}
-                          </td>
+                          <td className="p-3">{renderOrderDetails(order)}</td>
                         </tr>
                       ))}
                   </tbody>
@@ -1298,58 +1459,97 @@ export default function Dashboard() {
             {/* Table 3: Seller Candidate New Orders */}
             <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div className="border-b border-gray-200 px-6 py-4 bg-purple-50">
-                <h3 className="text-xl font-semibold text-purple-800">👥 Seller Candidate - New Orders</h3>
-                <p className="text-sm text-purple-600 mt-1">New orders from seller candidates</p>
+                <h3 className="text-xl font-semibold text-purple-800">
+                  👥 Seller Candidate - New Orders
+                </h3>
+                <p className="text-sm text-purple-600 mt-1">
+                  New orders from seller candidates
+                </p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Order ID</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Seller</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Items</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Total</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Status</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Customer Details</th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Order ID
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Seller
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Items
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Total
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Status
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Customer Details
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {sellerCandidateOrders
                       .filter((order) => order.orderStatus === "Pending")
                       .map((order) => (
-                        <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="p-3 font-mono text-sm text-gray-700">{order._id.slice(-8)}</td>
+                        <tr
+                          key={order._id}
+                          className="border-b border-gray-200 hover:bg-gray-50"
+                        >
+                          <td className="p-3 font-mono text-sm text-gray-700">
+                            {order._id.slice(-8)}
+                          </td>
                           <td className="p-3">
                             {order.items
-                              .filter(item => item.sellerId?.role === "seller_candidate")
+                              .filter(
+                                (item) =>
+                                  item.sellerId?.role === "seller_candidate"
+                              )
                               .map((item, index) => (
-                                <div key={index} className="text-sm text-gray-600">
+                                <div
+                                  key={index}
+                                  className="text-sm text-gray-600"
+                                >
                                   {item.sellerId?.name} ({item.sellerId?.email})
                                 </div>
                               ))}
                           </td>
                           <td className="p-3">
                             {order.items
-                              .filter(item => item.sellerId?.role === "seller_candidate")
+                              .filter(
+                                (item) =>
+                                  item.sellerId?.role === "seller_candidate"
+                              )
                               .map((item, index) => (
-                                <div key={index} className="text-sm text-gray-600">
-                                  {item.productId?.name} (Qty: {item.quantity}) - ${item.price}
+                                <div
+                                  key={index}
+                                  className="text-sm text-gray-600"
+                                >
+                                  {item.productId?.name} (Qty: {item.quantity})
+                                  - ${item.price}
                                 </div>
                               ))}
                           </td>
                           <td className="p-3 font-semibold text-green-600">
-                            ${order.items
-                              .filter(item => item.sellerId?.role === "seller_candidate")
-                              .reduce((sum, item) => sum + (item.price * item.quantity), 0)}
+                            $
+                            {order.items
+                              .filter(
+                                (item) =>
+                                  item.sellerId?.role === "seller_candidate"
+                              )
+                              .reduce(
+                                (sum, item) => sum + item.price * item.quantity,
+                                0
+                              )}
                           </td>
                           <td className="p-3">
                             <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
                               {order.orderStatus}
                             </span>
                           </td>
-                          <td className="p-3">
-                            {renderOrderDetails(order)}
-                          </td>
+                          <td className="p-3">{renderOrderDetails(order)}</td>
                         </tr>
                       ))}
                   </tbody>
@@ -1360,62 +1560,107 @@ export default function Dashboard() {
             {/* Table 4: Seller Candidate Processed Orders */}
             <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div className="border-b border-gray-200 px-6 py-4 bg-indigo-50">
-                <h3 className="text-xl font-semibold text-indigo-800">✅ Seller Candidate - Processed Orders</h3>
-                <p className="text-sm text-indigo-600 mt-1">Processed orders from seller candidates</p>
+                <h3 className="text-xl font-semibold text-indigo-800">
+                  ✅ Seller Candidate - Processed Orders
+                </h3>
+                <p className="text-sm text-indigo-600 mt-1">
+                  Processed orders from seller candidates
+                </p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Order ID</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Seller</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Items</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Total</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Status</th>
-                      <th className="p-3 text-left text-sm font-semibold text-gray-600">Customer Details</th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Order ID
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Seller
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Items
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Total
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Status
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Customer Details
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {sellerCandidateOrders
-                      .filter((order) => order.orderStatus === "Processing" || order.orderStatus === "Delivered")
+                      .filter(
+                        (order) =>
+                          order.orderStatus === "Processing" ||
+                          order.orderStatus === "Delivered"
+                      )
                       .map((order) => (
-                        <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="p-3 font-mono text-sm text-gray-700">{order._id.slice(-8)}</td>
+                        <tr
+                          key={order._id}
+                          className="border-b border-gray-200 hover:bg-gray-50"
+                        >
+                          <td className="p-3 font-mono text-sm text-gray-700">
+                            {order._id.slice(-8)}
+                          </td>
                           <td className="p-3">
                             {order.items
-                              .filter(item => item.sellerId?.role === "seller_candidate")
+                              .filter(
+                                (item) =>
+                                  item.sellerId?.role === "seller_candidate"
+                              )
                               .map((item, index) => (
-                                <div key={index} className="text-sm text-gray-600">
+                                <div
+                                  key={index}
+                                  className="text-sm text-gray-600"
+                                >
                                   {item.sellerId?.name} ({item.sellerId?.email})
                                 </div>
                               ))}
                           </td>
                           <td className="p-3">
                             {order.items
-                              .filter(item => item.sellerId?.role === "seller_candidate")
+                              .filter(
+                                (item) =>
+                                  item.sellerId?.role === "seller_candidate"
+                              )
                               .map((item, index) => (
-                                <div key={index} className="text-sm text-gray-600">
-                                  {item.productId?.name} (Qty: {item.quantity}) - ${item.price}
+                                <div
+                                  key={index}
+                                  className="text-sm text-gray-600"
+                                >
+                                  {item.productId?.name} (Qty: {item.quantity})
+                                  - ${item.price}
                                 </div>
                               ))}
                           </td>
                           <td className="p-3 font-semibold text-green-600">
-                            ${order.items
-                              .filter(item => item.sellerId?.role === "seller_candidate")
-                              .reduce((sum, item) => sum + (item.price * item.quantity), 0)}
+                            $
+                            {order.items
+                              .filter(
+                                (item) =>
+                                  item.sellerId?.role === "seller_candidate"
+                              )
+                              .reduce(
+                                (sum, item) => sum + item.price * item.quantity,
+                                0
+                              )}
                           </td>
                           <td className="p-3">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              order.orderStatus === 'Processing' 
-                                ? 'bg-blue-100 text-blue-800' 
-                                : 'bg-green-100 text-green-800'
-                            }`}>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                order.orderStatus === "Processing"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-green-100 text-green-800"
+                              }`}
+                            >
                               {order.orderStatus}
                             </span>
                           </td>
-                          <td className="p-3">
-                            {renderOrderDetails(order)}
-                          </td>
+                          <td className="p-3">{renderOrderDetails(order)}</td>
                         </tr>
                       ))}
                   </tbody>
@@ -1427,7 +1672,9 @@ export default function Dashboard() {
       )}
 
       {/* My Products (Sellers/Admins) */}
-      {(role === "seller_candidate" || role === "seller" || role === "admin") && (
+      {(role === "seller_candidate" ||
+        role === "seller" ||
+        role === "admin") && (
         <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
           <div className="border-b border-gray-200 px-6 py-4">
             <h3 className="text-xl font-semibold text-gray-800">My Products</h3>
@@ -1458,16 +1705,29 @@ export default function Dashboard() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Name</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Price</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Quantity</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Category</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Actions</th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Name
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Price
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Quantity
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Category
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {myProducts.map((product) => (
-                    <tr key={product._id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <tr
+                      key={product._id}
+                      className="border-b border-gray-200 hover:bg-gray-50"
+                    >
                       <td className="p-3 text-gray-700">{product.name}</td>
                       <td className="p-3 text-gray-700">${product.price}</td>
                       <td className="p-3 text-gray-700">{product.quantity}</td>
@@ -1501,58 +1761,77 @@ export default function Dashboard() {
       )}
 
       {/* ------------------- SELLER_CANDIDATE ORDERS - 2 TABLES ------------------- */}
+      {/* ------------------- SELLER_CANDIDATE ORDERS - UPDATED TO MATCH ADMIN ------------------- */}
       {role === "seller_candidate" && (
         <div className="space-y-6">
-          {/* Table 1: Unprocessed Orders */}
+          {/* Table 1: Seller Candidate New Orders */}
           <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200 px-6 py-4 bg-yellow-50">
-              <h3 className="text-xl font-semibold text-yellow-800">🆕 My Unprocessed Orders</h3>
-              <p className="text-sm text-yellow-600 mt-1">Orders waiting to be processed</p>
+              <h3 className="text-xl font-semibold text-yellow-800">
+                🆕 My New Orders
+              </h3>
+              <p className="text-sm text-yellow-600 mt-1">
+                Orders that need to be processed
+              </p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Order ID</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Items</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Quantity</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Price</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Total</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Customer Details</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Action</th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Order ID
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Items
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Total
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Status
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Payment
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Customer Details
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {sellerOrders
                     .filter((order) => order.orderStatus === "Pending")
                     .map((order) => (
-                      <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="p-3 font-mono text-sm text-gray-700">{order._id.slice(-8)}</td>
-                        <td className="p-3">
-                          {order.items.map((item, index) => (
-                            <div key={index} className="text-sm text-gray-600">
-                              {item.productId?.name}
-                            </div>
-                          ))}
+                      <tr
+                        key={order._id}
+                        className="border-b border-gray-200 hover:bg-gray-50"
+                      >
+                        <td className="p-3 font-mono text-sm text-gray-700">
+                          {order._id.slice(-8)}
                         </td>
                         <td className="p-3">
                           {order.items.map((item, index) => (
                             <div key={index} className="text-sm text-gray-600">
-                              {item.quantity}
+                              {item.productId?.name} (Qty: {item.quantity}) - $
+                              {item.price}
                             </div>
                           ))}
                         </td>
-                        <td className="p-3">
-                          {order.items.map((item, index) => (
-                            <div key={index} className="text-sm text-gray-600">
-                              ${item.price}
-                            </div>
-                          ))}
+                        <td className="p-3 font-semibold text-green-600">
+                          ${order.total}
                         </td>
-                        <td className="p-3 font-semibold text-green-600">${order.total}</td>
                         <td className="p-3">
-                          {renderOrderDetails(order)}
+                          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                            {order.orderStatus}
+                          </span>
                         </td>
+                        <td className="p-3 text-sm text-gray-600">
+                          {order.paymentStatus} ({order.paymentMethod})
+                        </td>
+                        <td className="p-3">{renderOrderDetails(order)}</td>
                         <td className="p-3">
                           <button
                             onClick={() => processOrder(order._id)}
@@ -1568,65 +1847,81 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Table 2: Processed Orders */}
+          {/* Table 2: Seller Candidate Processed Orders */}
           <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200 px-6 py-4 bg-green-50">
-              <h3 className="text-xl font-semibold text-green-800">✅ My Processed Orders</h3>
-              <p className="text-sm text-green-600 mt-1">Orders that have been processed</p>
+              <h3 className="text-xl font-semibold text-green-800">
+                ✅ My Processed Orders
+              </h3>
+              <p className="text-sm text-green-600 mt-1">
+                Orders that have been processed
+              </p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Order ID</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Items</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Quantity</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Price</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Total</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Customer Details</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Status</th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Order ID
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Items
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Total
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Status
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Payment
+                    </th>
+                    <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                      Customer Details
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {sellerOrders
-                    .filter((order) => order.orderStatus === "Processing" || order.orderStatus === "Delivered")
+                    .filter(
+                      (order) =>
+                        order.orderStatus === "Processing" ||
+                        order.orderStatus === "Delivered"
+                    )
                     .map((order) => (
-                      <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="p-3 font-mono text-sm text-gray-700">{order._id.slice(-8)}</td>
-                        <td className="p-3">
-                          {order.items.map((item, index) => (
-                            <div key={index} className="text-sm text-gray-600">
-                              {item.productId?.name}
-                            </div>
-                          ))}
+                      <tr
+                        key={order._id}
+                        className="border-b border-gray-200 hover:bg-gray-50"
+                      >
+                        <td className="p-3 font-mono text-sm text-gray-700">
+                          {order._id.slice(-8)}
                         </td>
                         <td className="p-3">
                           {order.items.map((item, index) => (
                             <div key={index} className="text-sm text-gray-600">
-                              {item.quantity}
+                              {item.productId?.name} (Qty: {item.quantity}) - $
+                              {item.price}
                             </div>
                           ))}
                         </td>
-                        <td className="p-3">
-                          {order.items.map((item, index) => (
-                            <div key={index} className="text-sm text-gray-600">
-                              ${item.price}
-                            </div>
-                          ))}
-                        </td>
-                        <td className="p-3 font-semibold text-green-600">${order.total}</td>
-                        <td className="p-3">
-                          {renderOrderDetails(order)}
+                        <td className="p-3 font-semibold text-green-600">
+                          ${order.total}
                         </td>
                         <td className="p-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            order.orderStatus === 'Processing' 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : 'bg-green-100 text-green-800'
-                          }`}>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              order.orderStatus === "Processing"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-green-100 text-green-800"
+                            }`}
+                          >
                             {order.orderStatus}
                           </span>
                         </td>
+                        <td className="p-3 text-sm text-gray-600">
+                          {order.paymentStatus} ({order.paymentMethod})
+                        </td>
+                        <td className="p-3">{renderOrderDetails(order)}</td>
                       </tr>
                     ))}
                 </tbody>
@@ -1641,7 +1936,9 @@ export default function Dashboard() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       >
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">Submit Product Form</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+          Submit Product Form
+        </h3>
         <form onSubmit={submitForm} className="space-y-4">
           <input
             type="text"
