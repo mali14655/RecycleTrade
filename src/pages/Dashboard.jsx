@@ -788,6 +788,37 @@ export default function Dashboard() {
   const { name, role } = user.user;
   const token = localStorage.getItem("accessToken");
 
+  // Add this function inside your Dashboard component, with the other functions
+  const toggleFeatured = async (productId, currentStatus) => {
+    try {
+      const res = await axios.patch(
+        `${import.meta.env.VITE_API_URL}/products/${productId}/featured`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Update local state
+      setAllProducts((prevProducts) =>
+        prevProducts.map((p) =>
+          p._id === productId ? { ...p, featured: !currentStatus } : p
+        )
+      );
+
+      // Also update myProducts if it exists there
+      setMyProducts((prevMyProducts) =>
+        prevMyProducts.map((p) =>
+          p._id === productId ? { ...p, featured: !currentStatus } : p
+        )
+      );
+
+      alert(res.data.message);
+    } catch (error) {
+      console.error("Error toggling featured:", error);
+      alert("Error updating featured status");
+    }
+  };
   const fetchSellerOrders = async () => {
     try {
       const res = await axios.get(
@@ -1129,7 +1160,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
           {/* Admin Content */}
           <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200 px-6 py-4">
@@ -1282,7 +1312,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
           {/* ------------------- ADMIN ORDERS - 4 TABLES ------------------- */}
           <div className="space-y-6">
             {/* Table 1: Admin New Orders */}
@@ -1665,6 +1694,221 @@ export default function Dashboard() {
                       ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+          {/* // In your Dashboard component, add this section in the Admin Panel: */}
+          {/* Featured Products Management - Admin Only */}
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mt-6">
+            <div className="border-b border-gray-200 px-6 py-4 bg-purple-50">
+              <h3 className="text-xl font-semibold text-purple-800">
+                ⭐ Featured Products Management
+              </h3>
+              <p className="text-sm text-purple-600 mt-1">
+                Mark/unmark products as featured for the home page
+              </p>
+            </div>
+            <div className="p-6">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Product
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Seller
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Price
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Category
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Status
+                      </th>
+                      <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allProducts.map((product) => (
+                      <tr
+                        key={product._id}
+                        className="border-b border-gray-200 hover:bg-gray-50"
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center space-x-3">
+                            {product.images && product.images.length > 0 ? (
+                              <img
+                                src={product.images[0]}
+                                alt={product.name}
+                                className="w-10 h-10 object-cover rounded-lg"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                                <svg
+                                  className="w-5 h-5 text-gray-400"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {product.name}
+                              </div>
+                              <div className="text-sm text-gray-500 line-clamp-1">
+                                {product.description}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3 text-sm text-gray-600">
+                          {product.sellerId?.name || "Unknown Seller"}
+                          <div className="text-xs text-gray-400 capitalize">
+                            {product.sellerId?.role?.replace("_", " ") ||
+                              "Unknown"}
+                          </div>
+                        </td>
+                        <td className="p-3 font-semibold text-green-600">
+                          ${product.price}
+                        </td>
+                        <td className="p-3">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium capitalize">
+                            {product.category}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              product.featured
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {product.featured ? "Featured" : "Not Featured"}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <button
+                            onClick={() =>
+                              toggleFeatured(product._id, product.featured)
+                            }
+                            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                              product.featured
+                                ? "bg-red-600 text-white hover:bg-red-700"
+                                : "bg-green-600 text-white hover:bg-green-700"
+                            }`}
+                          >
+                            {product.featured
+                              ? "Remove Featured"
+                              : "Mark Featured"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Featured Products Stats */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg
+                        className="w-5 h-5 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm text-green-600">
+                        Featured Products
+                      </p>
+                      <p className="text-2xl font-bold text-green-800">
+                        {allProducts.filter((p) => p.featured).length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg
+                        className="w-5 h-5 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-600">Total Products</p>
+                      <p className="text-2xl font-bold text-blue-800">
+                        {allProducts.length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg
+                        className="w-5 h-5 text-purple-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm text-purple-600">
+                        Seller Candidates
+                      </p>
+                      <p className="text-2xl font-bold text-purple-800">
+                        {
+                          allProducts.filter(
+                            (p) => p.sellerId?.role === "seller_candidate"
+                          ).length
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
