@@ -145,6 +145,7 @@ import Checkout from "./pages/Checkout.jsx";
 import Orders from "./pages/Orders.jsx";
 import Success from "./pages/Success";
 import Cancel from "./pages/Cancel";
+import TrackOrder from "./pages/TrackOrder.jsx";
 
 function App() {
   return (
@@ -159,6 +160,7 @@ function App() {
         <Route path="/success" element={<Success />} />
         <Route path="/cancel" element={<Cancel />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/track-order" element={<TrackOrder />} />
 
         {/* Dashboard - sellers will be redirected to sell-to-company via ProtectedRoute */}
         <Route

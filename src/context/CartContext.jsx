@@ -1,3 +1,4 @@
+// context/CartContext.jsx - Fix the addToCart function
 import React, { createContext, useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "./AuthContext";
@@ -46,7 +47,6 @@ export const CartProvider = ({ children }) => {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/cart`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // keep full cart object (with items array)
       setCart(res.data || { items: [] });
       console.log("Fetched user cart:", res.data);
     } catch (err) {
@@ -59,37 +59,94 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem("guestCart", JSON.stringify(updatedItems));
   };
 
-  const addToCart = async (product, quantity = 1) => {
+  const addToCart = async (product, quantity = 1, selectedVariant = null) => {
+    console.log(
+      "Adding to cart:",
+      product.name,
+      "quantity:",
+      quantity,
+      "variant:",
+      selectedVariant
+    );
+
+    // Check stock before adding to cart if variant is provided
+    if (selectedVariant) {
+      try {
+        const checkStock = await axios.post(
+          `${import.meta.env.VITE_API_URL}/orders/${product._id}/check-stock`,
+          {
+            variantId: selectedVariant._id,
+            quantity: quantity,
+          }
+        );
+
+        if (!checkStock.data.available) {
+          alert(
+            `Only ${checkStock.data.availableQuantity} items available in stock`
+          );
+          console.log("Stock check failed - not enough stock");
+          return;
+        }
+        console.log("Stock check passed");
+      } catch (error) {
+        console.error("Error checking stock:", error);
+        alert("Error checking product availability");
+        return;
+      }
+    }
+
     if (user) {
       try {
         const token = localStorage.getItem("accessToken");
         const res = await axios.post(
           `${import.meta.env.VITE_API_URL}/cart/add`,
-          { productId: product._id, quantity },
+          {
+            productId: product._id,
+            quantity,
+            variantId: selectedVariant?._id, // Include variant ID if available
+          },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setCart(res.data.cart || { items: [] });
+        console.log("Product added to user cart");
       } catch (err) {
         console.error("Error adding to cart:", err);
       }
     } else {
-      const existing = cart.items.find((item) => item._id === product._id);
+      const existing = cart.items.find((item) => {
+        // For variants, check both product ID and variant ID
+        if (selectedVariant && item.variantId) {
+          return (
+            item._id === product._id && item.variantId === selectedVariant._id
+          );
+        }
+        return item._id === product._id;
+      });
+
       let updatedItems;
       if (existing) {
         updatedItems = cart.items.map((item) =>
-          item._id === product._id
+          (selectedVariant && item.variantId === selectedVariant._id) ||
+          (!selectedVariant && item._id === product._id)
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       } else {
-        updatedItems = [...cart.items, { ...product, quantity }];
+        const cartItem = {
+          ...product,
+          quantity,
+          variantId: selectedVariant?._id,
+          variantSpecs: selectedVariant?.specs,
+        };
+        updatedItems = [...cart.items, cartItem];
       }
       setCart({ items: updatedItems });
       saveGuestCart(updatedItems);
+      console.log("Product added to guest cart");
     }
   };
 
-  const removeFromCart = async (productId) => {
+  const removeFromCart = async (productId, variantId = null) => {
     if (user) {
       try {
         const token = localStorage.getItem("accessToken");
@@ -102,7 +159,12 @@ export const CartProvider = ({ children }) => {
         console.error("Error removing from cart:", err);
       }
     } else {
-      const updatedItems = cart.items.filter((item) => item._id !== productId);
+      const updatedItems = cart.items.filter((item) => {
+        if (variantId && item.variantId) {
+          return !(item._id === productId && item.variantId === variantId);
+        }
+        return item._id !== productId;
+      });
       setCart({ items: updatedItems });
       saveGuestCart(updatedItems);
     }

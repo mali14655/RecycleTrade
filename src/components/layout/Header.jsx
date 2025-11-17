@@ -46,11 +46,17 @@ export default function Header() {
             >
               All Products
             </Link>
-
+            <Link
+              to="/track-order"
+              className="text-gray-700 hover:text-blue-600"
+            >
+              Track Your Order
+            </Link>
             {user && (
               <>
                 {/* Show Dashboard for admin and seller_candidate, but NOT for seller */}
-                {(user.user?.role === "admin" || user.user?.role === "seller_candidate") && (
+                {(user.user?.role === "admin" ||
+                  user.user?.role === "seller_candidate") && (
                   <Link
                     to="/dashboard"
                     className="text-gray-600 hover:text-green-600 transition-colors"
@@ -58,7 +64,7 @@ export default function Header() {
                     Dashboard
                   </Link>
                 )}
-                
+
                 {/* Show Sell to Company ONLY for seller role */}
                 {user.user?.role === "seller" && (
                   <Link
@@ -140,9 +146,10 @@ export default function Header() {
                         {user.user?.role}
                       </p>
                     </div>
-                    
+
                     {/* Show Dashboard link in dropdown for admin and seller_candidate only */}
-                    {(user.user?.role === "admin" || user.user?.role === "seller_candidate") && (
+                    {(user.user?.role === "admin" ||
+                      user.user?.role === "seller_candidate") && (
                       <Link
                         to="/dashboard"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
@@ -151,7 +158,7 @@ export default function Header() {
                         Dashboard
                       </Link>
                     )}
-                    
+
                     {/* Show Sell to Company link in dropdown for seller only */}
                     {user.user?.role === "seller" && (
                       <Link
@@ -162,7 +169,7 @@ export default function Header() {
                         Sell to Company
                       </Link>
                     )}
-                    
+
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
@@ -233,7 +240,8 @@ export default function Header() {
               {user && (
                 <>
                   {/* Show Dashboard for admin and seller_candidate, but NOT for seller */}
-                  {(user.user?.role === "admin" || user.user?.role === "seller_candidate") && (
+                  {(user.user?.role === "admin" ||
+                    user.user?.role === "seller_candidate") && (
                     <Link
                       to="/dashboard"
                       className="text-gray-600 hover:text-green-600 transition-colors"
@@ -242,7 +250,7 @@ export default function Header() {
                       Dashboard
                     </Link>
                   )}
-                  
+
                   {/* Show Sell to Company ONLY for seller role */}
                   {user.user?.role === "seller" && (
                     <Link
