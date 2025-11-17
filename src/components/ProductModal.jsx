@@ -1,4 +1,3 @@
-// components/ProductModal.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -195,7 +194,6 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     const variants = combinations.map((combo, index) => ({
       specs: combo,
       price: parseFloat(price) || 0,
-      quantity: 1,
       sku: `${name.replace(/\s+/g, '').toUpperCase().slice(0, 10)}-${index + 1}`,
       enabled: true,
       images: []
@@ -269,15 +267,6 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     );
   };
 
-  const updateVariantQuantity = (index, quantity) => {
-    console.log("Updating variant quantity:", index, quantity);
-    setSelectedVariants(prev => 
-      prev.map((v, i) => 
-        i === index ? { ...v, quantity: parseInt(quantity) || 0 } : v
-      )
-    );
-  };
-
   const handleVariantImageUpload = async (index, files) => {
     if (files.length === 0) return;
 
@@ -343,7 +332,6 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         name,
         description,
         price: parseFloat(price) || 0,
-        quantity: 0,
         category: selectedCategory ? selectedCategory.name : name,
         images: allImages
       };
@@ -353,7 +341,6 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         payload.basePrice = parseFloat(price) || 0;
         payload.specs = singleSpecs;
         payload.variants = selectedVariants;
-        payload.quantity = selectedVariants.reduce((total, variant) => total + (variant.quantity || 0), 0);
       }
 
       console.log("Submitting payload:", payload);
@@ -608,7 +595,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             <div className="space-y-4">
               <h3 className="text-lg font-semibold mb-4">Manage Product Variants</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Select which variants to sell and set their prices & quantities. 
+                Select which variants to sell and set their prices. 
                 <strong className="text-red-600"> Only selected variants will be available for sale.</strong>
               </p>
 
@@ -658,14 +645,13 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                         isSelected 
                           ? 'bg-green-50 border-green-300 shadow-sm' 
                           : 'bg-white border-gray-200 hover:bg-gray-50'
-                      } ${variant.quantity === 0 ? 'opacity-60' : ''}`}>
+                      }`}>
                         <div className="flex items-center space-x-3">
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleVariantSelection(index)}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                            disabled={variant.quantity === 0}
                           />
                           <div className="flex-1">
                             <div className="font-medium text-sm">
@@ -678,11 +664,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                             <div className="text-xs text-gray-500 mt-1">
                               SKU: {variant.sku}
                             </div>
-                            <div className={`text-xs mt-1 ${
-                              variant.quantity > 10 ? 'text-green-600' : 
-                              variant.quantity > 0 ? 'text-yellow-600' : 'text-red-600'
-                            }`}>
-                              Stock: {variant.quantity} {variant.quantity === 0 && '(Out of Stock)'}
+                            <div className="text-xs text-green-600 mt-1">
+                              Price: ${variant.price}
                             </div>
                           </div>
                         </div>
@@ -715,30 +698,17 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Price ($) *</label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={variant.price || ''}
-                              onChange={(e) => updateVariantPrice(index, e.target.value)}
-                              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Quantity *</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={variant.quantity || ''}
-                              onChange={(e) => updateVariantQuantity(index, e.target.value)}
-                              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium mb-1">Price ($) *</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={variant.price || ''}
+                            onChange={(e) => updateVariantPrice(index, e.target.value)}
+                            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required
+                          />
                         </div>
 
                         {/* Variant-specific Images */}

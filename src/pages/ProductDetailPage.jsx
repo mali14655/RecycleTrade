@@ -21,12 +21,10 @@ export default function ProductDetails() {
         setProduct(res.data);
         console.log("Product fetched:", res.data);
         
-        // Set default selected variant (first enabled variant that is in stock)
         if (res.data.variants && res.data.variants.length > 0) {
-          const firstEnabledVariant = res.data.variants.find(v => v.enabled && v.quantity > 0) || res.data.variants[0];
+          const firstEnabledVariant = res.data.variants.find(v => v.enabled) || res.data.variants[0];
           setSelectedVariant(firstEnabledVariant);
           
-          // Initialize selected specs
           if (firstEnabledVariant.specs) {
             setSelectedSpecs(firstEnabledVariant.specs);
           }
@@ -43,13 +41,12 @@ export default function ProductDetails() {
     fetchProduct();
   }, [id]);
 
-  // Get available options for each multiple spec (only in-stock variants)
   const getAvailableOptions = (specName) => {
     if (!product?.variants) return [];
     
     const options = new Set();
     product.variants.forEach(variant => {
-      if (variant.enabled && variant.quantity > 0 && variant.specs[specName]) {
+      if (variant.enabled && variant.specs[specName]) {
         options.add(variant.specs[specName]);
       }
     });
@@ -57,7 +54,6 @@ export default function ProductDetails() {
     return Array.from(options);
   };
 
-  // Handle spec selection change
   const handleSpecChange = (specName, value) => {
     console.log("Spec changed:", specName, value);
     const newSelectedSpecs = {
@@ -67,10 +63,8 @@ export default function ProductDetails() {
     
     setSelectedSpecs(newSelectedSpecs);
     
-    // Find matching variant that is in stock
     const matchingVariant = product.variants.find(variant => 
-      variant.enabled && 
-      variant.quantity > 0 &&
+      variant.enabled &&
       Object.keys(newSelectedSpecs).every(key => 
         variant.specs[key] === newSelectedSpecs[key]
       )
@@ -81,11 +75,10 @@ export default function ProductDetails() {
       console.log("Variant selected:", matchingVariant);
     } else {
       setSelectedVariant(null);
-      console.log("No in-stock variant found for specs:", newSelectedSpecs);
+      console.log("No variant found for specs:", newSelectedSpecs);
     }
   };
 
-  // Get current display images
   const getDisplayImages = () => {
     if (selectedVariant?.images && selectedVariant.images.length > 0) {
       return selectedVariant.images;
@@ -93,63 +86,12 @@ export default function ProductDetails() {
     return product?.images || [];
   };
 
-  // Get stock status text and color
-  const getStockStatus = () => {
-    if (!product) return { text: "", color: "" };
-    
-    if (product.variants && product.variants.length > 0) {
-      if (!selectedVariant) {
-        return { text: "Select variant", color: "text-gray-600" };
-      }
-      if (selectedVariant.quantity === 0) {
-        return { text: "Out of Stock", color: "text-red-600 font-semibold" };
-      }
-      if (selectedVariant.quantity === 1) {
-        return { text: "Only 1 left", color: "text-orange-600 font-semibold" };
-      }
-      if (selectedVariant.quantity <= 2) {
-        return { text: `Only ${selectedVariant.quantity} left`, color: "text-orange-600" };
-      }
-      return { text: "In Stock", color: "text-green-600" };
-    } else {
-      if (product.quantity === 0) {
-        return { text: "Out of Stock", color: "text-red-600 font-semibold" };
-      }
-      if (product.quantity === 1) {
-        return { text: "Only 1 left", color: "text-orange-600 font-semibold" };
-      }
-      if (product.quantity <= 2) {
-        return { text: `Only ${product.quantity} left`, color: "text-orange-600" };
-      }
-      return { text: "In Stock", color: "text-green-600" };
-    }
-  };
-
   const handleAddToCart = async () => {
     // For products without variants
     if (!product.variants || product.variants.length === 0) {
-      // Check stock for simple product
-      try {
-        const checkStock = await axios.post(
-          `${import.meta.env.VITE_API_URL}/orders/${product._id}/check-stock`,
-          { 
-            quantity: 1 
-          }
-        );
-
-        if (!checkStock.data.available) {
-          alert(`Only ${checkStock.data.availableQuantity} items available in stock`);
-          return;
-        }
-
-        addToCart(product, 1);
-        console.log("Simple product added to cart:", product);
-        return;
-      } catch (error) {
-        console.error("Error checking stock:", error);
-        alert("Error checking product availability");
-        return;
-      }
+      addToCart(product, 1);
+      console.log("Simple product added to cart:", product);
+      return;
     }
 
     // For products with variants
@@ -158,35 +100,16 @@ export default function ProductDetails() {
       return;
     }
 
-    // Check stock before adding to cart
-    try {
-      const checkStock = await axios.post(
-        `${import.meta.env.VITE_API_URL}/orders/${product._id}/check-stock`,
-        { 
-          variantId: selectedVariant._id, 
-          quantity: 1 
-        }
-      );
-
-      if (!checkStock.data.available) {
-        alert(`Only ${checkStock.data.availableQuantity} items available in stock`);
-        return;
-      }
-
-      const productToAdd = {
-        ...product,
-        price: selectedVariant.price,
-        images: getDisplayImages(),
-        variantId: selectedVariant._id,
-        variantSpecs: selectedVariant.specs
-      };
-      
-      addToCart(productToAdd, 1, selectedVariant);
-      console.log("Variant product added to cart:", productToAdd);
-    } catch (error) {
-      console.error("Error checking stock:", error);
-      alert("Error checking product availability");
-    }
+    const productToAdd = {
+      ...product,
+      price: selectedVariant.price,
+      images: getDisplayImages(),
+      variantId: selectedVariant._id,
+      variantSpecs: selectedVariant.specs
+    };
+    
+    addToCart(productToAdd, 1, selectedVariant);
+    console.log("Variant product added to cart:", productToAdd);
   };
 
   if (loading) return <p className="text-center mt-10 text-gray-500">Loading...</p>;
@@ -195,22 +118,13 @@ export default function ProductDetails() {
   const displayImages = getDisplayImages();
   const multipleSpecs = product.variants ? 
     Object.keys(product.variants[0]?.specs || {}) : [];
-  const stockStatus = getStockStatus();
-
-  // Check if product is in stock
-  const isProductInStock = product.variants && product.variants.length > 0 
-    ? product.variants.some(v => v.enabled && v.quantity > 0)
-    : product.quantity > 0;
-
-  // Determine if we should show variant selection
-  const showVariantSelection = multipleSpecs.length > 0 && isProductInStock;
+  const showVariantSelection = multipleSpecs.length > 0;
 
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Product Images */}
         <div>
-          {/* Main Image */}
           <div className="mb-4">
             <img
               src={displayImages[activeImage] || "https://via.placeholder.com/600"}
@@ -219,7 +133,6 @@ export default function ProductDetails() {
             />
           </div>
           
-          {/* Thumbnail Gallery */}
           {displayImages.length > 1 && (
             <div className="grid grid-cols-4 gap-2">
               {displayImages.map((image, index) => (
@@ -248,13 +161,6 @@ export default function ProductDetails() {
           <p className="text-gray-700 mb-4 leading-relaxed">
             {product.description}
           </p>
-
-          {/* Stock Status */}
-          <div className="mb-4">
-            <p className={`text-lg font-semibold ${stockStatus.color}`}>
-              {stockStatus.text}
-            </p>
-          </div>
 
           {/* Single Specs Display */}
           {product.specs && Object.keys(product.specs).length > 0 && (
@@ -296,19 +202,14 @@ export default function ProductDetails() {
             </div>
           )}
 
-          {/* Price and Stock */}
+          {/* Price */}
           <div className="mb-6">
             <p className="text-3xl font-bold text-green-600 mb-2">
               ${selectedVariant ? selectedVariant.price : product.price}
             </p>
             
-            {selectedVariant ? (
+            {selectedVariant && (
               <div>
-                <p className={`text-gray-600 mb-2 ${
-                  selectedVariant.quantity === 0 ? 'text-red-600 font-semibold' : ''
-                }`}>
-                  <strong>Stock:</strong> {selectedVariant.quantity} available
-                </p>
                 <p className="text-sm text-gray-500">
                   Selected: {Object.entries(selectedVariant.specs).map(([key, value]) => (
                     <span key={key} className="mr-2">
@@ -317,12 +218,6 @@ export default function ProductDetails() {
                   ))}
                 </p>
               </div>
-            ) : (
-              <p className={`text-gray-600 mb-2 ${
-                product.quantity === 0 ? 'text-red-600 font-semibold' : ''
-              }`}>
-                <strong>Stock:</strong> {product.quantity} available
-              </p>
             )}
             
             <p className="text-gray-600">
@@ -332,11 +227,10 @@ export default function ProductDetails() {
 
           <button
             onClick={handleAddToCart}
-            disabled={!isProductInStock || (product.variants && product.variants.length > 0 && !selectedVariant)}
+            disabled={product.variants && product.variants.length > 0 && !selectedVariant}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-all duration-200 text-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {!isProductInStock ? "Out of Stock" : 
-             (product.variants && product.variants.length > 0 && !selectedVariant) ? "Select Variant" : "Add to Cart"}
+            {product.variants && product.variants.length > 0 && !selectedVariant ? "Select Variant" : "Add to Cart"}
           </button>
         </div>
       </div>

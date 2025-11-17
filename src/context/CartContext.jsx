@@ -1,4 +1,3 @@
-// context/CartContext.jsx - Fix the addToCart function
 import React, { createContext, useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "./AuthContext";
@@ -32,7 +31,6 @@ export const CartProvider = ({ children }) => {
         console.error("Error updating quantity:", err);
       }
     } else {
-      // Guest user
       const updatedItems = cart.items.map((item) =>
         item._id === productId ? { ...item, quantity: newQuantity } : item
       );
@@ -60,41 +58,9 @@ export const CartProvider = ({ children }) => {
   };
 
   const addToCart = async (product, quantity = 1, selectedVariant = null) => {
-    console.log(
-      "Adding to cart:",
-      product.name,
-      "quantity:",
-      quantity,
-      "variant:",
-      selectedVariant
-    );
+    console.log("Adding to cart:", product.name, "quantity:", quantity, "variant:", selectedVariant);
 
-    // Check stock before adding to cart if variant is provided
-    if (selectedVariant) {
-      try {
-        const checkStock = await axios.post(
-          `${import.meta.env.VITE_API_URL}/orders/${product._id}/check-stock`,
-          {
-            variantId: selectedVariant._id,
-            quantity: quantity,
-          }
-        );
-
-        if (!checkStock.data.available) {
-          alert(
-            `Only ${checkStock.data.availableQuantity} items available in stock`
-          );
-          console.log("Stock check failed - not enough stock");
-          return;
-        }
-        console.log("Stock check passed");
-      } catch (error) {
-        console.error("Error checking stock:", error);
-        alert("Error checking product availability");
-        return;
-      }
-    }
-
+    // No stock checks - all products have unlimited stock
     if (user) {
       try {
         const token = localStorage.getItem("accessToken");
@@ -103,7 +69,7 @@ export const CartProvider = ({ children }) => {
           {
             productId: product._id,
             quantity,
-            variantId: selectedVariant?._id, // Include variant ID if available
+            variantId: selectedVariant?._id,
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -114,7 +80,6 @@ export const CartProvider = ({ children }) => {
       }
     } else {
       const existing = cart.items.find((item) => {
-        // For variants, check both product ID and variant ID
         if (selectedVariant && item.variantId) {
           return (
             item._id === product._id && item.variantId === selectedVariant._id
