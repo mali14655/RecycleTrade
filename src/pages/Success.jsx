@@ -9,8 +9,8 @@ const Success = () => {
 
   useEffect(() => {
     // clear local cart (guest)
-    clearCart(); // ensure this clears localStorage guestCart and CartContext state
-    // for logged-in user, also call backend clear to be safe (webhook should already do it)
+    clearCart();
+    // for logged-in user, also call backend clear to be safe 
     if (user) {
       axios.delete(`${import.meta.env.VITE_API_URL}/cart/clear`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }

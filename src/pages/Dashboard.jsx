@@ -4,7 +4,7 @@ import axios from "axios";
 import ProductModal from "../components/ProductModal";
 import CategoryManager from "../components/CategoryManager";
 
-// Dashboard Sidebar Component (Removed notifications)
+// Dashboard Sidebar Component 
 const DashboardSidebar = ({ activeSection, setActiveSection, user }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -377,7 +377,7 @@ function getSectionTitle(section) {
   return titles[section] || "Dashboard";
 }
 
-// Enhanced Dashboard Overview Component - Fixed calculations
+// Enhanced Dashboard Overview Component
 const DashboardOverview = ({ user, dashboardData, data }) => {
   if (!dashboardData) {
     return (

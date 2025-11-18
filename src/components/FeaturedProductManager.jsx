@@ -1,4 +1,3 @@
-// components/FeaturedProductManager.jsx (Optional - for admin panel)
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 

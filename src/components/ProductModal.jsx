@@ -19,8 +19,36 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
   const [generatedVariants, setGeneratedVariants] = useState([]);
   const [selectedVariants, setSelectedVariants] = useState([]);
   const [step, setStep] = useState(1);
-  const [variantImages, setVariantImages] = useState({});
+  
+  // Track variant image files separately (not uploaded immediately)
+  const [variantImageFiles, setVariantImageFiles] = useState({});
 
+  // Fetch categories when modal opens
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        console.log("Fetching categories...");
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/categories`);
+        setCategories(res.data);
+        console.log("Categories fetched:", res.data);
+        
+        // If editing product, set the selected category
+        if (product && product.categoryRef) {
+          const category = res.data.find(cat => cat._id === product.categoryRef);
+          setSelectedCategory(category);
+          console.log("Selected category for editing:", category);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    
+    if (isOpen) {
+      fetchCategories();
+    }
+  }, [product, isOpen]);
+
+  // Initialize form when product changes
   useEffect(() => {
     if (product) {
       console.log("Editing product:", product);
@@ -50,29 +78,6 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     }
   }, [product, isOpen]);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        console.log("Fetching categories...");
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/categories`);
-        setCategories(res.data);
-        console.log("Categories fetched:", res.data.length);
-        
-        if (product && product.categoryRef) {
-          const category = res.data.find(cat => cat._id === product.categoryRef);
-          setSelectedCategory(category);
-          console.log("Selected category for editing:", category);
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      }
-    };
-    
-    if (isOpen) {
-      fetchCategories();
-    }
-  }, [product, isOpen]);
-
   const resetForm = () => {
     console.log("Resetting form");
     setName("");
@@ -85,7 +90,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     setMultipleSpecs({});
     setGeneratedVariants([]);
     setSelectedVariants([]);
-    setVariantImages({});
+    setVariantImageFiles({});
     setStep(1);
   };
 
@@ -106,15 +111,16 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const uploadImages = async (files = null) => {
-    const filesToUpload = files || selectedFiles;
-    if (filesToUpload.length === 0) return [];
+  // Upload images only when saving product
+  const uploadImages = async (files) => {
+    if (!files || files.length === 0) return [];
 
-    console.log("Uploading images:", filesToUpload.length);
+    console.log("Uploading images:", files.length);
     const formData = new FormData();
-    filesToUpload.forEach(file => formData.append("images", file));
+    files.forEach(file => formData.append("images", file));
 
     try {
+      setUploading(true);
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/upload/upload`,
         formData,
@@ -123,13 +129,19 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
+          timeout: 120000
         }
       );
       console.log("Images uploaded successfully:", response.data.images);
       return response.data.images || [];
     } catch (error) {
       console.error('Error uploading images:', error);
-      throw error;
+      if (error.code === 'ECONNRESET' || error.response?.status === 413) {
+        throw new Error('Upload failed: File too large or network issue. Please try smaller files.');
+      }
+      throw new Error('Failed to upload images. Please try again.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -141,7 +153,24 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     setMultipleSpecs({});
     setGeneratedVariants([]);
     setSelectedVariants([]);
-    setVariantImages({});
+    setVariantImageFiles({});
+    
+    // If category has specs, initialize them
+    if (category?.specs) {
+      const initialSingleSpecs = {};
+      const initialMultipleSpecs = {};
+      
+      category.specs.forEach(spec => {
+        if (spec.type === 'single') {
+          initialSingleSpecs[spec.name] = '';
+        } else {
+          initialMultipleSpecs[spec.name] = '';
+        }
+      });
+      
+      setSingleSpecs(initialSingleSpecs);
+      setMultipleSpecs(initialMultipleSpecs);
+    }
   };
 
   const handleSpecChange = (specName, value, isMultiple = false) => {
@@ -267,34 +296,45 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     );
   };
 
-  const handleVariantImageUpload = async (index, files) => {
+  // Handle variant image selection (not upload)
+  const handleVariantImageSelect = (variantIndex, files) => {
     if (files.length === 0) return;
 
-    console.log("Uploading variant images for variant:", index, "files:", files.length);
-    try {
-      setUploading(true);
-      const uploadedImages = await uploadImages(files);
-      if (uploadedImages.length > 0) {
-        setSelectedVariants(prev => 
-          prev.map((v, i) => 
-            i === index ? { 
-              ...v, 
-              images: [...(v.images || []), ...uploadedImages] 
-            } : v
-          )
-        );
-        console.log("Variant images uploaded successfully");
-      }
-    } catch (error) {
-      console.error('Error uploading variant images:', error);
-      alert('Error uploading variant images');
-    } finally {
-      setUploading(false);
-    }
+    console.log("Variant images selected for variant:", variantIndex, "files:", files.length);
+    
+    // Create preview URLs
+    const previewUrls = files.map(file => URL.createObjectURL(file));
+    
+    // Store files for later upload
+    setVariantImageFiles(prev => ({
+      ...prev,
+      [variantIndex]: [...(prev[variantIndex] || []), ...files.map((file, idx) => ({
+        file,
+        preview: previewUrls[idx]
+      }))]
+    }));
+
+    // Update variant with preview URLs (these will be replaced with actual URLs when saved)
+    setSelectedVariants(prev => 
+      prev.map((v, i) => 
+        i === variantIndex ? { 
+          ...v, 
+          images: [...(v.images || []), ...previewUrls] 
+        } : v
+      )
+    );
   };
 
   const removeVariantImage = (variantIndex, imageIndex) => {
     console.log("Removing variant image:", variantIndex, imageIndex);
+    
+    // Clean up the preview URL
+    const variant = selectedVariants[variantIndex];
+    if (variant && variant.images[imageIndex]?.startsWith('blob:')) {
+      URL.revokeObjectURL(variant.images[imageIndex]);
+    }
+    
+    // Remove from variant images
     setSelectedVariants(prev => 
       prev.map((v, i) => 
         i === variantIndex ? { 
@@ -303,30 +343,68 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         } : v
       )
     );
+    
+    // Remove from files storage
+    setVariantImageFiles(prev => ({
+      ...prev,
+      [variantIndex]: (prev[variantIndex] || []).filter((_, idx) => idx !== imageIndex)
+    }));
   };
 
   const submitProduct = async (e) => {
     e.preventDefault();
     console.log("Submitting product...");
     
-    if (selectedVariants.length === 0) {
-      alert('Please select at least one variant to sell');
-      return;
-    }
-
     setLoading(true);
-    setUploading(true);
 
     try {
-      let imageUrls = [];
+      let uploadedMainImages = [];
+      
+      // Upload main product images
       if (selectedFiles.length > 0) {
-        console.log("Uploading product images...");
-        imageUrls = await uploadImages();
+        console.log("Uploading main product images...");
+        uploadedMainImages = await uploadImages(selectedFiles);
+      }
+
+      // Upload variant images
+      const uploadedVariantImages = {};
+      for (const [variantIndex, files] of Object.entries(variantImageFiles)) {
+        if (files && files.length > 0) {
+          const fileObjects = files.map(f => f.file);
+          const uploadedUrls = await uploadImages(fileObjects);
+          uploadedVariantImages[variantIndex] = uploadedUrls;
+        }
       }
 
       const allImages = product 
-        ? [...product.images, ...imageUrls] 
-        : imageUrls;
+        ? [...product.images, ...uploadedMainImages] 
+        : uploadedMainImages;
+
+      // Prepare final variants
+      let finalVariants = [];
+      
+      if (selectedVariants.length > 0) {
+        // Use selected variants with their images
+        finalVariants = selectedVariants.map((variant, index) => {
+          const uploadedVariantImgs = uploadedVariantImages[index] || [];
+          const existingVariantImgs = variant.images.filter(img => !img.startsWith('blob:'));
+          const variantImages = [...existingVariantImgs, ...uploadedVariantImgs];
+          
+          return {
+            ...variant,
+            images: variantImages.length > 0 ? variantImages : allImages
+          };
+        });
+      } else {
+        // Create default variant with common images
+        finalVariants = [{
+          specs: {},
+          price: parseFloat(price) || 0,
+          sku: `${name.replace(/\s+/g, '').toUpperCase().slice(0, 10)}-1`,
+          enabled: true,
+          images: allImages
+        }];
+      }
 
       const payload = {
         name,
@@ -340,7 +418,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         payload.categoryRef = selectedCategory._id;
         payload.basePrice = parseFloat(price) || 0;
         payload.specs = singleSpecs;
-        payload.variants = selectedVariants;
+        payload.variants = finalVariants;
       }
 
       console.log("Submitting payload:", payload);
@@ -349,14 +427,20 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         await axios.put(
           `${import.meta.env.VITE_API_URL}/products/${product._id}`,
           payload,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { 
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 30000
+          }
         );
         console.log("Product updated successfully");
       } else {
         await axios.post(
           `${import.meta.env.VITE_API_URL}/products`,
           payload,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { 
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 30000
+          }
         );
         console.log("Product created successfully");
       }
@@ -367,13 +451,13 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
       alert(`Product ${product ? "updated" : "added"} successfully!`);
     } catch (err) {
       console.error("Error saving product:", err);
-      alert(err.response?.data?.message || "Error saving product");
+      alert(err.response?.data?.message || err.message || "Error saving product");
     } finally {
       setLoading(false);
-      setUploading(false);
     }
   };
 
+  // Clean up image previews
   useEffect(() => {
     return () => {
       console.log("Cleaning up image previews");
@@ -382,8 +466,17 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
           URL.revokeObjectURL(preview);
         }
       });
+      
+      // Clean up variant image previews
+      Object.values(variantImageFiles).forEach(files => {
+        files.forEach(fileObj => {
+          if (fileObj.preview.startsWith('blob:')) {
+            URL.revokeObjectURL(fileObj.preview);
+          }
+        });
+      });
     };
-  }, [imagePreviews]);
+  }, [imagePreviews, variantImageFiles]);
 
   if (!isOpen) return null;
 
@@ -457,6 +550,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                 />
               </div>
               
+              {/* Category Selection */}
               <div>
                 <label className="block text-sm font-medium mb-2">Category *</label>
                 <select
@@ -465,16 +559,44 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
-                  <option value="">Select Category</option>
+                  <option value="">Select a Category</option>
                   {categories.map(cat => (
-                    <option key={cat._id} value={cat._id}>{cat.name}</option>
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name} {cat.specs?.length > 0 ? `(${cat.specs.length} specs)` : ''}
+                    </option>
                   ))}
                 </select>
+                
+                {/* Show category details when selected */}
+                {selectedCategory && (
+                  <div className="mt-2 p-3 bg-blue-50 rounded border border-blue-200">
+                    <h4 className="font-semibold text-blue-800">{selectedCategory.name}</h4>
+                    {selectedCategory.description && (
+                      <p className="text-sm text-blue-700 mt-1">{selectedCategory.description}</p>
+                    )}
+                    {selectedCategory.specs && selectedCategory.specs.length > 0 ? (
+                      <div className="mt-2">
+                        <p className="text-xs text-blue-600 font-medium">Specifications:</p>
+                        <ul className="text-xs text-blue-600 mt-1 list-disc list-inside">
+                          {selectedCategory.specs.map((spec, index) => (
+                            <li key={index}>
+                              {spec.name} ({spec.type}) {spec.required && '*'}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-blue-600 mt-1">No specifications defined for this category</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Common Images Upload */}
               <div>
-                <label className="block text-sm font-medium mb-2">Common Product Images</label>
+                <label className="block text-sm font-medium mb-2">
+                  Common Product Images ({imagePreviews.length}/5 selected)
+                </label>
                 <input
                   type="file"
                   multiple
@@ -487,7 +609,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                 {imagePreviews.length > 0 && (
                   <div className="mt-4">
                     <p className="text-sm text-gray-600 mb-2">
-                      {imagePreviews.length} image(s) ready to upload
+                      {imagePreviews.length} image(s) ready to upload when you save the product
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       {imagePreviews.map((preview, index) => (
@@ -505,11 +627,18 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                           >
                             ×
                           </button>
+                          <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
+                            New
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
+                
+                <p className="text-xs text-gray-500 mt-1">
+                  Images will be uploaded to Cloudinary only when you click "Save Product"
+                </p>
               </div>
 
               <div className="flex justify-end pt-4">
@@ -529,64 +658,101 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
           {step === 2 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold mb-4">Product Specifications</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Fill in the specifications for {selectedCategory?.name}
-              </p>
+              
+              {selectedCategory ? (
+                <>
+                  <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                    <h4 className="font-semibold text-blue-800">{selectedCategory.name}</h4>
+                    <p className="text-sm text-blue-600">
+                      Fill in the specifications below. Multiple-value specs will create variants.
+                    </p>
+                  </div>
 
-              {selectedCategory?.specs?.map(spec => (
-                <div key={spec.name} className="mb-4 p-4 border rounded bg-gray-50">
-                  <label className="block text-sm font-medium mb-2">
-                    {spec.name} {spec.required && '*'}
-                  </label>
-                  {spec.type === 'single' ? (
-                    <input
-                      type="text"
-                      value={singleSpecs[spec.name] || ''}
-                      onChange={(e) => handleSpecChange(spec.name, e.target.value, false)}
-                      className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required={spec.required}
-                      placeholder={`Enter ${spec.name}`}
-                    />
+                  {selectedCategory.specs?.length > 0 ? (
+                    selectedCategory.specs.map(spec => (
+                      <div key={spec.name} className="mb-4 p-4 border rounded bg-gray-50">
+                        <label className="block text-sm font-medium mb-2">
+                          {spec.name} {spec.required && '*'}
+                          <span className="ml-2 text-xs font-normal text-gray-500">
+                            ({spec.type} {spec.type === 'multiple' ? '- creates variants' : ''})
+                          </span>
+                        </label>
+                        {spec.type === 'single' ? (
+                          <input
+                            type="text"
+                            value={singleSpecs[spec.name] || ''}
+                            onChange={(e) => handleSpecChange(spec.name, e.target.value, false)}
+                            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required={spec.required}
+                            placeholder={`Enter ${spec.name}`}
+                          />
+                        ) : (
+                          <div>
+                            <input
+                              type="text"
+                              placeholder={`Enter ${spec.name} values separated by commas (e.g., Black, White, Blue)`}
+                              value={multipleSpecs[spec.name] || ''}
+                              onChange={(e) => handleSpecChange(spec.name, e.target.value, true)}
+                              className="w-full p-2 border rounded mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              required={spec.required}
+                            />
+                            {multipleSpecs[spec.name] && (
+                              <div className="text-sm text-green-600 mb-2">
+                                Values: {multipleSpecs[spec.name]}
+                              </div>
+                            )}
+                            <p className="text-xs text-gray-500">
+                              Separate values with commas. These will create product variants.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))
                   ) : (
-                    <div>
-                      <input
-                        type="text"
-                        placeholder={`Enter ${spec.name} values separated by commas (e.g., Black, White, Blue)`}
-                        value={multipleSpecs[spec.name] || ''}
-                        onChange={(e) => handleSpecChange(spec.name, e.target.value, true)}
-                        className="w-full p-2 border rounded mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required={spec.required}
-                      />
-                      {multipleSpecs[spec.name] && (
-                        <div className="text-sm text-green-600 mb-2">
-                          Type values separated by commas and press "Generate Variants"
-                        </div>
-                      )}
-                      <p className="text-xs text-gray-500">
-                        Separate values with commas. These will create product variants.
-                      </p>
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No specifications defined for this category.</p>
+                      <button
+                        type="button"
+                        onClick={() => setStep(3)}
+                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                      >
+                        Continue without Specifications
+                      </button>
                     </div>
                   )}
+                </>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Please select a category first.</p>
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  >
+                    ← Back to Basic Info
+                  </button>
                 </div>
-              ))}
+              )}
 
-              <div className="flex justify-between pt-4">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700 transition-colors"
-                >
-                  ← Back
-                </button>
-                <button
-                  type="button"
-                  onClick={generateVariants}
-                  disabled={Object.keys(multipleSpecs).length === 0}
-                  className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Generate Variants →
-                </button>
-              </div>
+              {selectedCategory?.specs?.length > 0 && (
+                <div className="flex justify-between pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700 transition-colors"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={generateVariants}
+                    disabled={Object.keys(multipleSpecs).length === 0}
+                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Generate Variants →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -629,7 +795,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                 {selectedVariants.length === 0 && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
                     <p className="text-yellow-800 text-sm">
-                      ⚠️ No variants selected. You must select at least one variant to sell.
+                      ⚠️ No variants selected. A default variant will be created with common images.
                     </p>
                   </div>
                 )}
@@ -718,15 +884,15 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                             type="file"
                             multiple
                             accept="image/*"
-                            onChange={(e) => handleVariantImageUpload(index, Array.from(e.target.files))}
+                            onChange={(e) => handleVariantImageSelect(index, Array.from(e.target.files))}
                             className="w-full p-2 border rounded mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            disabled={uploading}
+                            disabled={uploading || loading}
                           />
                           
                           {variant.images && variant.images.length > 0 && (
                             <div className="mt-2">
                               <p className="text-sm text-gray-600 mb-2">
-                                {variant.images.length} variant image(s)
+                                {variant.images.length} variant image(s) - will be uploaded when you save
                               </p>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                 {variant.images.map((image, imgIndex) => (
@@ -743,6 +909,11 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                                     >
                                       ×
                                     </button>
+                                    {image.startsWith('blob:') && (
+                                      <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
+                                        New
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -765,7 +936,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || uploading || selectedVariants.length === 0}
+                  disabled={loading || uploading}
                   className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {loading ? "Saving..." : uploading ? "Uploading..." : "Save Product"}
