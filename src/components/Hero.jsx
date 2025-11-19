@@ -91,9 +91,9 @@ const Hero = () => {
           />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-16">
-          <div className="flex flex-col items-center text-center gap-6 sm:gap-8 lg:gap-10">
-            <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight mb-4 sm:mb-8 lg:mb-12 px-2">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-6 lg:py-8">
+          <div className="flex flex-col items-center text-center gap-2 sm:gap-4 lg:gap-6">
+            <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight lg:mb-4 px-2">
               Mobitrade products with at least a 12-month warranty
             </h1>
 
