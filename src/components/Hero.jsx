@@ -124,14 +124,14 @@ const Hero = () => {
                 {/* Categories Scroll Container */}
                 <div 
                   id="categories-scroll"
-                  className="flex overflow-x-auto gap-4 sm:gap-6 pb-4 scrollbar-hide scroll-smooth px-4 lg:px-0"
+                  className="flex overflow-x-auto gap-4 sm:gap-6 pb-4 scrollbar-hide scroll-smooth p-2 md:px-8"
                   onScroll={checkScroll}
                 >
                   {categories.map((category) => (
                     <Link
                       key={category._id}
                       to={`/products?category=${category.name.toLowerCase()}`}
-                      className="flex-shrink-0 w-48 sm:w-56 lg:w-64 transform hover:scale-105 transition-transform duration-300"
+                      className="shrink-0 w-48 sm:w-56 lg:w-64 transform hover:scale-105 transition-transform duration-300"
                     >
                       <div className="bg-[#212121]/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 hover:bg-[#212121]/90 transition-all duration-300 cursor-pointer border border-gray-700 hover:border-gray-600 h-64 flex flex-col justify-between"> {/* Fixed height and flex layout */}
                         {/* Category Image as Background */}
