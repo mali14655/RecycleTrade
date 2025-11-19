@@ -81,7 +81,7 @@ const Hero = () => {
       </div>
 
       {/* Hero Banner */}
-      <div className="relative bg-[#212121] overflow-hidden min-h-[60vh] sm:min-h-[70vh] lg:h-[80vh]">
+      <div className="relative bg-[#212121] overflow-hidden min-h-[60vh]  lg:h-[90vh]">
         {/* Background Image with Darker Overlay */}
         <div className="absolute inset-0 bg-black">
           <img
