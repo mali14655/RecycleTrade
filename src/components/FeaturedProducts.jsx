@@ -1,0 +1,151 @@
+// components/FeaturedProducts.jsx - NEW FILE (with your backend integration)
+import React from "react";
+import { Link } from "react-router-dom";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination } from "swiper/modules";
+import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+
+// Import Swiper styles
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+
+const FeaturedProducts = ({ products = [], loading = false }) => {
+  if (loading) {
+    return (
+      <div className="bg-gray-50 py-16">
+        <div className="max-w-[90%] mx-auto">
+          <h2 className="text-3xl font-bold text-gray-900 mb-10">
+            Featured Products
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+                <div className="bg-gray-200 rounded-lg h-48 mb-4"></div>
+                <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                <div className="bg-gray-200 h-6 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="bg-gray-50 py-16">
+        <div className="max-w-[90%] mx-auto">
+          <h2 className="text-3xl font-bold text-gray-900 mb-10">
+            Featured Products
+          </h2>
+          <div className="text-center py-8">
+            <p className="text-gray-600">No featured products available</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-50 py-16">
+      <div className="max-w-[90%] mx-auto">
+        <h2 className="text-3xl font-bold text-gray-900 mb-10">
+          Featured Products
+        </h2>
+
+        <div className="relative">
+          <Swiper
+            modules={[Navigation, Pagination]}
+            spaceBetween={24}
+            slidesPerView={1}
+            navigation={{
+              prevEl: ".swiper-button-prev-custom",
+              nextEl: ".swiper-button-next-custom",
+            }}
+            breakpoints={{
+              640: {
+                slidesPerView: 2,
+              },
+              768: {
+                slidesPerView: 3,
+              },
+              1024: {
+                slidesPerView: 4,
+              },
+            }}
+            className="featured-products-swiper"
+          >
+            {products.map((product) => (
+              <SwiperSlide key={product._id}>
+                <Link to={`/product/${product._id}`}>
+                  <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 cursor-pointer h-full">
+                    {/* Product Image */}
+                    <div className="mb-4 flex justify-center items-center bg-gray-50 rounded-lg h-48">
+                      {product.images && product.images.length > 0 ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-contain p-4"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg">
+                          <span className="text-gray-400">No Image</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Rating */}
+                    <div className="flex items-center gap-1 mb-2">
+                      {[...Array(5)].map((_, index) => (
+                        <Star
+                          key={index}
+                          size={16}
+                          className={
+                            index < (product.rating || 5)
+                              ? "fill-black text-black"
+                              : "text-gray-300"
+                          }
+                        />
+                      ))}
+                      <span className="text-sm text-gray-600 ml-1">
+                        ({product.reviews?.length || 0})
+                      </span>
+                    </div>
+
+                    {/* Product Name */}
+                    <h3 className="text-gray-900 font-medium mb-3 text-sm line-clamp-2">
+                      {product.name}
+                    </h3>
+
+                    {/* Price */}
+                    <p className="text-blue-600 font-semibold text-lg">
+                      ${product.price}
+                    </p>
+
+                    {/* Seller Info */}
+                    {product.sellerId && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Sold by: {product.sellerId.name || "Seller"}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+
+          {/* Custom Navigation Buttons */}
+          <button className="swiper-button-prev-custom absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-12 h-12 bg-black rounded-full flex items-center justify-center text-white hover:bg-gray-800 transition-colors shadow-lg">
+            <ChevronLeft size={24} />
+          </button>
+          <button className="swiper-button-next-custom absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-12 h-12 bg-black rounded-full flex items-center justify-center text-white hover:bg-gray-800 transition-colors shadow-lg">
+            <ChevronRight size={24} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FeaturedProducts;

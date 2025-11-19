@@ -1,7 +1,8 @@
+// app.jsx - UPDATED (keep your existing structure)
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
-import Home from "./pages/Home";
+import Home from "./pages/Home"; // This will use new UI
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -31,7 +32,6 @@ function App() {
         <Route path="/products" element={<Products />} />
         <Route path="/track-order" element={<TrackOrder />} />
 
-        {/* Dashboard - sellers will be redirected to sell-to-company via ProtectedRoute */}
         <Route
           path="/dashboard"
           element={
@@ -41,7 +41,6 @@ function App() {
           }
         />
         
-        {/* Sell to Company - only for sellers */}
         <Route
           path="/sell-to-company"
           element={
