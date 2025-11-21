@@ -1,0 +1,730 @@
+import React, { useEffect, useState, useContext } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { CartContext } from "../context/CartContext";
+import { ChevronLeft, ChevronRight, Star, ShoppingCart, User, Mail, MessageSquare } from "lucide-react";
+import toast from "react-hot-toast";
+
+export default function ProductDetails() {
+  const { id } = useParams();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeImage, setActiveImage] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [selectedSpecs, setSelectedSpecs] = useState({});
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const { addToCart } = useContext(CartContext);
+
+  // Fetch product and reviews
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        console.log("Fetching product:", id);
+        const [productRes, reviewsRes] = await Promise.all([
+          axios.get(`${import.meta.env.VITE_API_URL}/products/${id}`),
+          axios.get(`${import.meta.env.VITE_API_URL}/products/${id}/reviews`)
+        ]);
+        
+        setProduct(productRes.data);
+        setReviews(reviewsRes.data);
+        console.log("Product fetched:", productRes.data);
+        
+        if (productRes.data.variants && productRes.data.variants.length > 0) {
+          const firstEnabledVariant = productRes.data.variants.find(v => v.enabled) || productRes.data.variants[0];
+          setSelectedVariant(firstEnabledVariant);
+          
+          if (firstEnabledVariant.specs) {
+            setSelectedSpecs(firstEnabledVariant.specs);
+          }
+        } else {
+          setSelectedVariant(null);
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        toast.error("Product not found");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
+
+  const getAvailableOptions = (specName) => {
+    if (!product?.variants) return [];
+    
+    const options = new Set();
+    product.variants.forEach(variant => {
+      if (variant.enabled && variant.specs[specName]) {
+        options.add(variant.specs[specName]);
+      }
+    });
+    
+    return Array.from(options);
+  };
+
+  // NEW: Stock management - Get stock status for variant option
+  const getVariantStockForOption = (specName, optionValue) => {
+    if (!product?.variants) return null;
+    
+    // Find variant matching current selected specs + this option
+    const testSpecs = {
+      ...selectedSpecs,
+      [specName]: optionValue
+    };
+    
+    const matchingVariant = product.variants.find(variant => 
+      variant.enabled &&
+      Object.keys(testSpecs).every(key => 
+        variant.specs[key] === testSpecs[key]
+      )
+    );
+    
+    return matchingVariant ? matchingVariant.stock : null;
+  };
+
+  // NEW: Stock management - Check if variant is in stock
+  const isVariantInStock = (variant) => {
+    if (!variant) return false;
+    // If stock is undefined, assume unlimited (backward compatibility)
+    if (variant.stock === undefined) return true;
+    return variant.stock > 0;
+  };
+
+  const handleSpecChange = (specName, value) => {
+    const newSelectedSpecs = {
+      ...selectedSpecs,
+      [specName]: value
+    };
+    
+    setSelectedSpecs(newSelectedSpecs);
+    
+    const matchingVariant = product.variants.find(variant => 
+      variant.enabled &&
+      Object.keys(newSelectedSpecs).every(key => 
+        variant.specs[key] === newSelectedSpecs[key]
+      )
+    );
+    
+    if (matchingVariant) {
+      setSelectedVariant(matchingVariant);
+    } else {
+      setSelectedVariant(null);
+    }
+  };
+
+  const getDisplayImages = () => {
+    if (selectedVariant?.images && selectedVariant.images.length > 0) {
+      return selectedVariant.images;
+    }
+    return product?.images || [];
+  };
+
+  const handleAddToCart = async () => {
+    if (!product.variants || product.variants.length === 0) {
+      addToCart(product, 1);
+      // Toast is handled in CartContext, no need to show here
+      return;
+    }
+
+    if (!selectedVariant) {
+      toast.error("Please select an available variant");
+      return;
+    }
+
+    // NEW: Stock management - Check stock before adding to cart
+    if (!isVariantInStock(selectedVariant)) {
+      toast.error("This variant is out of stock");
+      return;
+    }
+
+    const productToAdd = {
+      ...product,
+      price: selectedVariant.price,
+      images: getDisplayImages(),
+      variantId: selectedVariant._id,
+      variantSpecs: selectedVariant.specs
+    };
+    
+    addToCart(productToAdd, 1, selectedVariant);
+    // Toast is handled in CartContext, no need to show here
+  };
+
+  // Calculate average rating
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
+    : 0;
+
+  if (loading) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading product...</p>
+      </div>
+    </div>
+  );
+  
+  if (!product) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-red-500 text-lg">Product not found</p>
+      </div>
+    </div>
+  );
+
+  const displayImages = getDisplayImages();
+  const multipleSpecs = product.variants ? 
+    Object.keys(product.variants[0]?.specs || {}) : [];
+  const showVariantSelection = multipleSpecs.length > 0;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Main Product Section */}
+      <div className="max-w-[90%] mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
+          {/* Left: Image Gallery */}
+          <div>
+            <div className="space-y-4">
+              {/* Main Image */}
+              <div className="relative bg-white rounded-lg border border-gray-200 p-8 flex items-center justify-center aspect-square">
+                <img
+                  src={displayImages[activeImage] || "https://via.placeholder.com/600"}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+
+              {/* Thumbnail Navigation */}
+              {displayImages.length > 1 && (
+                <div className="relative flex items-center gap-2">
+                  <button 
+                    onClick={() => setActiveImage(prev => prev > 0 ? prev - 1 : displayImages.length - 1)}
+                    className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors shrink-0"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+
+                  <div className="flex-1 overflow-hidden">
+                    <div className="flex gap-2 justify-center">
+                      {displayImages.map((image, index) => (
+                        <div
+                          key={index}
+                          onClick={() => setActiveImage(index)}
+                          className={`w-16 h-16 sm:w-20 sm:h-20 border-2 rounded-lg cursor-pointer overflow-hidden shrink-0 ${
+                            activeImage === index
+                              ? "border-black"
+                              : "border-gray-200 hover:border-gray-400"
+                          }`}
+                        >
+                          <img
+                            src={image}
+                            alt={`${product.name} ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => setActiveImage(prev => prev < displayImages.length - 1 ? prev + 1 : 0)}
+                    className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors shrink-0"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Product Info */}
+          <div className="space-y-6">
+            {/* Reviews Rating - Product name ke upar */}
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={20}
+                    className={`${
+                      i < Math.floor(averageRating) 
+                        ? "fill-orange-400 text-orange-400" 
+                        : "text-gray-300"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-gray-600">{averageRating} Star Rating</span>
+              <span className="text-sm text-gray-400">({reviews.length} reviews)</span>
+            </div>
+
+            {/* Product Title */}
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              {product.name}
+            </h1>
+
+            {/* Category */}
+            <p className="text-gray-500 text-sm capitalize">
+              {product.category}
+            </p>
+
+            {/* Availability and Seller */}
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Seller: </span>
+                <span className="text-gray-900 font-semibold">
+                  {product.sellerId?.name || "Unknown"}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-600">Category: </span>
+                <span className="text-gray-900 font-semibold capitalize">
+                  {product.category}
+                </span>
+              </div>
+            </div>
+
+            {/* Price and Stock Status */}
+            <div className="space-y-2">
+              <div className="text-4xl font-bold text-gray-900">
+                ${selectedVariant ? selectedVariant.price : product.price}
+              </div>
+              {/* Stock management - Stock status display */}
+              {(() => {
+                // If variant is selected, show its stock status
+                if (selectedVariant) {
+                  const inStock = isVariantInStock(selectedVariant);
+                  return (
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm px-3 py-1 rounded-full font-medium ${
+                        inStock
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {inStock
+                          ? selectedVariant.stock !== undefined
+                            ? `${selectedVariant.stock} in stock`
+                            : "In Stock"
+                          : "Out of Stock"}
+                      </span>
+                    </div>
+                  );
+                }
+                // If product has no variants, show in stock
+                if (!product.variants || product.variants.length === 0) {
+                  return (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm px-3 py-1 rounded-full font-medium bg-blue-100 text-blue-700">
+                        In Stock
+                      </span>
+                    </div>
+                  );
+                }
+                // If product has variants but none selected, check if any are in stock
+                const hasAvailableStock = product.variants.some(v => 
+                  v.enabled && (v.stock === undefined || v.stock > 0)
+                );
+                return (
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm px-3 py-1 rounded-full font-medium ${
+                      hasAvailableStock
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {hasAvailableStock ? "Select variant to see stock" : "Out of Stock"}
+                    </span>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Variant Selection - Inline Layout */}
+            {showVariantSelection && (
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <h4 className="font-semibold mb-3">Select Variant:</h4>
+                <div className="flex flex-wrap gap-3">
+                  {multipleSpecs.map(specName => (
+                    <div key={specName} className="flex-1 min-w-[120px]">
+                      <label className="block text-sm font-medium mb-2 capitalize">
+                        {specName}:
+                      </label>
+                      <select
+                        value={selectedSpecs[specName] || ''}
+                        onChange={(e) => handleSpecChange(specName, e.target.value)}
+                        className="w-full p-2 border rounded text-sm"
+                      >
+                        <option value="">Select {specName}</option>
+                        {getAvailableOptions(specName).map(option => {
+                          const stock = getVariantStockForOption(specName, option);
+                          const inStock = stock === undefined || stock > 0;
+                          return (
+                            <option 
+                              key={option} 
+                              value={option}
+                              disabled={!inStock}
+                            >
+                              {option} {stock !== null && stock !== undefined && `(${stock > 0 ? `${stock} in stock` : 'Out of stock'})`}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+                
+                {selectedVariant && (
+                  <div className={`mt-3 p-3 rounded border ${
+                    isVariantInStock(selectedVariant) ? 'bg-white' : 'bg-red-50 border-red-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-600">
+                        Selected: {Object.entries(selectedVariant.specs).map(([key, value]) => (
+                          <span key={key} className="mr-2">
+                            {key}: <strong>{value}</strong>
+                          </span>
+                        ))}
+                      </p>
+                      {/* NEW: Stock management - Stock info in variant selection */}
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        isVariantInStock(selectedVariant)
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {isVariantInStock(selectedVariant)
+                          ? selectedVariant.stock !== undefined
+                            ? `Stock: ${selectedVariant.stock}`
+                            : "In Stock"
+                          : "Out of Stock"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Single Specs Display */}
+            {product.specs && Object.keys(product.specs).length > 0 && (
+              <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-gray-200">
+                {Object.entries(product.specs).map(([key, value]) => (
+                  <div key={key}>
+                    <p className="text-gray-600 text-sm mb-1 capitalize">{key}</p>
+                    <p className="text-gray-900 font-medium">{value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add to Cart Button */}
+            <button
+              onClick={handleAddToCart}
+              disabled={
+                (product.variants && product.variants.length > 0 && !selectedVariant) ||
+                (selectedVariant && !isVariantInStock(selectedVariant))
+              }
+              className={`w-full py-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
+                (product.variants && product.variants.length > 0 && !selectedVariant) ||
+                (selectedVariant && !isVariantInStock(selectedVariant))
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                  : 'bg-black text-white hover:bg-gray-900'
+              }`}
+            >
+              <span>
+                {product.variants && product.variants.length > 0 && !selectedVariant 
+                  ? "SELECT VARIANT"
+                  : selectedVariant && !isVariantInStock(selectedVariant)
+                  ? "OUT OF STOCK"
+                  : "ADD TO CART"
+                }
+              </span>
+              <ShoppingCart size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Description & Specifications Section - Side by Side */}
+        <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left: Description */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Description</h2>
+            
+            {product.description && (
+              <div className="text-gray-700 leading-relaxed">
+                {/* Full description show karega with show more/less */}
+                {isDescriptionExpanded ? (
+                  <div className="whitespace-pre-line">
+                    {product.description}
+                  </div>
+                ) : (
+                  <div className="whitespace-pre-line">
+                    {product.description.length > 300 
+                      ? `${product.description.substring(0, 300)}...` 
+                      : product.description
+                    }
+                  </div>
+                )}
+                
+                {/* Show more/less button - sirf tab dikhega jab description lambi ho */}
+                {product.description.length > 300 && (
+                  <button
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="text-blue-600 hover:text-blue-700 font-medium mt-4"
+                  >
+                    {isDescriptionExpanded ? "Show less" : "Show more"}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Specifications */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Specifications</h2>
+            {product.specs && Object.keys(product.specs).length > 0 ? (
+              <div className="max-h-[400px] overflow-y-auto">
+                <div className="space-y-3">
+                  {Object.entries(product.specs).map(([key, value]) => (
+                    <div key={key} className="flex justify-between items-start py-2 border-b border-gray-100 last:border-b-0">
+                      <span className="text-sm font-medium text-gray-700 capitalize flex-1">
+                        {key}
+                      </span>
+                      <span className="text-sm text-gray-900 text-right flex-1">
+                        {value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">No specifications available.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        <ReviewSection productId={id} reviews={reviews} setReviews={setReviews} />
+      </div>
+    </div>
+  );
+}
+
+// Review Section Component
+function ReviewSection({ productId, reviews, setReviews }) {
+  const [rating, setRating] = useState("");
+  const [comment, setComment] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL}/products/${productId}/reviews`, {
+        rating,
+        comment,
+        name,
+        email,
+      });
+      setRating("");
+      setComment("");
+      setName("");
+      setEmail("");
+      
+      // Refresh reviews
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/products/${productId}/reviews`);
+      setReviews(res.data);
+      
+      toast.success("Review submitted successfully!");
+    } catch (err) {
+      console.error("Error submitting review:", err);
+      toast.error("Failed to submit review");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
+    : 0;
+
+  return (
+    <div className="mt-12 bg-white rounded-lg border border-gray-200 p-6 sm:p-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Customer Reviews</h2>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={20}
+                    className={`${
+                      i < Math.floor(averageRating) 
+                        ? "fill-orange-400 text-orange-400" 
+                        : "text-gray-300"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-lg font-semibold text-gray-900">{averageRating}</span>
+            </div>
+            <span className="text-gray-600">({reviews.length} reviews)</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Review Form */}
+      <div className="mb-8">
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">Write a Review</h3>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Name Input */}
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <User size={20} />
+              </div>
+              <input
+                type="text"
+                placeholder="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base"
+                required
+              />
+            </div>
+
+            {/* Email Input */}
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <Mail size={20} />
+              </div>
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base"
+              />
+            </div>
+          </div>
+
+          {/* Rating Select */}
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              <Star size={20} />
+            </div>
+            <select
+              value={rating}
+              onChange={(e) => setRating(e.target.value)}
+              className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base appearance-none cursor-pointer"
+              required
+            >
+              <option value="">Select Rating</option>
+              {[1, 2, 3, 4, 5].map((r) => (
+                <option key={r} value={r}>
+                  {'⭐'.repeat(r)} {r} Star{r > 1 ? "s" : ""}
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </div>
+
+          {/* Comment Textarea */}
+          <div className="relative">
+            <div className="absolute left-4 top-4 text-gray-400">
+              <MessageSquare size={20} />
+            </div>
+            <textarea
+              placeholder="Share your experience with this product..."
+              rows={5}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base resize-none"
+              required
+            />
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-black text-white py-4 rounded-lg font-semibold hover:bg-gray-900 transition-colors text-base disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {loading ? "SUBMITTING..." : "SUBMIT REVIEW"}
+          </button>
+        </form>
+      </div>
+
+      {/* Display Reviews */}
+      <div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-6">Customer Reviews ({reviews.length})</h3>
+        
+        {reviews.length > 0 ? (
+          <div className={`space-y-6 ${reviews.length > 5 ? 'max-h-[600px] overflow-y-auto pr-4' : ''}`}>
+            {reviews.map((review, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg p-6 hover:shadow-sm transition-shadow">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3">
+                  <div className="flex items-center gap-3 mb-2 sm:mb-0">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                      <User size={20} className="text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {review.name || "Anonymous"}
+                      </p>
+                      <p className="text-gray-500 text-sm">
+                        {new Date(review.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={16}
+                        className={`${
+                          i < review.rating 
+                            ? "fill-orange-400 text-orange-400" 
+                            : "text-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageSquare size={32} className="text-gray-400" />
+            </div>
+            <p className="text-gray-500 text-lg">No reviews yet</p>
+            <p className="text-gray-400 mt-2">Be the first to share your experience!</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
