@@ -1514,6 +1514,11 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
 };
 
 const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, setEditingProduct, token, user }) => {
+  const [showQuantityModal, setShowQuantityModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [variantQuantities, setVariantQuantities] = useState({});
+  const [savingQuantities, setSavingQuantities] = useState(false);
+
   const deleteProduct = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
@@ -1525,6 +1530,63 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
         console.log(err);
       }
     }
+  };
+
+  // NEW: Open quantity edit modal
+  const openQuantityEdit = (product) => {
+    setSelectedProduct(product);
+    
+    // Initialize variant quantities from product
+    const quantities = {};
+    if (product.variants && product.variants.length > 0) {
+      product.variants.forEach((variant, index) => {
+        quantities[index] = variant.stock !== undefined ? variant.stock : 0;
+      });
+    }
+    setVariantQuantities(quantities);
+    setShowQuantityModal(true);
+  };
+
+  // NEW: Save quantity changes
+  const saveQuantities = async () => {
+    if (!selectedProduct || !selectedProduct.variants) return;
+    
+    setSavingQuantities(true);
+    try {
+      // Update variants with new quantities
+      const updatedVariants = selectedProduct.variants.map((variant, index) => ({
+        ...variant,
+        stock: variantQuantities[index] !== undefined ? parseInt(variantQuantities[index]) || 0 : variant.stock || 0
+      }));
+
+      // Update product with new variants
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/products/${selectedProduct._id}`,
+        { variants: updatedVariants },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      fetchAllData();
+      setShowQuantityModal(false);
+      setSelectedProduct(null);
+      setVariantQuantities({});
+      
+      // Show success message
+      alert("Quantities updated successfully!");
+    } catch (err) {
+      console.error("Error updating quantities:", err);
+      alert("Failed to update quantities. Please try again.");
+    } finally {
+      setSavingQuantities(false);
+    }
+  };
+
+  // NEW: Update variant quantity in state
+  const updateVariantQuantity = (index, value) => {
+    setVariantQuantities(prev => ({
+      ...prev,
+      [index]: Math.max(0, parseInt(value) || 0)
+    }));
   };
 
   return (
@@ -1564,11 +1626,41 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
             {myProducts.map((product) => (
               <tr key={product._id} className="border-b border-gray-200 hover:bg-gray-50">
                 <td className="p-3 text-gray-700">{product.name}</td>
-                <td className="p-3 text-gray-700">${product.price}</td>
-                <td className="p-3 text-gray-700">{product.quantity}</td>
+                <td className="p-3 text-gray-700">
+                  ${(() => {
+                    // NEW: Use first variant's price if available
+                    if (product.variants && product.variants.length > 0) {
+                      const firstVariant = product.variants.find(v => v.enabled) || product.variants[0];
+                      if (firstVariant.price !== undefined && firstVariant.price !== null) {
+                        return firstVariant.price;
+                      }
+                    }
+                    return product.price || 0;
+                  })()}
+                </td>
+                <td className="p-3 text-gray-700">
+                  {(() => {
+                    // NEW: Calculate total quantity from variants
+                    if (product.variants && product.variants.length > 0) {
+                      return product.variants
+                        .filter(v => v.enabled)
+                        .reduce((sum, v) => sum + (v.stock || 0), 0);
+                    }
+                    return product.quantity || 0;
+                  })()}
+                </td>
                 <td className="p-3 text-gray-700">{product.category}</td>
                 <td className="p-3">
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2 flex-wrap gap-1">
+                    {product.variants && product.variants.length > 0 && (
+                      <button
+                        onClick={() => openQuantityEdit(product)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                        title="Quick Edit Quantities"
+                      >
+                        Qty
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setEditingProduct(product);
@@ -1591,6 +1683,82 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
           </tbody>
         </table>
       </div>
+
+      {/* NEW: Quantity Edit Modal */}
+      {showQuantityModal && selectedProduct && selectedProduct.variants && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg w-11/12 md:w-2/3 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Edit Quantities - {selectedProduct.name}</h2>
+              <button
+                onClick={() => {
+                  setShowQuantityModal(false);
+                  setSelectedProduct(null);
+                  setVariantQuantities({});
+                }}
+                className="text-red-600 font-bold text-lg hover:text-red-800"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {selectedProduct.variants.map((variant, index) => (
+                <div key={index} className="border rounded p-4 bg-gray-50">
+                  <div className="mb-2">
+                    <h3 className="font-semibold text-sm">
+                      Variant {index + 1}
+                      {variant.specs && Object.keys(variant.specs).length > 0 && (
+                        <span className="ml-2 text-xs text-gray-600">
+                          ({Object.entries(variant.specs).map(([key, value]) => `${key}: ${value}`).join(', ')})
+                        </span>
+                      )}
+                    </h3>
+                    {variant.price !== undefined && (
+                      <p className="text-xs text-gray-500">Price: ${variant.price}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm font-medium">Quantity:</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={variantQuantities[index] !== undefined ? variantQuantities[index] : (variant.stock || 0)}
+                      onChange={(e) => updateVariantQuantity(index, e.target.value)}
+                      className="w-24 p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <span className="text-xs text-gray-500">
+                      {variant.enabled ? '' : '(Disabled)'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => {
+                  setShowQuantityModal(false);
+                  setSelectedProduct(null);
+                  setVariantQuantities({});
+                }}
+                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                disabled={savingQuantities}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveQuantities}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={savingQuantities}
+              >
+                {savingQuantities ? "Saving..." : "Save Quantities"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1644,17 +1812,29 @@ const FeaturedProductsManagement = ({ products, fetchAllData, token }) => {
               <tr key={product._id} className="border-b border-gray-200 hover:bg-gray-50">
                 <td className="p-3">
                   <div className="flex items-center space-x-3">
-                    {product.images && product.images.length > 0 ? (
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        className="w-10 h-10 object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-400 text-xs">No Image</span>
-                      </div>
-                    )}
+                    {(() => {
+                      // NEW: Use first variant's image if available
+                      let displayImage = null;
+                      if (product.variants && product.variants.length > 0) {
+                        const firstVariant = product.variants.find(v => v.enabled) || product.variants[0];
+                        displayImage = firstVariant.images?.[0] || null;
+                      }
+                      if (!displayImage && product.images && product.images.length > 0) {
+                        displayImage = product.images[0];
+                      }
+                      
+                      return displayImage ? (
+                        <img
+                          src={displayImage}
+                          alt={product.name}
+                          className="w-10 h-10 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <span className="text-gray-400 text-xs">No Image</span>
+                        </div>
+                      );
+                    })()}
                     <div>
                       <div className="font-medium text-gray-900">{product.name}</div>
                       <div className="text-sm text-gray-500 line-clamp-1">{product.description}</div>
@@ -1667,7 +1847,18 @@ const FeaturedProductsManagement = ({ products, fetchAllData, token }) => {
                     {product.sellerId?.role?.replace("_", " ") || "Unknown"}
                   </div>
                 </td>
-                <td className="p-3 font-semibold text-green-600">${product.price}</td>
+                <td className="p-3 font-semibold text-green-600">
+                  ${(() => {
+                    // NEW: Use first variant's price if available
+                    if (product.variants && product.variants.length > 0) {
+                      const firstVariant = product.variants.find(v => v.enabled) || product.variants[0];
+                      if (firstVariant.price !== undefined && firstVariant.price !== null) {
+                        return firstVariant.price;
+                      }
+                    }
+                    return product.price || 0;
+                  })()}
+                </td>
                 <td className="p-3">
                   <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium capitalize">
                     {product.category}

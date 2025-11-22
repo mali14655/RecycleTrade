@@ -260,7 +260,8 @@ export default function ProductDetails() {
 
             {/* Product Title */}
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              {product.name}
+              {product.name} 
+              
             </h1>
 
             {/* Category */}
@@ -269,20 +270,20 @@ export default function ProductDetails() {
             </p>
 
             {/* Availability and Seller */}
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              <div>
+            {/* <div className="flex flex-wrap items-center gap-4 text-sm"> */}
+              {/* <div>
                 <span className="text-gray-600">Seller: </span>
                 <span className="text-gray-900 font-semibold">
                   {product.sellerId?.name || "Unknown"}
                 </span>
-              </div>
-              <div>
+              </div> */}
+              {/* <div>
                 <span className="text-gray-600">Category: </span>
                 <span className="text-gray-900 font-semibold capitalize">
                   {product.category}
                 </span>
-              </div>
-            </div>
+              </div> */}
+            {/* </div> */}
 
             {/* Price and Stock Status */}
             <div className="space-y-2">
@@ -353,7 +354,7 @@ export default function ProductDetails() {
                         onChange={(e) => handleSpecChange(specName, e.target.value)}
                         className="w-full p-2 border rounded text-sm"
                       >
-                        <option value="">Select {specName}</option>
+                        {/* <option value="">Select {specName}</option> */}
                         {getAvailableOptions(specName).map(option => {
                           const stock = getVariantStockForOption(specName, option);
                           const inStock = stock === undefined || stock > 0;
@@ -363,7 +364,8 @@ export default function ProductDetails() {
                               value={option}
                               disabled={!inStock}
                             >
-                              {option} {stock !== null && stock !== undefined && `(${stock > 0 ? `${stock} in stock` : 'Out of stock'})`}
+                              {option} 
+                              {/* {stock !== null && stock !== undefined && `(${stock > 0 ? `${stock} in stock` : 'Out of stock'})`} */}
                             </option>
                           );
                         })}
@@ -403,7 +405,7 @@ export default function ProductDetails() {
             )}
 
             {/* Single Specs Display */}
-            {product.specs && Object.keys(product.specs).length > 0 && (
+            {/* {product.specs && Object.keys(product.specs).length > 0 && (
               <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-gray-200">
                 {Object.entries(product.specs).map(([key, value]) => (
                   <div key={key}>
@@ -412,7 +414,7 @@ export default function ProductDetails() {
                   </div>
                 ))}
               </div>
-            )}
+            )} */}
 
             {/* Add to Cart Button */}
             <button
@@ -447,33 +449,135 @@ export default function ProductDetails() {
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Description</h2>
             
-            {product.description && (
-              <div className="text-gray-700 leading-relaxed">
-                {/* Full description show karega with show more/less */}
-                {isDescriptionExpanded ? (
-                  <div className="whitespace-pre-line">
-                    {product.description}
-                  </div>
-                ) : (
-                  <div className="whitespace-pre-line">
-                    {product.description.length > 300 
-                      ? `${product.description.substring(0, 300)}...` 
-                      : product.description
-                    }
-                  </div>
-                )}
+            {product.description && (() => {
+              // Function to format description - convert text inside " " to headers
+              const formatDescription = (text) => {
+                if (!text) return [];
                 
-                {/* Show more/less button - sirf tab dikhega jab description lambi ho */}
-                {product.description.length > 300 && (
-                  <button
-                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                    className="text-blue-600 hover:text-blue-700 font-medium mt-4"
-                  >
-                    {isDescriptionExpanded ? "Show less" : "Show more"}
-                  </button>
-                )}
-              </div>
-            )}
+                const parts = [];
+                let currentIndex = 0;
+                const regex = /"([^"]+)"/g;
+                let match;
+                
+                while ((match = regex.exec(text)) !== null) {
+                  // Add text before the quoted part
+                  if (match.index > currentIndex) {
+                    const textBefore = text.substring(currentIndex, match.index).trim();
+                    if (textBefore) {
+                      parts.push({
+                        type: 'text',
+                        content: textBefore
+                      });
+                    }
+                  }
+                  
+                  // Add the quoted part as header
+                  parts.push({
+                    type: 'header',
+                    content: match[1]
+                  });
+                  
+                  currentIndex = regex.lastIndex;
+                }
+                
+                // Add remaining text
+                if (currentIndex < text.length) {
+                  const textAfter = text.substring(currentIndex).trim();
+                  if (textAfter) {
+                    parts.push({
+                      type: 'text',
+                      content: textAfter
+                    });
+                  }
+                }
+                
+                // If no quotes found, return original text as single text part
+                if (parts.length === 0) {
+                  parts.push({
+                    type: 'text',
+                    content: text
+                  });
+                }
+                
+                return parts;
+              };
+              
+              const formattedParts = formatDescription(product.description);
+              const descriptionLength = product.description.length;
+              const shouldTruncate = descriptionLength > 300;
+              
+              // Helper to render parts
+              const renderParts = (partsToRender, showFull = true) => {
+                if (showFull) {
+                  return partsToRender.map((part, idx) => {
+                    if (part.type === 'header') {
+                      return (
+                        <h3 key={idx} className="text-xl font-bold text-gray-900 mt-4 mb-2 first:mt-0">
+                          {part.content}
+                        </h3>
+                      );
+                    } else {
+                      return (
+                        <p key={idx} className="mb-3 whitespace-pre-line">
+                          {part.content}
+                        </p>
+                      );
+                    }
+                  });
+                } else {
+                  // Truncate: show first 300 characters
+                  let remainingChars = 300;
+                  const rendered = [];
+                  
+                  for (let idx = 0; idx < partsToRender.length && remainingChars > 0; idx++) {
+                    const part = partsToRender[idx];
+                    
+                    if (part.type === 'header') {
+                      // Include header if we have space
+                      if (remainingChars > part.content.length + 10) {
+                        rendered.push(
+                          <h3 key={idx} className="text-xl font-bold text-gray-900 mt-4 mb-2 first:mt-0">
+                            {part.content}
+                          </h3>
+                        );
+                        remainingChars -= part.content.length + 10;
+                      }
+                    } else {
+                      // Truncate text content
+                      const truncatedText = part.content.substring(0, remainingChars);
+                      rendered.push(
+                        <p key={idx} className="mb-3 whitespace-pre-line">
+                          {truncatedText}
+                          {remainingChars < part.content.length ? '...' : ''}
+                        </p>
+                      );
+                      remainingChars -= Math.min(part.content.length, remainingChars);
+                    }
+                  }
+                  
+                  return rendered;
+                }
+              };
+              
+              return (
+                <div className="text-gray-700 leading-relaxed">
+                  {isDescriptionExpanded || !shouldTruncate ? (
+                    <div>{renderParts(formattedParts, true)}</div>
+                  ) : (
+                    <div>{renderParts(formattedParts, false)}</div>
+                  )}
+                  
+                  {shouldTruncate && (
+                    <button
+                      onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                      className="text-blue-600 hover:text-blue-700 font-medium mt-4"
+                    >
+                      {isDescriptionExpanded ? "Show less" : "Show more"}
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Right: Specifications */}

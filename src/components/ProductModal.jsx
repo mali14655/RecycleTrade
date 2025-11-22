@@ -32,13 +32,6 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/categories`);
         setCategories(res.data);
         console.log("Categories fetched:", res.data);
-        
-        // If editing product, set the selected category
-        if (product && product.categoryRef) {
-          const category = res.data.find(cat => cat._id === product.categoryRef);
-          setSelectedCategory(category);
-          console.log("Selected category for editing:", category);
-        }
       } catch (error) {
         console.error('Error fetching categories:', error);
       }
@@ -47,42 +40,121 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     if (isOpen) {
       fetchCategories();
     }
-  }, [product, isOpen]);
+  }, [isOpen]);
 
-  // Initialize form when product changes
+  // Initialize form when product and categories are available
   useEffect(() => {
-    if (product) {
-      console.log("Editing product:", product);
+    if (product && categories.length > 0 && isOpen) {
+      console.log("Initializing product for editing:", product);
       setName(product.name || "");
       setDescription(product.description || "");
-      setPrice(product.price || "");
-      setImagePreviews(product.images || []);
+      setPrice(product.price || ""); // Keep for backward compatibility but won't be shown
+      // NEW: Remove common images - images should come from first variant
+      setImagePreviews([]);
       
-      if (product.categoryRef) {
-        setSingleSpecs(product.specs || {});
-        // NEW: Stock management - Initialize variants with stock field
-        const variantsWithStock = (product.variants || []).map(v => ({
-          ...v,
-          stock: v.stock !== undefined ? v.stock : 0 // Ensure stock field exists
-        }));
-        setGeneratedVariants(variantsWithStock);
-        setSelectedVariants(variantsWithStock.filter(v => v.enabled) || []);
+      // NEW: Handle categoryRef - could be ObjectId string or populated object
+      const categoryRefId = product.categoryRef?._id || product.categoryRef;
+      
+      if (categoryRefId) {
+        // Find and set the category
+        const category = categories.find(cat => 
+          cat._id === categoryRefId || cat._id?.toString() === categoryRefId?.toString()
+        );
         
-        // Initialize multipleSpecs from existing variants
-        const existingMultipleSpecs = {};
-        if (product.variants && product.variants.length > 0) {
-          const firstVariant = product.variants[0];
-          Object.keys(firstVariant.specs || {}).forEach(key => {
-            const uniqueValues = [...new Set(product.variants.map(v => v.specs[key]))];
-            existingMultipleSpecs[key] = uniqueValues.join(', ');
+        if (category) {
+          console.log("Setting category for editing:", category);
+          setSelectedCategory(category);
+          
+          // Initialize specs - single specs from product
+          const initialSingleSpecs = {};
+          if (product.specs) {
+            // Handle both Map and object formats
+            const specsObj = product.specs instanceof Map 
+              ? Object.fromEntries(product.specs)
+              : product.specs;
+            Object.assign(initialSingleSpecs, specsObj);
+          }
+          
+          // Ensure all single specs from category are included
+          if (category.specs) {
+            category.specs.forEach(spec => {
+              if (spec.type === 'single' && !initialSingleSpecs[spec.name]) {
+                initialSingleSpecs[spec.name] = '';
+              }
+            });
+          }
+          setSingleSpecs(initialSingleSpecs);
+          
+          // Initialize multiple specs from variants
+          const initialMultipleSpecs = {};
+          if (product.variants && product.variants.length > 0) {
+            // Get all unique spec keys from variants
+            const allSpecKeys = new Set();
+            product.variants.forEach(v => {
+              if (v.specs) {
+                const specsObj = v.specs instanceof Map 
+                  ? Object.fromEntries(v.specs)
+                  : v.specs;
+                Object.keys(specsObj).forEach(key => allSpecKeys.add(key));
+              }
+            });
+            
+            // Populate multiple specs with comma-separated values
+            allSpecKeys.forEach(key => {
+              const uniqueValues = [...new Set(
+                product.variants.map(v => {
+                  const specsObj = v.specs instanceof Map 
+                    ? Object.fromEntries(v.specs)
+                    : v.specs;
+                  return specsObj[key];
+                }).filter(Boolean)
+              )];
+              if (uniqueValues.length > 0) {
+                initialMultipleSpecs[key] = uniqueValues.join(', ');
+              }
+            });
+            
+            // Ensure all multiple specs from category are included
+            if (category.specs) {
+              category.specs.forEach(spec => {
+                if (spec.type === 'multiple' && !initialMultipleSpecs[spec.name]) {
+                  initialMultipleSpecs[spec.name] = '';
+                }
+              });
+            }
+          } else if (category.specs) {
+            // No variants yet, but initialize empty multiple specs
+            category.specs.forEach(spec => {
+              if (spec.type === 'multiple') {
+                initialMultipleSpecs[spec.name] = '';
+              }
+            });
+          }
+          setMultipleSpecs(initialMultipleSpecs);
+          
+          // Initialize variants with stock field
+          const variantsWithStock = (product.variants || []).map(v => {
+            // Handle Map format for specs
+            const specsObj = v.specs instanceof Map 
+              ? Object.fromEntries(v.specs)
+              : (v.specs || {});
+            
+            return {
+              ...v,
+              specs: specsObj,
+              stock: v.stock !== undefined ? v.stock : 0
+            };
           });
+          setGeneratedVariants(variantsWithStock);
+          setSelectedVariants(variantsWithStock.filter(v => v.enabled !== false) || []);
+        } else {
+          console.warn("Category not found for categoryRef:", categoryRefId);
         }
-        setMultipleSpecs(existingMultipleSpecs);
       }
-    } else {
+    } else if (!product && isOpen) {
       resetForm();
     }
-  }, [product, isOpen]);
+  }, [product, categories, isOpen]);
 
   const resetForm = () => {
     console.log("Resetting form");
@@ -171,27 +243,53 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     console.log("Category changed to:", categoryId);
     const category = categories.find(cat => cat._id === categoryId);
     setSelectedCategory(category);
-    setSingleSpecs({});
-    setMultipleSpecs({});
-    setGeneratedVariants([]);
-    setSelectedVariants([]);
-    setVariantImageFiles({});
     
-    // If category has specs, initialize them
-    if (category?.specs) {
-      const initialSingleSpecs = {};
-      const initialMultipleSpecs = {};
+    // NEW: Only clear specs/variants if not editing or category changed
+    if (!product || product.categoryRef !== categoryId) {
+      setSingleSpecs({});
+      setMultipleSpecs({});
+      setGeneratedVariants([]);
+      setSelectedVariants([]);
+      setVariantImageFiles({});
       
-      category.specs.forEach(spec => {
-        if (spec.type === 'single') {
-          initialSingleSpecs[spec.name] = '';
-        } else {
-          initialMultipleSpecs[spec.name] = '';
-        }
-      });
+      // If category has specs, initialize them
+      if (category?.specs) {
+        const initialSingleSpecs = {};
+        const initialMultipleSpecs = {};
+        
+        category.specs.forEach(spec => {
+          if (spec.type === 'single') {
+            initialSingleSpecs[spec.name] = '';
+          } else {
+            initialMultipleSpecs[spec.name] = '';
+          }
+        });
+        
+        setSingleSpecs(initialSingleSpecs);
+        setMultipleSpecs(initialMultipleSpecs);
+      }
+    } else if (product && product.categoryRef === categoryId) {
+      // NEW: When editing and category is same, restore specs from product
+      setSingleSpecs(product.specs || {});
       
-      setSingleSpecs(initialSingleSpecs);
-      setMultipleSpecs(initialMultipleSpecs);
+      // Restore multipleSpecs from variants
+      const existingMultipleSpecs = {};
+      if (product.variants && product.variants.length > 0) {
+        const firstVariant = product.variants[0];
+        Object.keys(firstVariant.specs || {}).forEach(key => {
+          const uniqueValues = [...new Set(product.variants.map(v => v.specs[key]))];
+          existingMultipleSpecs[key] = uniqueValues.join(', ');
+        });
+      }
+      setMultipleSpecs(existingMultipleSpecs);
+      
+      // Restore variants
+      const variantsWithStock = (product.variants || []).map(v => ({
+        ...v,
+        stock: v.stock !== undefined ? v.stock : 0
+      }));
+      setGeneratedVariants(variantsWithStock);
+      setSelectedVariants(variantsWithStock.filter(v => v.enabled) || []);
     }
   };
 
@@ -371,24 +469,31 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
 
     console.log("Variant images selected for variant:", variantIndex, "files:", files.length);
     
+    // NEW: When new images are selected, mark that old images should be replaced
+    // Store the variant index in a set to track which variants have new images
+    const variant = selectedVariants[variantIndex];
+    const existingImages = variant?.images?.filter(img => !img.startsWith('blob:')) || [];
+    
     // Create preview URLs
     const previewUrls = files.map(file => URL.createObjectURL(file));
     
-    // Store files for later upload
+    // Store files for later upload - replace old files if any exist
     setVariantImageFiles(prev => ({
       ...prev,
-      [variantIndex]: [...(prev[variantIndex] || []), ...files.map((file, idx) => ({
+      [variantIndex]: files.map((file, idx) => ({
         file,
-        preview: previewUrls[idx]
-      }))]
+        preview: previewUrls[idx],
+        isNew: true // Mark as new to indicate old images should be replaced
+      }))
     }));
 
-    // Update variant with preview URLs (these will be replaced with actual URLs when saved)
+    // NEW: Replace all images with new ones (old ones will be deleted if new ones are uploaded)
     setSelectedVariants(prev => 
       prev.map((v, i) => 
         i === variantIndex ? { 
           ...v, 
-          images: [...(v.images || []), ...previewUrls] 
+          images: previewUrls, // Replace with new preview URLs
+          hasNewImages: true // Flag to track that images were changed
         } : v
       )
     );
@@ -427,29 +532,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     setLoading(true);
 
     try {
-      let uploadedMainImages = [];
-      
-      // Upload main product images
-      if (selectedFiles.length > 0) {
-        console.log("Uploading main product images...");
-        const toastId = toast.loading(
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-black/10 rounded-full flex items-center justify-center">
-              <svg className="w-4 h-4 text-black" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-gray-900">Uploading Images</p>
-              <p className="text-sm text-gray-600">Please wait...</p>
-            </div>
-          </div>
-        );
-        
-        uploadedMainImages = await uploadImages(selectedFiles);
-        toast.dismiss(toastId);
-      }
-
+      // NEW: No common images - only variant images
       // Upload variant images
       const uploadedVariantImages = {};
       for (const [variantIndex, files] of Object.entries(variantImageFiles)) {
@@ -460,10 +543,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         }
       }
 
-      const allImages = product 
-        ? [...product.images, ...uploadedMainImages] 
-        : uploadedMainImages;
-
+      // NEW: No common images - images come from variants only
       // Prepare final variants
       let finalVariants = [];
       
@@ -471,33 +551,49 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         // Use selected variants with their images
         finalVariants = selectedVariants.map((variant, index) => {
           const uploadedVariantImgs = uploadedVariantImages[index] || [];
-          const existingVariantImgs = variant.images.filter(img => !img.startsWith('blob:'));
-          const variantImages = [...existingVariantImgs, ...uploadedVariantImgs];
+          
+          // NEW: If variant has new images uploaded, use only new ones (old ones will be deleted)
+          // Otherwise, keep existing images
+          let variantImages;
+          if (uploadedVariantImgs.length > 0) {
+            // New images uploaded - replace old ones
+            variantImages = uploadedVariantImgs;
+          } else {
+            // No new images - keep existing ones (filter out blob URLs which are just previews)
+            const existingVariantImgs = variant.images?.filter(img => !img.startsWith('blob:')) || [];
+            variantImages = existingVariantImgs.length > 0 ? existingVariantImgs : [];
+          }
           
           return {
             ...variant,
-            images: variantImages.length > 0 ? variantImages : allImages,
+            images: variantImages.length > 0 ? variantImages : (variant.images?.filter(img => !img.startsWith('blob:')) || []),
             stock: variant.stock !== undefined ? variant.stock : 0 // NEW: Stock management - Ensure stock is included
           };
         });
       } else {
-        // Create default variant with common images
+        // Create default variant (should not happen if variants are required)
+        const firstVariant = product?.variants?.[0];
         finalVariants = [{
           specs: {},
-          price: parseFloat(price) || 0,
+          price: firstVariant?.price || parseFloat(price) || 0,
           sku: `${name.replace(/\s+/g, '').toUpperCase().slice(0, 10)}-1`,
           enabled: true,
-          images: allImages,
-          stock: 0 // NEW: Stock management - Default stock for non-variant products
+          images: firstVariant?.images || [],
+          stock: firstVariant?.stock || 0
         }];
       }
+
+      // NEW: Get images from first variant for product display
+      const productImages = finalVariants.length > 0 && finalVariants[0].images.length > 0
+        ? finalVariants[0].images
+        : (product?.variants?.[0]?.images || []);
 
       const payload = {
         name,
         description,
         price: parseFloat(price) || 0,
         category: selectedCategory ? selectedCategory.name : name,
-        images: allImages
+        images: productImages // NEW: Use first variant's images instead of common images
       };
 
       if (selectedCategory) {
@@ -602,6 +698,117 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     }
   };
 
+  // NEW: Populate specs when navigating to Step 2 while editing (ensure they persist)
+  useEffect(() => {
+    if (step === 2 && product && selectedCategory && isOpen) {
+      console.log("Navigating to Step 2 - ensuring specs are populated");
+      
+      const categoryRefId = product.categoryRef?._id || product.categoryRef;
+      if (categoryRefId === selectedCategory._id || categoryRefId === selectedCategory._id?.toString()) {
+        // Ensure single specs are populated from product
+        if (product.specs) {
+          const specsObj = product.specs instanceof Map 
+            ? Object.fromEntries(product.specs)
+            : product.specs;
+          
+          // Merge with existing to preserve any edits
+          setSingleSpecs(prev => {
+            const merged = { ...prev };
+            Object.keys(specsObj).forEach(key => {
+              if (!merged[key]) {
+                merged[key] = specsObj[key];
+              }
+            });
+            // Ensure all category specs are included
+            if (selectedCategory.specs) {
+              selectedCategory.specs.forEach(spec => {
+                if (spec.type === 'single' && !merged[spec.name]) {
+                  merged[spec.name] = specsObj[spec.name] || '';
+                }
+              });
+            }
+            return merged;
+          });
+        }
+        
+        // Ensure multiple specs are populated from variants
+        if (product.variants && product.variants.length > 0) {
+          const existingMultipleSpecs = {};
+          
+          product.variants.forEach(v => {
+            const specsObj = v.specs instanceof Map 
+              ? Object.fromEntries(v.specs)
+              : (v.specs || {});
+            
+            Object.keys(specsObj).forEach(key => {
+              if (!existingMultipleSpecs[key]) {
+                const uniqueValues = [...new Set(
+                  product.variants.map(v2 => {
+                    const v2Specs = v2.specs instanceof Map 
+                      ? Object.fromEntries(v2.specs)
+                      : (v2.specs || {});
+                    return v2Specs[key];
+                  }).filter(Boolean)
+                )];
+                if (uniqueValues.length > 0) {
+                  existingMultipleSpecs[key] = uniqueValues.join(', ');
+                }
+              }
+            });
+          });
+          
+          // Fill in any missing multiple specs from category
+          if (selectedCategory.specs) {
+            selectedCategory.specs.forEach(spec => {
+              if (spec.type === 'multiple' && !existingMultipleSpecs[spec.name]) {
+                existingMultipleSpecs[spec.name] = '';
+              }
+            });
+          }
+          
+          // Merge with existing to preserve any edits
+          setMultipleSpecs(prev => {
+            const merged = { ...prev };
+            Object.keys(existingMultipleSpecs).forEach(key => {
+              if (!merged[key] || merged[key] === '') {
+                merged[key] = existingMultipleSpecs[key];
+              }
+            });
+            return merged;
+          });
+        }
+      }
+    }
+  }, [step, product, selectedCategory, isOpen]);
+
+  // NEW: Populate variants when navigating to Step 3 while editing (ensure they persist)
+  useEffect(() => {
+    if (step === 3 && product && product.variants && product.variants.length > 0 && isOpen) {
+      console.log("Navigating to Step 3 - ensuring variants are populated");
+      
+      const variantsWithStock = product.variants.map(v => {
+        // Handle Map format for specs
+        const specsObj = v.specs instanceof Map 
+          ? Object.fromEntries(v.specs)
+          : (v.specs || {});
+        
+        return {
+          ...v,
+          specs: specsObj,
+          stock: v.stock !== undefined ? v.stock : 0
+        };
+      });
+      
+      // Only update if variants haven't been set yet or if we're editing
+      if (generatedVariants.length === 0 || generatedVariants.length !== variantsWithStock.length) {
+        setGeneratedVariants(variantsWithStock);
+      }
+      if (selectedVariants.length === 0 || selectedVariants.length !== variantsWithStock.filter(v => v.enabled !== false).length) {
+        setSelectedVariants(variantsWithStock.filter(v => v.enabled !== false) || []);
+      }
+    }
+  }, [step, product, isOpen]);
+
   // Clean up image previews
   useEffect(() => {
     return () => {
@@ -615,7 +822,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
       // Clean up variant image previews
       Object.values(variantImageFiles).forEach(files => {
         files.forEach(fileObj => {
-          if (fileObj.preview.startsWith('blob:')) {
+          if (fileObj.preview && fileObj.preview.startsWith('blob:')) {
             URL.revokeObjectURL(fileObj.preview);
           }
         });
@@ -656,31 +863,15 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             <div className="space-y-4">
               <h3 className="text-lg font-semibold mb-4">Basic Product Information</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Product Name *</label>
-                  <input 
-                    value={name} 
-                    onChange={e => setName(e.target.value)} 
-                    placeholder="Product Name" 
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                    required 
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-2">Base Price *</label>
-                  <input 
-                    value={price} 
-                    onChange={e => setPrice(e.target.value)} 
-                    type="number" 
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00" 
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                    required 
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Product Name *</label>
+                <input 
+                  value={name} 
+                  onChange={e => setName(e.target.value)} 
+                  placeholder="Product Name" 
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  required 
+                />
               </div>
               
               <div>
@@ -699,9 +890,21 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
               <div>
                 <label className="block text-sm font-medium mb-2">Category *</label>
                 <select
-                  value={selectedCategory?._id || ''}
+                  value={(() => {
+                    // Handle both string and object categoryRef
+                    if (selectedCategory) {
+                      return selectedCategory._id || '';
+                    }
+                    if (product?.categoryRef) {
+                      return product.categoryRef._id || product.categoryRef || '';
+                    }
+                    return '';
+                  })()}
                   onChange={(e) => handleCategoryChange(e.target.value)}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={!!product} // NEW: Disable category selection when editing
+                  className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    product ? 'bg-gray-100 cursor-not-allowed' : ''
+                  }`}
                   required
                 >
                   <option value="">Select a Category</option>
@@ -711,6 +914,11 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                     </option>
                   ))}
                 </select>
+                {product && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Category cannot be changed when editing a product
+                  </p>
+                )}
                 
                 {/* Show category details when selected */}
                 {selectedCategory && (
@@ -737,60 +945,11 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                 )}
               </div>
 
-              {/* Common Images Upload */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Common Product Images ({imagePreviews.length}/5 selected)
-                </label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="w-full p-2 border rounded mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={uploading || loading}
-                />
-                
-                {imagePreviews.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-600 mb-2">
-                      {imagePreviews.length} image(s) ready to upload when you save the product
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {imagePreviews.map((preview, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-24 object-cover rounded border"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center hover:bg-red-600"
-                            disabled={uploading || loading}
-                          >
-                            ×
-                          </button>
-                          <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
-                            New
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <p className="text-xs text-gray-500 mt-1">
-                  Images will be uploaded to Cloudinary only when you click "Save Product"
-                </p>
-              </div>
-
               <div className="flex justify-end pt-4">
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  disabled={!name || !description || !price || !selectedCategory}
+                  disabled={!name || !description || !selectedCategory}
                   className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Next: Specifications →
@@ -811,6 +970,11 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                     <p className="text-sm text-blue-600">
                       Fill in the specifications below. Multiple-value specs will create variants.
                     </p>
+                    {product && generatedVariants.length > 0 && (
+                      <p className="text-xs text-blue-700 mt-2 font-medium">
+                        💡 Tip: Adding new values to multiple specs will create new variants while preserving existing ones. Click "Update Variants" to regenerate.
+                      </p>
+                    )}
                   </div>
 
                   {selectedCategory.specs?.length > 0 ? (
@@ -838,7 +1002,10 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                               placeholder={`Enter ${spec.name} values separated by commas (e.g., Black, White, Blue)`}
                               value={multipleSpecs[spec.name] || ''}
                               onChange={(e) => handleSpecChange(spec.name, e.target.value, true)}
-                              className="w-full p-2 border rounded mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              disabled={!!product} // NEW: Disable multiple specs when editing
+                              className={`w-full p-2 border rounded mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                product ? 'bg-gray-100 cursor-not-allowed' : ''
+                              }`}
                               required={spec.required}
                             />
                             {multipleSpecs[spec.name] && (
@@ -846,9 +1013,16 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                                 Values: {multipleSpecs[spec.name]}
                               </div>
                             )}
-                            <p className="text-xs text-gray-500">
-                              Separate values with commas. These will create product variants.
-                            </p>
+                            {product && (
+                              <p className="text-xs text-orange-600 mb-2">
+                                ⚠️ Multiple specs cannot be changed when editing. Variants are already created.
+                              </p>
+                            )}
+                            {!product && (
+                              <p className="text-xs text-gray-500">
+                                Separate values with commas. These will create product variants.
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -888,14 +1062,26 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                   >
                     ← Back
                   </button>
-                  <button
-                    type="button"
-                    onClick={generateVariants}
-                    disabled={Object.keys(multipleSpecs).length === 0}
-                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Generate Variants →
-                  </button>
+                  {product && generatedVariants.length > 0 ? (
+                    // When editing and variants exist, go directly to Step 3
+                    <button
+                      type="button"
+                      onClick={() => setStep(3)}
+                      className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition-colors"
+                    >
+                      Go to Variants →
+                    </button>
+                  ) : (
+                    // When creating new product, generate variants
+                    <button
+                      type="button"
+                      onClick={generateVariants}
+                      disabled={!Object.keys(multipleSpecs).some(key => multipleSpecs[key] && multipleSpecs[key].trim())}
+                      className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Generate Variants →
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -910,89 +1096,109 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                 <strong className="text-red-600"> Only selected variants will be available for sale.</strong>
               </p>
 
-              {/* Variant Selection Controls */}
-              <div className="flex items-center justify-between mb-4 p-3 bg-blue-50 rounded-lg">
-                <span className="text-sm font-medium text-blue-800">
-                  {selectedVariants.length} of {generatedVariants.length} variants selected
-                </span>
-                <div className="flex space-x-2">
-                  <button
-                    type="button"
-                    onClick={selectAllVariants}
-                    className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
-                  >
-                    Select All
-                  </button>
-                  <button
-                    type="button"
-                    onClick={deselectAllVariants}
-                    className="text-sm bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 transition-colors"
-                  >
-                    Deselect All
-                  </button>
-                </div>
-              </div>
-
-              <div className="border rounded p-4 mb-4 bg-gray-50">
-                <h4 className="font-semibold mb-3">Available Variants ({generatedVariants.length})</h4>
-                
-                {/* Warning if no variants selected */}
-                {selectedVariants.length === 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
-                    <p className="text-yellow-800 text-sm">
-                      ⚠️ No variants selected. A default variant will be created with common images.
-                    </p>
+              {/* Variant Selection Controls - Only show when creating new product */}
+              {!product && (
+                <>
+                  <div className="flex items-center justify-between mb-4 p-3 bg-blue-50 rounded-lg">
+                    <span className="text-sm font-medium text-blue-800">
+                      {selectedVariants.length} of {generatedVariants.length} variants selected
+                    </span>
+                    <div className="flex space-x-2">
+                      <button
+                        type="button"
+                        onClick={selectAllVariants}
+                        className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                      >
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={deselectAllVariants}
+                        className="text-sm bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 transition-colors"
+                      >
+                        Deselect All
+                      </button>
+                    </div>
                   </div>
-                )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                  {generatedVariants.map((variant, index) => {
-                    const isSelected = selectedVariants.some(v => 
-                      JSON.stringify(v.specs) === JSON.stringify(variant.specs)
-                    );
+                  <div className="border rounded p-4 mb-4 bg-gray-50">
+                    <h4 className="font-semibold mb-3">Available Variants ({generatedVariants.length})</h4>
                     
-                    return (
-                      <div key={index} className={`border rounded p-3 transition-all ${
-                        isSelected 
-                          ? 'bg-green-50 border-green-300 shadow-sm' 
-                          : 'bg-white border-gray-200 hover:bg-gray-50'
-                      }`}>
-                        <div className="flex items-center space-x-3">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleVariantSelection(index)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">
-                              {Object.entries(variant.specs).map(([key, value]) => (
-                                <span key={key} className="mr-2">
-                                  {key}: <strong>{value}</strong>
-                                </span>
-                              ))}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              SKU: {variant.sku}
-                            </div>
-                            <div className="text-xs text-green-600 mt-1">
-                              Price: ${variant.price}
-                            </div>
-                            <div className="text-xs text-blue-600 mt-1">
-                              Stock: {variant.stock !== undefined ? variant.stock : 0}
+                    {/* Warning if no variants selected */}
+                    {selectedVariants.length === 0 && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
+                        <p className="text-yellow-800 text-sm">
+                          ⚠️ No variants selected. A default variant will be created with common images.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                      {generatedVariants.map((variant, index) => {
+                        const isSelected = selectedVariants.some(v => 
+                          JSON.stringify(v.specs) === JSON.stringify(variant.specs)
+                        );
+                        
+                        return (
+                          <div key={index} className={`border rounded p-3 transition-all ${
+                            isSelected 
+                              ? 'bg-green-50 border-green-300 shadow-sm' 
+                              : 'bg-white border-gray-200 hover:bg-gray-50'
+                          }`}>
+                            <div className="flex items-center space-x-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleVariantSelection(index)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">
+                                  {Object.entries(variant.specs).map(([key, value]) => (
+                                    <span key={key} className="mr-2">
+                                      {key}: <strong>{value}</strong>
+                                    </span>
+                                  ))}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  SKU: {variant.sku}
+                                </div>
+                                <div className="text-xs text-green-600 mt-1">
+                                  Price: ${variant.price}
+                                </div>
+                                <div className="text-xs text-blue-600 mt-1">
+                                  Stock: {variant.stock !== undefined ? variant.stock : 0}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
 
-              {/* Selected Variants Configuration */}
+              {/* When editing, show simple header */}
+              {product && (
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                  <span className="text-sm font-medium text-blue-800">
+                    Editing {selectedVariants.length} variant(s) - You can edit images and quantities only
+                  </span>
+                </div>
+              )}
+
+              {/* Variants Configuration */}
               {selectedVariants.length > 0 && (
                 <div className="border rounded p-4 bg-white">
-                  <h4 className="font-semibold mb-3">Configure Selected Variants ({selectedVariants.length})</h4>
+                  <h4 className="font-semibold mb-3">
+                    {product ? `Edit Variants (${selectedVariants.length})` : `Configure Selected Variants (${selectedVariants.length})`}
+                  </h4>
+                  {product && (
+                    <p className="text-sm text-gray-600 mb-4">
+                      You can edit prices, images, and quantities.
+                    </p>
+                  )}
                   <div className="space-y-6">
                     {selectedVariants.map((variant, index) => (
                       <div key={index} className="border rounded p-4 bg-gray-50">
@@ -1044,6 +1250,11 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                         {/* Variant-specific Images */}
                         <div>
                           <label className="block text-sm font-medium mb-2">Variant-specific Images</label>
+                          {product && (
+                            <p className="text-xs text-gray-600 mb-2">
+                              Upload new images to replace existing ones. Old images will be deleted from Cloudinary.
+                            </p>
+                          )}
                           <input
                             type="file"
                             multiple

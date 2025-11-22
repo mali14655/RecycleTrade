@@ -60,6 +60,37 @@ export default function ProductCard({ product }) {
     ));
   };
 
+  // NEW: Get first variant's images and price for display
+  const getDisplayImage = () => {
+    // If product has variants, use first variant's images
+    if (product.variants && product.variants.length > 0) {
+      const firstVariant = product.variants.find(v => v.enabled) || product.variants[0];
+      if (firstVariant.images && firstVariant.images.length > 0) {
+        return firstVariant.images[0];
+      }
+    }
+    // Fallback to product images
+    if (product.images && product.images.length > 0) {
+      return product.images[0];
+    }
+    return null;
+  };
+
+  const getDisplayPrice = () => {
+    // If product has variants, use first variant's price
+    if (product.variants && product.variants.length > 0) {
+      const firstVariant = product.variants.find(v => v.enabled) || product.variants[0];
+      if (firstVariant.price !== undefined && firstVariant.price !== null) {
+        return firstVariant.price;
+      }
+    }
+    // Fallback to product price
+    return product.price || 0;
+  };
+
+  const displayImage = getDisplayImage();
+  const displayPrice = getDisplayPrice();
+
   return (
     <div 
       className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer h-full flex flex-col border border-gray-200"
@@ -67,9 +98,9 @@ export default function ProductCard({ product }) {
     >
       {/* Product Image - Hero Section Style */}
       <div className="mb-4 flex justify-center items-center bg-gray-50 rounded-t-lg h-48 overflow-hidden">
-        {product.images && product.images.length > 0 ? (
+        {displayImage ? (
           <img
-            src={product.images[0]}
+            src={displayImage}
             alt={product.name}
             className="w-full h-full object-contain p-4 hover:scale-105 transition-transform duration-200"
           />
@@ -99,7 +130,7 @@ export default function ProductCard({ product }) {
         <div className="mt-auto">
           <div className="flex items-center justify-between">
             <p className="text-gray-900 font-semibold text-lg">
-              ${product.price}
+              ${displayPrice}
             </p>
             {/* Stock management - Stock status badge */}
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
