@@ -5,6 +5,25 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Breadcrumb from "../components/Breadcrumb"; // Add this import
 
+// Country list
+const COUNTRIES = [
+  "United States", "United Kingdom", "Canada", "Australia", "Germany", "France", "Italy", "Spain",
+  "Netherlands", "Belgium", "Switzerland", "Austria", "Sweden", "Norway", "Denmark", "Finland",
+  "Poland", "Portugal", "Greece", "Ireland", "Czech Republic", "Hungary", "Romania", "Bulgaria",
+  "Croatia", "Slovakia", "Slovenia", "Lithuania", "Latvia", "Estonia", "Luxembourg", "Malta",
+  "Cyprus", "Japan", "South Korea", "China", "India", "Singapore", "Malaysia", "Thailand",
+  "Indonesia", "Philippines", "Vietnam", "Taiwan", "Hong Kong", "New Zealand", "South Africa",
+  "Egypt", "Nigeria", "Kenya", "Morocco", "Tunisia", "Ghana", "Brazil", "Mexico", "Argentina",
+  "Chile", "Colombia", "Peru", "Venezuela", "Ecuador", "Uruguay", "Paraguay", "Bolivia",
+  "Saudi Arabia", "United Arab Emirates", "Israel", "Turkey", "Russia", "Ukraine", "Belarus",
+  "Kazakhstan", "Uzbekistan", "Pakistan", "Bangladesh", "Sri Lanka", "Nepal", "Myanmar",
+  "Cambodia", "Laos", "Mongolia", "Afghanistan", "Iraq", "Iran", "Jordan", "Lebanon",
+  "Qatar", "Kuwait", "Bahrain", "Oman", "Yemen", "Syria", "Libya", "Algeria", "Sudan",
+  "Ethiopia", "Tanzania", "Uganda", "Rwanda", "Zimbabwe", "Botswana", "Namibia", "Mozambique",
+  "Angola", "Zambia", "Malawi", "Madagascar", "Mauritius", "Seychelles", "Iceland",
+  "Greenland", "Fiji", "Papua New Guinea", "Samoa", "Tonga", "Vanuatu", "Solomon Islands"
+].sort();
+
 export default function Checkout() {
   const { cart, clearCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
@@ -110,15 +129,28 @@ export default function Checkout() {
     try {
       setLoading(true);
       
-      const payloadItems = cart.items.map((item) => ({
-        productId: item.productId?._id || item._id,
-        name: item.productId?.name || item.name,
-        price: item.productId?.price || item.price,
-        image: item.productId?.images?.[0] || item.image,
-        quantity: item.quantity || 1,
-        variantId: item.variantId || null,
-        sellerId: item.productId?.sellerId?._id || item.sellerId,
-      }));
+      const payloadItems = cart.items.map((item) => {
+        // Get variant price if variant exists
+        let itemPrice = item.price || item.productId?.price || 0;
+        if (item.variantId && item.productId?.variants) {
+          const variant = item.productId.variants.find(
+            v => v._id?.toString() === item.variantId?.toString()
+          );
+          if (variant) {
+            itemPrice = variant.price;
+          }
+        }
+
+        return {
+          productId: item.productId?._id || item._id,
+          name: item.productId?.name || item.name,
+          price: itemPrice,
+          image: item.productId?.images?.[0] || item.image,
+          quantity: item.quantity || 1,
+          variantId: item.variantId || null,
+          sellerId: item.productId?.sellerId?._id || item.sellerId,
+        };
+      });
 
       const orderData = {
         items: payloadItems,
@@ -155,16 +187,41 @@ export default function Checkout() {
     try {
       setLoading(true);
       
-      const payloadItems = cart.items.map((item) => ({
-        productId: item.productId?._id || item._id,
-        name: item.productId?.name || item.name,
-        price: item.productId?.price || item.price,
-        quantity: item.quantity || 1,
-        variantId: item.variantId || null,
-        sellerId: item.productId?.sellerId?._id || item.sellerId,
-      }));
+      const payloadItems = cart.items.map((item) => {
+        // Get variant price if variant exists
+        let itemPrice = item.price || item.productId?.price || 0;
+        if (item.variantId && item.productId?.variants) {
+          const variant = item.productId.variants.find(
+            v => v._id?.toString() === item.variantId?.toString()
+          );
+          if (variant) {
+            itemPrice = variant.price;
+          }
+        }
 
-      const total = cart.items.reduce((sum, item) => sum + (item.productId?.price || item.price) * item.quantity, 0);
+        return {
+          productId: item.productId?._id || item._id,
+          name: item.productId?.name || item.name,
+          price: itemPrice,
+          quantity: item.quantity || 1,
+          variantId: item.variantId || null,
+          sellerId: item.productId?.sellerId?._id || item.sellerId,
+        };
+      });
+
+      const total = cart.items.reduce((sum, item) => {
+        // Get variant price if variant exists
+        let itemPrice = item.price || item.productId?.price || 0;
+        if (item.variantId && item.productId?.variants) {
+          const variant = item.productId.variants.find(
+            v => v._id?.toString() === item.variantId?.toString()
+          );
+          if (variant) {
+            itemPrice = variant.price;
+          }
+        }
+        return sum + itemPrice * item.quantity;
+      }, 0);
 
       const orderData = {
         items: payloadItems,
@@ -184,8 +241,7 @@ export default function Checkout() {
       );
 
       clearCart();
-      alert(res.data.message);
-      navigate("/orders");
+      navigate("/success");
     } catch (error) {
       console.error("Pickup order failed:", error);
       alert(error.response?.data?.message || "Order failed");
@@ -198,35 +254,56 @@ export default function Checkout() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Breadcrumb />
-        <div className="max-w-4xl mx-auto text-center py-16">
-          <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
-          <p className="text-gray-600 mb-8">Add some products to proceed to checkout</p>
-          <button
-            onClick={() => navigate("/products")}
-            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
-          >
-            Continue Shopping
-          </button>
+        <div className="max-w-[90%] mx-auto px-4 py-8">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="text-center py-16">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5.5M7 13l2.5 5.5m0 0L17 21" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Your cart is empty</h2>
+              <p className="text-gray-600 mb-8">Add some products to proceed to checkout</p>
+              <button
+                onClick={() => navigate("/products")}
+                className="bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  const total = cart.items.reduce((sum, item) => sum + (item.productId?.price || item.price) * item.quantity, 0);
+  const total = cart.items.reduce((sum, item) => {
+    // Get variant price if variant exists
+    let itemPrice = item.price || item.productId?.price || 0;
+    if (item.variantId && item.productId?.variants) {
+      const variant = item.productId.variants.find(
+        v => v._id?.toString() === item.variantId?.toString()
+      );
+      if (variant) {
+        itemPrice = variant.price;
+      }
+    }
+    return sum + itemPrice * item.quantity;
+  }, 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Breadcrumb />
       
-      <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+      <div className="max-w-[90%] mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Form */}
           <div className="space-y-8">
             {/* Personal Information */}
-            <section className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
+            <section className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Personal Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">First Name *</label>
@@ -276,8 +353,8 @@ export default function Checkout() {
             </section>
 
             {/* Contact Information */}
-            <section className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
+            <section className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Email Address *</label>
@@ -307,8 +384,8 @@ export default function Checkout() {
             </section>
 
             {/* Delivery Method */}
-            <section className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Delivery Method</h2>
+            <section className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Delivery Method</h2>
               <div className="space-y-4">
                 <label className="flex items-center p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
                   <input
@@ -358,14 +435,20 @@ export default function Checkout() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">Country *</label>
-                      <input
-                        type="text"
+                      <select
                         name="country"
                         value={formData.country}
                         onChange={handleInputChange}
-                        className={`w-full p-3 border rounded-lg ${errors.country ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`w-full p-3 border rounded-lg ${errors.country ? 'border-red-500' : 'border-gray-300'} bg-white`}
                         required
-                      />
+                      >
+                        <option value="">Select a country</option>
+                        {COUNTRIES.map((country) => (
+                          <option key={country} value={country}>
+                            {country}
+                          </option>
+                        ))}
+                      </select>
                       {errors.country && <p className="text-red-500 text-sm mt-1">{errors.country}</p>}
                     </div>
                     <div>
@@ -404,15 +487,15 @@ export default function Checkout() {
                   
                   {/* Show selected outlet details */}
                   {selectedOutlet && (
-                    <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
-                      <h4 className="font-semibold text-lg mb-2">Selected Outlet:</h4>
+                    <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <h4 className="font-semibold text-lg text-gray-900 mb-2">Selected Outlet:</h4>
                       {outlets.find(o => o._id === selectedOutlet) && (
                         <div className="text-sm text-gray-600 space-y-1">
-                          <p><strong>Name:</strong> {outlets.find(o => o._id === selectedOutlet).name}</p>
-                          <p><strong>Location:</strong> {outlets.find(o => o._id === selectedOutlet).location}</p>
-                          <p><strong>Address:</strong> {outlets.find(o => o._id === selectedOutlet).address}</p>
-                          <p><strong>Phone:</strong> {outlets.find(o => o._id === selectedOutlet).phone || 'Not provided'}</p>
-                          <p><strong>Email:</strong> {outlets.find(o => o._id === selectedOutlet).email || 'Not provided'}</p>
+                          <p><strong className="text-gray-900">Name:</strong> {outlets.find(o => o._id === selectedOutlet).name}</p>
+                          <p><strong className="text-gray-900">Location:</strong> {outlets.find(o => o._id === selectedOutlet).location}</p>
+                          <p><strong className="text-gray-900">Address:</strong> {outlets.find(o => o._id === selectedOutlet).address}</p>
+                          <p><strong className="text-gray-900">Phone:</strong> {outlets.find(o => o._id === selectedOutlet).phone || 'Not provided'}</p>
+                          <p><strong className="text-gray-900">Email:</strong> {outlets.find(o => o._id === selectedOutlet).email || 'Not provided'}</p>
                         </div>
                       )}
                     </div>
@@ -425,34 +508,83 @@ export default function Checkout() {
           {/* Right Column - Order Summary */}
           <div className="space-y-6">
             {/* Order Summary */}
-            <div className="bg-white p-6 rounded-lg shadow-md sticky top-6">
-              <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+            <div className="bg-white p-6 rounded-lg border border-gray-200 sticky top-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
               
               <div className="space-y-4 mb-6">
                 {cart.items.map((item, index) => {
                   const product = item.productId || item;
+                  
+                  // Get variant image and specs
+                  const getVariantImage = () => {
+                    if (item.variantId && product.variants) {
+                      const variant = product.variants.find(
+                        v => v._id?.toString() === item.variantId?.toString()
+                      );
+                      if (variant && variant.images && variant.images.length > 0) {
+                        return variant.images[0];
+                      }
+                    }
+                    return product.images?.[0] || "https://via.placeholder.com/60";
+                  };
+
+                  const getVariantSpecs = () => {
+                    if (item.variantSpecs) {
+                      return item.variantSpecs instanceof Map 
+                        ? Object.fromEntries(item.variantSpecs) 
+                        : item.variantSpecs;
+                    }
+                    if (item.variantId && product.variants) {
+                      const variant = product.variants.find(
+                        v => v._id?.toString() === item.variantId?.toString()
+                      );
+                      if (variant && variant.specs) {
+                        return variant.specs instanceof Map 
+                          ? Object.fromEntries(variant.specs) 
+                          : variant.specs;
+                      }
+                    }
+                    return null;
+                  };
+
+                  // Get variant price if variant exists
+                  let itemPrice = item.price || product.price || 0;
+                  if (item.variantId && product.variants) {
+                    const variant = product.variants.find(
+                      v => v._id?.toString() === item.variantId?.toString()
+                    );
+                    if (variant) {
+                      itemPrice = variant.price;
+                    }
+                  }
+
+                  const variantImage = getVariantImage();
+                  const variantSpecs = getVariantSpecs();
+
                   return (
                     <div key={index} className="flex justify-between items-center border-b pb-4">
                       <div className="flex items-center space-x-3">
                         <img
-                          src={product.images?.[0] || "https://via.placeholder.com/60"}
+                          src={variantImage}
                           alt={product.name}
                           className="w-12 h-12 rounded object-cover"
                         />
                         <div>
                           <p className="font-medium">{product.name}</p>
-                          <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                          {item.variantSpecs && (
-                            <p className="text-xs text-gray-400">
-                              {Object.entries(item.variantSpecs).map(([key, value]) => (
-                                <span key={key} className="mr-2">{key}: {value}</span>
+                          {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                            <div className="mt-0.5 flex flex-wrap gap-1">
+                              {Object.entries(variantSpecs).map(([key, value]) => (
+                                <span key={key} className="text-xs text-gray-500">
+                                  <span className="font-medium capitalize">{key}:</span> {value}
+                                </span>
                               ))}
-                            </p>
+                            </div>
                           )}
+                          <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                         </div>
                       </div>
                       <p className="font-semibold">
-                        ${((product.price || product.price) * item.quantity).toFixed(2)}
+                        ${(itemPrice * item.quantity).toFixed(2)}
                       </p>
                     </div>
                   );
@@ -481,7 +613,7 @@ export default function Checkout() {
                   <button
                     onClick={handleStripeCheckout}
                     disabled={loading}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? "Processing..." : "Pay Online"}
                   </button>
@@ -490,7 +622,7 @@ export default function Checkout() {
                   <button
                     onClick={handlePickupOrder}
                     disabled={loading || !selectedOutlet}
-                    className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? "Placing Order..." : "Place Pickup Order"}
                   </button>

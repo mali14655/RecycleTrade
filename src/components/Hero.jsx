@@ -1,5 +1,5 @@
 // components/Hero.jsx - COMPACT FIXED VERSION
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Truck,
@@ -21,6 +21,7 @@ const Hero = () => {
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -47,14 +48,24 @@ const Hero = () => {
     fetchCategories();
   }, []);
 
-  const scrollLeft = () => {
-    const container = document.getElementById("categories-scroll");
-    container.scrollBy({ left: -300, behavior: "smooth" });
+  const scrollLeft = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const container = scrollContainerRef.current || document.getElementById("categories-scroll");
+    if (container) {
+      const currentScroll = container.scrollLeft;
+      container.scrollTo({ left: currentScroll - 300, behavior: "smooth" });
+    }
   };
 
-  const scrollRight = () => {
-    const container = document.getElementById("categories-scroll");
-    container.scrollBy({ left: 300, behavior: "smooth" });
+  const scrollRight = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const container = scrollContainerRef.current || document.getElementById("categories-scroll");
+    if (container) {
+      const currentScroll = container.scrollLeft;
+      container.scrollTo({ left: currentScroll + 300, behavior: "smooth" });
+    }
   };
 
   const checkScroll = () => {
@@ -114,25 +125,27 @@ const Hero = () => {
               <div className="relative">
                 {/* Scroll Buttons */}
                 <button
+                  type="button"
                   onClick={scrollLeft}
-                  className={`hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-20 w-10 h-10 bg-[#212121]/90 hover:bg-[#212121] text-white rounded-full items-center justify-center transition-all shadow-2xl border border-gray-600 hover:scale-105 ${
+                  className={`hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-30 w-10 h-10 bg-[#212121]/90 hover:bg-[#212121] text-white rounded-full items-center justify-center transition-all shadow-2xl border border-gray-600 hover:scale-105 pointer-events-auto ${
                     !showLeftArrow
-                      ? "opacity-50 cursor-not-allowed"
-                      : "opacity-100"
+                      ? "opacity-50 cursor-pointer"
+                      : "opacity-100 cursor-pointer"
                   }`}
-                  disabled={!showLeftArrow}
+                  style={{ pointerEvents: 'auto' }}
                 >
                   <ChevronLeft size={20} />
                 </button>
 
                 <button
+                  type="button"
                   onClick={scrollRight}
-                  className={`hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-20 w-10 h-10 bg-[#212121]/90 hover:bg-[#212121] text-white rounded-full items-center justify-center transition-all shadow-2xl border border-gray-600 hover:scale-105 ${
+                  className={`hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-30 w-10 h-10 bg-[#212121]/90 hover:bg-[#212121] text-white rounded-full items-center justify-center transition-all shadow-2xl border border-gray-600 hover:scale-105 pointer-events-auto ${
                     !showRightArrow
-                      ? "opacity-50 cursor-not-allowed"
-                      : "opacity-100"
+                      ? "opacity-50 cursor-pointer"
+                      : "opacity-100 cursor-pointer"
                   }`}
-                  disabled={!showRightArrow}
+                  style={{ pointerEvents: 'auto' }}
                 >
                   <ChevronRight size={20} />
                 </button>
@@ -140,6 +153,7 @@ const Hero = () => {
                 {/* Categories Scroll Container - HIDDEN SCROLLBAR */}
                 <div
                   id="categories-scroll"
+                  ref={scrollContainerRef}
                   className="flex overflow-x-auto gap-3 sm:gap-4 pb-3 scroll-smooth px-2 lg:px-0 hide-scrollbar"
                   onScroll={checkScroll}
                 >

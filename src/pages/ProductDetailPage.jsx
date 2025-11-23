@@ -4,6 +4,7 @@ import axios from "axios";
 import { CartContext } from "../context/CartContext";
 import { ChevronLeft, ChevronRight, Star, ShoppingCart, User, Mail, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
+import Breadcrumb from "../components/Breadcrumb";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -12,7 +13,6 @@ export default function ProductDetails() {
   const [activeImage, setActiveImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedSpecs, setSelectedSpecs] = useState({});
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [reviews, setReviews] = useState([]);
   const { addToCart } = useContext(CartContext);
 
@@ -173,12 +173,32 @@ export default function ProductDetails() {
   );
 
   const displayImages = getDisplayImages();
-  const multipleSpecs = product.variants ? 
+  
+  // Check if product has actual variants with multiple options (not just single-value specs)
+  // Only show variant selection if there are multiple variants AND at least one spec has multiple values
+  const hasMultipleVariants = product.variants && product.variants.length > 1;
+  
+  // Get all spec names from first variant
+  const allSpecNames = product.variants && product.variants.length > 0 ? 
     Object.keys(product.variants[0]?.specs || {}) : [];
-  const showVariantSelection = multipleSpecs.length > 0;
+  
+  // Check if any spec has multiple unique values (using getAvailableOptions logic)
+  const hasVariantSpecs = hasMultipleVariants && allSpecNames.some(specName => {
+    const options = getAvailableOptions(specName);
+    return options.length > 1; // Multiple options = variant spec
+  });
+  
+  // Only include specs that have multiple options
+  const multipleSpecs = hasVariantSpecs ? 
+    allSpecNames.filter(specName => getAvailableOptions(specName).length > 1) : [];
+  
+  const showVariantSelection = hasVariantSpecs && multipleSpecs.length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Breadcrumb */}
+      <Breadcrumb currentPage={product?.name} />
+      
       {/* Main Product Section */}
       <div className="max-w-[90%] mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
@@ -404,6 +424,95 @@ export default function ProductDetails() {
               </div>
             )}
 
+            {/* Product Details/Specs Display - When no variant selection */}
+            {!showVariantSelection && selectedVariant && (
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <h4 className="font-semibold mb-3">Product Details:</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {Object.entries(selectedVariant.specs || {}).slice(0, 6).map(([key, value]) => (
+                    <div key={key} className="flex items-start gap-2">
+                      <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px]">
+                        {key}:
+                      </span>
+                      <span className="text-sm text-gray-900 flex-1">
+                        {value}
+                      </span>
+                    </div>
+                  ))}
+                  {/* Show product specs if variant specs are less than 6 */}
+                  {Object.keys(selectedVariant.specs || {}).length < 6 && product.specs && (() => {
+                    const productSpecs = product.specs instanceof Map 
+                      ? Object.fromEntries(product.specs) 
+                      : product.specs;
+                    const variantSpecKeys = Object.keys(selectedVariant.specs || {});
+                    return Object.entries(productSpecs || {})
+                      .filter(([key]) => !variantSpecKeys.includes(key))
+                      .slice(0, 6 - variantSpecKeys.length)
+                      .map(([key, value]) => (
+                        <div key={key} className="flex items-start gap-2">
+                          <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px]">
+                            {key}:
+                          </span>
+                          <span className="text-sm text-gray-900 flex-1">
+                            {value}
+                          </span>
+                        </div>
+                      ));
+                  })()}
+                </div>
+                {selectedVariant && (
+                  <div className={`mt-3 p-3 rounded border ${
+                    isVariantInStock(selectedVariant) ? 'bg-white' : 'bg-red-50 border-red-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Availability:</span>
+                      </p>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        isVariantInStock(selectedVariant)
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {isVariantInStock(selectedVariant)
+                          ? selectedVariant.stock !== undefined
+                            ? `${selectedVariant.stock} in stock`
+                            : "In Stock"
+                          : "Out of Stock"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Product Specs Display - When no variants at all */}
+            {!showVariantSelection && !selectedVariant && (() => {
+              const productSpecs = product.specs instanceof Map 
+                ? Object.fromEntries(product.specs) 
+                : product.specs;
+              return productSpecs && Object.keys(productSpecs).length > 0;
+            })() && (
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <h4 className="font-semibold mb-3">Product Details:</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {Object.entries(
+                    product.specs instanceof Map 
+                      ? Object.fromEntries(product.specs) 
+                      : product.specs
+                  ).slice(0, 6).map(([key, value]) => (
+                    <div key={key} className="flex items-start gap-2">
+                      <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px]">
+                        {key}:
+                      </span>
+                      <span className="text-sm text-gray-900 flex-1">
+                        {value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Single Specs Display */}
             {/* {product.specs && Object.keys(product.specs).length > 0 && (
               <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-gray-200">
@@ -446,7 +555,7 @@ export default function ProductDetails() {
         {/* Description & Specifications Section - Side by Side */}
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left: Description */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Description</h2>
             
             {product.description && (() => {
@@ -503,88 +612,46 @@ export default function ProductDetails() {
               };
               
               const formattedParts = formatDescription(product.description);
-              const descriptionLength = product.description.length;
-              const shouldTruncate = descriptionLength > 300;
+              const specsCount = product.specs ? Object.keys(product.specs).length : 0;
+              const specsHasScroll = specsCount > 10;
               
               // Helper to render parts
-              const renderParts = (partsToRender, showFull = true) => {
-                if (showFull) {
-                  return partsToRender.map((part, idx) => {
-                    if (part.type === 'header') {
-                      return (
-                        <h3 key={idx} className="text-xl font-bold text-gray-900 mt-4 mb-2 first:mt-0">
-                          {part.content}
-                        </h3>
-                      );
-                    } else {
-                      return (
-                        <p key={idx} className="mb-3 whitespace-pre-line">
-                          {part.content}
-                        </p>
-                      );
-                    }
-                  });
-                } else {
-                  // Truncate: show first 300 characters
-                  let remainingChars = 300;
-                  const rendered = [];
-                  
-                  for (let idx = 0; idx < partsToRender.length && remainingChars > 0; idx++) {
-                    const part = partsToRender[idx];
-                    
-                    if (part.type === 'header') {
-                      // Include header if we have space
-                      if (remainingChars > part.content.length + 10) {
-                        rendered.push(
-                          <h3 key={idx} className="text-xl font-bold text-gray-900 mt-4 mb-2 first:mt-0">
-                            {part.content}
-                          </h3>
-                        );
-                        remainingChars -= part.content.length + 10;
-                      }
-                    } else {
-                      // Truncate text content
-                      const truncatedText = part.content.substring(0, remainingChars);
-                      rendered.push(
-                        <p key={idx} className="mb-3 whitespace-pre-line">
-                          {truncatedText}
-                          {remainingChars < part.content.length ? '...' : ''}
-                        </p>
-                      );
-                      remainingChars -= Math.min(part.content.length, remainingChars);
-                    }
+              const renderParts = (partsToRender) => {
+                return partsToRender.map((part, idx) => {
+                  if (part.type === 'header') {
+                    return (
+                      <h3 key={idx} className="text-xl font-bold text-gray-900 mt-4 mb-2 first:mt-0">
+                        {part.content}
+                      </h3>
+                    );
+                  } else {
+                    return (
+                      <p key={idx} className="mb-3 whitespace-pre-line">
+                        {part.content}
+                      </p>
+                    );
                   }
-                  
-                  return rendered;
-                }
+                });
               };
+              
+              // Description max height should match specs max height (400px) when specs > 10
+              const shouldApplyMaxHeight = specsHasScroll;
               
               return (
                 <div className="text-gray-700 leading-relaxed">
-                  {isDescriptionExpanded || !shouldTruncate ? (
-                    <div>{renderParts(formattedParts, true)}</div>
-                  ) : (
-                    <div>{renderParts(formattedParts, false)}</div>
-                  )}
-                  
-                  {shouldTruncate && (
-                    <button
-                      onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                      className="text-blue-600 hover:text-blue-700 font-medium mt-4"
-                    >
-                      {isDescriptionExpanded ? "Show less" : "Show more"}
-                    </button>
-                  )}
+                  <div className={`${shouldApplyMaxHeight ? 'max-h-[400px] overflow-y-auto' : ''}`}>
+                    {renderParts(formattedParts)}
+                  </div>
                 </div>
               );
             })()}
           </div>
 
           {/* Right: Specifications */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Specifications</h2>
             {product.specs && Object.keys(product.specs).length > 0 ? (
-              <div className="max-h-[400px] overflow-y-auto">
+              <div className={`${Object.keys(product.specs).length > 10 ? 'max-h-[400px] overflow-y-auto pr-4' : ''}`}>
                 <div className="space-y-3">
                   {Object.entries(product.specs).map(([key, value]) => (
                     <div key={key} className="flex justify-between items-start py-2 border-b border-gray-100 last:border-b-0">

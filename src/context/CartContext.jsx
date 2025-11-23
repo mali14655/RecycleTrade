@@ -153,12 +153,17 @@ export const CartProvider = ({ children }) => {
     } else {
       // NEW: Stock management - Check stock for guest cart
       const existing = cart.items.find((item) => {
+        const productMatch = item._id === product._id || item._id?.toString() === product._id?.toString();
         if (selectedVariant && item.variantId) {
+          // Compare both productId and variantId, converting to strings for reliable comparison
           return (
-            item._id === product._id && item.variantId === selectedVariant._id
+            productMatch && 
+            (item.variantId?.toString() === selectedVariant._id?.toString() || 
+             item.variantId === selectedVariant._id)
           );
         }
-        return item._id === product._id;
+        // If no variant selected, match only if item also has no variant
+        return productMatch && !item.variantId;
       });
 
       const existingQuantity = existing ? existing.quantity : 0;
@@ -173,18 +178,27 @@ export const CartProvider = ({ children }) => {
 
       let updatedItems;
       if (existing) {
-        updatedItems = cart.items.map((item) =>
-          (selectedVariant && item.variantId === selectedVariant._id) ||
-          (!selectedVariant && item._id === product._id)
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
+        updatedItems = cart.items.map((item) => {
+          const productMatch = item._id === product._id || item._id?.toString() === product._id?.toString();
+          const variantMatch = selectedVariant && item.variantId && 
+            (item.variantId?.toString() === selectedVariant._id?.toString() || item.variantId === selectedVariant._id);
+          const noVariantMatch = !selectedVariant && !item.variantId;
+          
+          if ((productMatch && variantMatch) || (productMatch && noVariantMatch)) {
+            return { ...item, quantity: item.quantity + quantity };
+          }
+          return item;
+        });
       } else {
+        // Get variant price if variant exists
+        const itemPrice = selectedVariant?.price || product.price;
+        
         const cartItem = {
           ...product,
           quantity,
           variantId: selectedVariant?._id,
           variantSpecs: selectedVariant?.specs,
+          price: itemPrice, // Store the actual price (variant or product)
         };
         updatedItems = [...cart.items, cartItem];
       }

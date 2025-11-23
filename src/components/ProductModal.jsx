@@ -309,27 +309,11 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
   };
 
   const generateVariants = () => {
-    console.log("Generating variants with specs:", multipleSpecs);
-    if (Object.keys(multipleSpecs).length === 0) {
-      toast.error(
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div>
-            <p className="font-medium text-gray-900">Missing Information</p>
-            <p className="text-sm text-gray-600">Please enter values for multiple specs first</p>
-          </div>
-        </div>
-      );
-      return;
-    }
-
-    // Parse comma-separated values into arrays
+    console.log("Generating variants with specs:", { multipleSpecs, singleSpecs });
+    
+    // Parse comma-separated values into arrays for multiple specs
     const parsedMultipleSpecs = {};
-    let hasValidSpecs = false;
+    let hasMultipleSpecs = false;
     
     for (const [key, value] of Object.entries(multipleSpecs)) {
       if (typeof value === 'string' && value.trim()) {
@@ -339,12 +323,15 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         
         if (valuesArray.length > 0) {
           parsedMultipleSpecs[key] = valuesArray;
-          hasValidSpecs = true;
+          hasMultipleSpecs = true;
         }
       }
     }
 
-    if (!hasValidSpecs) {
+    // Check if we have any specs at all (single or multiple)
+    const hasSingleSpecs = Object.keys(singleSpecs).some(key => singleSpecs[key] && singleSpecs[key].trim());
+    
+    if (!hasMultipleSpecs && !hasSingleSpecs) {
       toast.error(
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
@@ -353,18 +340,39 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             </svg>
           </div>
           <div>
-            <p className="font-medium text-gray-900">Invalid Input</p>
-            <p className="text-sm text-gray-600">Please enter valid values for at least one multiple specification</p>
+            <p className="font-medium text-gray-900">Missing Information</p>
+            <p className="text-sm text-gray-600">Please enter values for at least one specification</p>
           </div>
         </div>
       );
       return;
     }
 
-    const combinations = generateCombinations(parsedMultipleSpecs);
-    console.log("Generated combinations:", combinations);
+    let combinations = [];
     
-    const variants = combinations.map((combo, index) => ({
+    if (hasMultipleSpecs) {
+      // Generate combinations from multiple specs
+      combinations = generateCombinations(parsedMultipleSpecs);
+    } else {
+      // If only single specs, create one combination with all single specs
+      combinations = [{}];
+    }
+    
+    // Add single specs to all combinations
+    const finalCombinations = combinations.map(combo => {
+      const finalCombo = { ...combo };
+      // Add all single specs to each combination
+      for (const [key, value] of Object.entries(singleSpecs)) {
+        if (value && value.trim()) {
+          finalCombo[key] = value.trim();
+        }
+      }
+      return finalCombo;
+    });
+    
+    console.log("Generated combinations:", finalCombinations);
+    
+    const variants = finalCombinations.map((combo, index) => ({
       specs: combo,
       price: parseFloat(price) || 0,
       sku: `${name.replace(/\s+/g, '').toUpperCase().slice(0, 10)}-${index + 1}`,
@@ -1076,7 +1084,10 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                     <button
                       type="button"
                       onClick={generateVariants}
-                      disabled={!Object.keys(multipleSpecs).some(key => multipleSpecs[key] && multipleSpecs[key].trim())}
+                      disabled={
+                        !Object.keys(multipleSpecs).some(key => multipleSpecs[key] && multipleSpecs[key].trim()) &&
+                        !Object.keys(singleSpecs).some(key => singleSpecs[key] && singleSpecs[key].trim())
+                      }
                       className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       Generate Variants →

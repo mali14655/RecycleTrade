@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
+import { Navigation, Pagination, Mousewheel } from "swiper/modules";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "./ProductCard";
 
@@ -56,12 +56,20 @@ const FeaturedProducts = ({ products = [], loading = false }) => {
 
         <div className="relative">
           <Swiper
-            modules={[Navigation, Pagination]}
+            modules={[Navigation, Pagination, Mousewheel]}
             spaceBetween={24}
             slidesPerView={1}
             navigation={{
               prevEl: ".swiper-button-prev-custom",
               nextEl: ".swiper-button-next-custom",
+            }}
+            allowTouchMove={true}
+            allowSlideNext={true}
+            allowSlidePrev={true}
+            mousewheel={{
+              forceToAxis: false,
+              sensitivity: 1,
+              releaseOnEdges: false,
             }}
             breakpoints={{
               640: {

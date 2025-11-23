@@ -651,32 +651,90 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                       </td>
                       <td className="p-3">
                         <div className="text-sm text-gray-600">
-                          <p className="font-medium">
+                          <p className="font-semibold text-gray-900 mb-1">
                             {order.userId 
                               ? order.userId.name 
-                              : `${order.guestInfo?.firstName} ${order.guestInfo?.lastName}`
+                              : `${order.guestInfo?.firstName || ''} ${order.guestInfo?.lastName || ''}`.trim() || 'Guest Customer'
                             }
                           </p>
-                          <p className="text-xs">{order.userId ? order.userId.email : order.guestInfo?.email}</p>
-                          <p className="text-xs">{order.userId ? order.userId.phone : order.guestInfo?.phone}</p>
-                          {order.guestInfo?.address && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              📍 {order.guestInfo.address}
+                          <div className="space-y-0.5">
+                            <p className="text-xs text-gray-600">
+                              <span className="font-medium">Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}
                             </p>
-                          )}
+                            <p className="text-xs text-gray-600">
+                              <span className="font-medium">Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}
+                            </p>
+                            {order.guestInfo?.address && (
+                              <p className="text-xs text-gray-600 mt-1">
+                                <span className="font-medium">Address:</span> {order.guestInfo.address}
+                                {order.guestInfo?.postalCode && `, ${order.guestInfo.postalCode}`}
+                                {order.guestInfo?.country && `, ${order.guestInfo.country}`}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="p-3">
-                        <div className="text-sm text-gray-600">
-                          {order.items.map((item, index) => (
-                            <div key={index} className="mb-1">
-                              <p className="font-medium">{item.productId?.name}</p>
-                              <p className="text-xs">Qty: {item.quantity} × ${item.price}</p>
-                              {item.sellerId && (
-                                <p className="text-xs text-gray-500">Seller: {item.sellerId.name}</p>
-                              )}
-                            </div>
-                          ))}
+                        <div className="text-sm text-gray-600 space-y-3">
+                          {order.items.map((item, index) => {
+                            // Get variant image and specs
+                            const getVariantImage = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.images && variant.images.length > 0) {
+                                  return variant.images[0];
+                                }
+                              }
+                              return item.productId?.images?.[0] || "https://via.placeholder.com/60";
+                            };
+
+                            const getVariantSpecs = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.specs) {
+                                  return variant.specs instanceof Map 
+                                    ? Object.fromEntries(variant.specs) 
+                                    : variant.specs;
+                                }
+                              }
+                              return null;
+                            };
+
+                            const variantImage = getVariantImage();
+                            const variantSpecs = getVariantSpecs();
+
+                            return (
+                              <div key={index} className="flex items-start gap-3 pb-2 border-b border-gray-100 last:border-b-0">
+                                <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                                  <img
+                                    src={variantImage}
+                                    alt={item.productId?.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900">{item.productId?.name}</p>
+                                  {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                                    <div className="mt-1 flex flex-wrap gap-1.5">
+                                      {Object.entries(variantSpecs).map(([key, value]) => (
+                                        <span key={key} className="text-xs text-gray-600">
+                                          <span className="font-medium capitalize">{key}:</span> {value}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
+                                  {item.sellerId && (
+                                    <p className="text-xs text-gray-500">Seller: {item.sellerId.name}</p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </td>
                       <td className="p-3 text-sm font-semibold text-green-600">
@@ -741,10 +799,20 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                         </div>
                       </td>
                       <td className="p-3 text-sm text-gray-600">
-                        {order.userId 
-                          ? order.userId.name 
-                          : `${order.guestInfo?.firstName} ${order.guestInfo?.lastName}`
-                        }
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {order.userId 
+                              ? order.userId.name 
+                              : `${order.guestInfo?.firstName || ''} ${order.guestInfo?.lastName || ''}`.trim() || 'Guest Customer'
+                            }
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}
+                          </p>
+                        </div>
                       </td>
                       <td className="p-3">
                         <p className="text-sm text-blue-600 font-medium">
@@ -755,13 +823,63 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                         )}
                       </td>
                       <td className="p-3">
-                        <div className="text-sm text-gray-600">
-                          {order.items.map((item, index) => (
-                            <div key={index} className="mb-1">
-                              <p className="font-medium">{item.productId?.name}</p>
-                              <p className="text-xs">Qty: {item.quantity}</p>
-                            </div>
-                          ))}
+                        <div className="text-sm text-gray-600 space-y-3">
+                          {order.items.map((item, index) => {
+                            // Get variant image and specs
+                            const getVariantImage = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.images && variant.images.length > 0) {
+                                  return variant.images[0];
+                                }
+                              }
+                              return item.productId?.images?.[0] || "https://via.placeholder.com/60";
+                            };
+
+                            const getVariantSpecs = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.specs) {
+                                  return variant.specs instanceof Map 
+                                    ? Object.fromEntries(variant.specs) 
+                                    : variant.specs;
+                                }
+                              }
+                              return null;
+                            };
+
+                            const variantImage = getVariantImage();
+                            const variantSpecs = getVariantSpecs();
+
+                            return (
+                              <div key={index} className="flex items-start gap-3 pb-2 border-b border-gray-100 last:border-b-0">
+                                <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                                  <img
+                                    src={variantImage}
+                                    alt={item.productId?.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900">{item.productId?.name}</p>
+                                  {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                                    <div className="mt-1 flex flex-wrap gap-1.5">
+                                      {Object.entries(variantSpecs).map(([key, value]) => (
+                                        <span key={key} className="text-xs text-gray-600">
+                                          <span className="font-medium capitalize">{key}:</span> {value}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </td>
                       <td className="p-3 text-sm font-semibold text-green-600">
@@ -858,17 +976,25 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                       </td>
                       <td className="p-3">
                         <div className="text-sm text-gray-600">
-                          <p className="font-medium">
+                          <p className="font-semibold text-gray-900 mb-1">
                             {order.userId 
                               ? order.userId.name 
-                              : `${order.guestInfo?.firstName} ${order.guestInfo?.lastName}`
+                              : `${order.guestInfo?.firstName || ''} ${order.guestInfo?.lastName || ''}`.trim() || 'Guest Customer'
                             }
                           </p>
-                          <p className="text-xs">{order.userId ? order.userId.email : order.guestInfo?.email}</p>
-                          <p className="text-xs">{order.userId ? order.userId.phone : order.guestInfo?.phone}</p>
-                          {order.guestInfo?.gender && (
-                            <p className="text-xs text-gray-500 capitalize">Gender: {order.guestInfo.gender}</p>
-                          )}
+                          <div className="space-y-0.5">
+                            <p className="text-xs text-gray-600">
+                              <span className="font-medium">Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              <span className="font-medium">Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}
+                            </p>
+                            {order.guestInfo?.gender && (
+                              <p className="text-xs text-gray-600 capitalize">
+                                <span className="font-medium">Gender:</span> {order.guestInfo.gender}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="p-3 text-sm text-gray-600">
@@ -886,19 +1012,66 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                         )}
                       </td>
                       <td className="p-3">
-                        <div className="text-sm text-gray-600">
-                          {order.items.map((item, index) => (
-                            <div key={index} className="mb-1">
-                              <p className="font-medium">{item.productId?.name}</p>
-                              <p className="text-xs">Qty: {item.quantity} × ${item.price}</p>
-                              {item.sellerId && (
-                                <p className="text-xs text-gray-500">Seller: {item.sellerId.name}</p>
-                              )}
-                              {item.variantId && (
-                                <p className="text-xs text-gray-400">Variant</p>
-                              )}
-                            </div>
-                          ))}
+                        <div className="text-sm text-gray-600 space-y-3">
+                          {order.items.map((item, index) => {
+                            // Get variant image and specs
+                            const getVariantImage = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.images && variant.images.length > 0) {
+                                  return variant.images[0];
+                                }
+                              }
+                              return item.productId?.images?.[0] || "https://via.placeholder.com/60";
+                            };
+
+                            const getVariantSpecs = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.specs) {
+                                  return variant.specs instanceof Map 
+                                    ? Object.fromEntries(variant.specs) 
+                                    : variant.specs;
+                                }
+                              }
+                              return null;
+                            };
+
+                            const variantImage = getVariantImage();
+                            const variantSpecs = getVariantSpecs();
+
+                            return (
+                              <div key={index} className="flex items-start gap-3 pb-2 border-b border-gray-100 last:border-b-0">
+                                <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                                  <img
+                                    src={variantImage}
+                                    alt={item.productId?.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900">{item.productId?.name}</p>
+                                  {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                                    <div className="mt-1 flex flex-wrap gap-1.5">
+                                      {Object.entries(variantSpecs).map(([key, value]) => (
+                                        <span key={key} className="text-xs text-gray-600">
+                                          <span className="font-medium capitalize">{key}:</span> {value}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
+                                  {item.sellerId && (
+                                    <p className="text-xs text-gray-500">Seller: {item.sellerId.name}</p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </td>
                       <td className="p-3">
@@ -969,13 +1142,18 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                       </td>
                       <td className="p-3 text-sm text-gray-600">
                         <div>
-                          <p className="font-medium">
+                          <p className="font-semibold text-gray-900">
                             {order.userId 
                               ? order.userId.name 
-                              : `${order.guestInfo?.firstName} ${order.guestInfo?.lastName}`
+                              : `${order.guestInfo?.firstName || ''} ${order.guestInfo?.lastName || ''}`.trim() || 'Guest Customer'
                             }
                           </p>
-                          <p className="text-xs">{order.userId ? order.userId.phone : order.guestInfo?.phone}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}
+                          </p>
                         </div>
                       </td>
                       <td className="p-3 text-sm text-gray-600">
@@ -994,13 +1172,63 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                         )}
                       </td>
                       <td className="p-3">
-                        <div className="text-sm text-gray-600">
-                          {order.items.map((item, index) => (
-                            <div key={index} className="mb-1">
-                              <p className="font-medium">{item.productId?.name}</p>
-                              <p className="text-xs">Qty: {item.quantity}</p>
-                            </div>
-                          ))}
+                        <div className="text-sm text-gray-600 space-y-3">
+                          {order.items.map((item, index) => {
+                            // Get variant image and specs
+                            const getVariantImage = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.images && variant.images.length > 0) {
+                                  return variant.images[0];
+                                }
+                              }
+                              return item.productId?.images?.[0] || "https://via.placeholder.com/60";
+                            };
+
+                            const getVariantSpecs = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.specs) {
+                                  return variant.specs instanceof Map 
+                                    ? Object.fromEntries(variant.specs) 
+                                    : variant.specs;
+                                }
+                              }
+                              return null;
+                            };
+
+                            const variantImage = getVariantImage();
+                            const variantSpecs = getVariantSpecs();
+
+                            return (
+                              <div key={index} className="flex items-start gap-3 pb-2 border-b border-gray-100 last:border-b-0">
+                                <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                                  <img
+                                    src={variantImage}
+                                    alt={item.productId?.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900">{item.productId?.name}</p>
+                                  {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                                    <div className="mt-1 flex flex-wrap gap-1.5">
+                                      {Object.entries(variantSpecs).map(([key, value]) => (
+                                        <span key={key} className="text-xs text-gray-600">
+                                          <span className="font-medium capitalize">{key}:</span> {value}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </td>
                       <td className="p-3 text-sm font-semibold text-green-600">
@@ -1405,9 +1633,28 @@ const CategoryManagement = () => {
 
 const OutletManagement = ({ outlets, fetchAllData, token }) => {
   const [showForm, setShowForm] = useState(false);
+  const [editingOutlet, setEditingOutlet] = useState(null);
   const [formData, setFormData] = useState({
     name: "", location: "", address: "", phone: "", email: ""
   });
+
+  const resetForm = () => {
+    setFormData({ name: "", location: "", address: "", phone: "", email: "" });
+    setEditingOutlet(null);
+    setShowForm(false);
+  };
+
+  const handleEdit = (outlet) => {
+    setEditingOutlet(outlet._id);
+    setFormData({
+      name: outlet.name || "",
+      location: outlet.location || "",
+      address: outlet.address || "",
+      phone: outlet.phone || "",
+      email: outlet.email || ""
+    });
+    setShowForm(true);
+  };
 
   const createOutlet = async (e) => {
     e.preventDefault();
@@ -1416,12 +1663,42 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert("Outlet created successfully!");
-      setShowForm(false);
-      setFormData({ name: "", location: "", address: "", phone: "", email: "" });
+      resetForm();
       fetchAllData();
     } catch (error) {
       console.error("Error creating outlet:", error);
       alert("Failed to create outlet");
+    }
+  };
+
+  const updateOutlet = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${import.meta.env.VITE_API_URL}/outlets/${editingOutlet}`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("Outlet updated successfully!");
+      resetForm();
+      fetchAllData();
+    } catch (error) {
+      console.error("Error updating outlet:", error);
+      alert("Failed to update outlet");
+    }
+  };
+
+  const deleteOutlet = async (outletId) => {
+    if (!window.confirm("Are you sure you want to delete this outlet?")) {
+      return;
+    }
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/outlets/${outletId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("Outlet deleted successfully!");
+      fetchAllData();
+    } catch (error) {
+      console.error("Error deleting outlet:", error);
+      alert("Failed to delete outlet");
     }
   };
 
@@ -1433,7 +1710,10 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
           <p className="text-gray-600">Manage pickup locations</p>
         </div>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
           className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700"
         >
           Add Outlet
@@ -1442,8 +1722,8 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
 
       {showForm && (
         <div className="bg-gray-50 p-4 rounded-lg mb-6">
-          <h4 className="font-semibold mb-3">Add New Outlet</h4>
-          <form onSubmit={createOutlet} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <h4 className="font-semibold mb-3">{editingOutlet ? 'Edit Outlet' : 'Add New Outlet'}</h4>
+          <form onSubmit={editingOutlet ? updateOutlet : createOutlet} className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input
               type="text"
               placeholder="Outlet Name"
@@ -1484,11 +1764,11 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
             />
             <div className="md:col-span-2 flex gap-2">
               <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">
-                Create Outlet
+                {editingOutlet ? 'Update Outlet' : 'Create Outlet'}
               </button>
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={resetForm}
                 className="bg-gray-600 text-white px-4 py-2 rounded"
               >
                 Cancel
@@ -1500,12 +1780,30 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {outlets.map(outlet => (
-          <div key={outlet._id} className="border rounded-lg p-4">
-            <h4 className="font-semibold">{outlet.name}</h4>
-            <p className="text-sm text-gray-600">{outlet.location}</p>
-            <p className="text-sm text-gray-500">{outlet.address}</p>
-            {outlet.phone && <p className="text-sm text-gray-500">📞 {outlet.phone}</p>}
-            {outlet.email && <p className="text-sm text-gray-500">✉️ {outlet.email}</p>}
+          <div key={outlet._id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-2">
+              <h4 className="font-semibold text-lg">{outlet.name}</h4>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEdit(outlet)}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  title="Edit"
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  onClick={() => deleteOutlet(outlet._id)}
+                  className="text-red-600 hover:text-red-800 text-sm font-medium"
+                  title="Delete"
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 font-medium">{outlet.location}</p>
+            <p className="text-sm text-gray-500 mt-1">{outlet.address}</p>
+            {outlet.phone && <p className="text-sm text-gray-500 mt-1">📞 {outlet.phone}</p>}
+            {outlet.email && <p className="text-sm text-gray-500 mt-1">✉️ {outlet.email}</p>}
           </div>
         ))}
       </div>
