@@ -31,14 +31,22 @@ export default function ProductDetails() {
         console.log("Product fetched:", productRes.data);
         
         if (productRes.data.variants && productRes.data.variants.length > 0) {
-          const firstEnabledVariant = productRes.data.variants.find(v => v.enabled) || productRes.data.variants[0];
-          setSelectedVariant(firstEnabledVariant);
+          // Find first enabled variant that is in stock (if stock is defined)
+          // If stock is undefined, assume unlimited and allow selection
+          const firstInStockVariant = productRes.data.variants.find(v => 
+            v.enabled && (v.stock === undefined || v.stock > 0)
+          ) || productRes.data.variants.find(v => v.enabled) || productRes.data.variants[0];
           
-          if (firstEnabledVariant.specs) {
-            setSelectedSpecs(firstEnabledVariant.specs);
+          setSelectedVariant(firstInStockVariant);
+          
+          if (firstInStockVariant && firstInStockVariant.specs) {
+            setSelectedSpecs(firstInStockVariant.specs);
+          } else {
+            setSelectedSpecs({});
           }
         } else {
           setSelectedVariant(null);
+          setSelectedSpecs({});
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -67,20 +75,72 @@ export default function ProductDetails() {
   const getVariantStockForOption = (specName, optionValue) => {
     if (!product?.variants) return null;
     
-    // Find variant matching current selected specs + this option
+    // Get all spec names from variants to know what we're working with
+    const allSpecNames = product.variants.length > 0 ? 
+      Object.keys(product.variants[0]?.specs || {}) : [];
+    
+    // Get other spec names (excluding the one we're checking)
+    const otherSpecNames = allSpecNames.filter(s => s !== specName);
+    
+    // Get currently selected specs for OTHER specs (not the one we're checking)
+    const selectedOtherSpecs = {};
+    otherSpecNames.forEach(otherSpec => {
+      if (selectedSpecs[otherSpec]) {
+        selectedOtherSpecs[otherSpec] = selectedSpecs[otherSpec];
+      }
+    });
+    
+    // Build test specs: other selected specs + the option we're checking
     const testSpecs = {
-      ...selectedSpecs,
+      ...selectedOtherSpecs,
       [specName]: optionValue
     };
     
+    // Find variant matching the test specs (other selected + this option)
+    // Match means all testSpecs keys must match, but variant can have additional specs
     const matchingVariant = product.variants.find(variant => 
       variant.enabled &&
       Object.keys(testSpecs).every(key => 
-        variant.specs[key] === testSpecs[key]
+        variant.specs && variant.specs[key] === testSpecs[key]
       )
     );
     
-    return matchingVariant ? matchingVariant.stock : null;
+    // If we found a matching variant, return its stock
+    if (matchingVariant) {
+      return matchingVariant.stock;
+    }
+    
+    // If no exact match (maybe not all specs selected yet), check if ANY variant with this option is available
+    // This is important when user is selecting the first spec or when some specs aren't fully selected
+    const variantsWithOption = product.variants.filter(variant => 
+      variant.enabled && 
+      variant.specs[specName] === optionValue
+    );
+    
+    // If we have other specs selected, check if any variant with this option matches those other specs
+    if (Object.keys(selectedOtherSpecs).length > 0) {
+      const variantsMatchingOtherSpecs = variantsWithOption.filter(variant =>
+        Object.keys(selectedOtherSpecs).every(key =>
+          variant.specs[key] === selectedOtherSpecs[key]
+        )
+      );
+      
+      // Find first in-stock variant among those matching
+      const inStockVariant = variantsMatchingOtherSpecs.find(variant => 
+        variant.stock === undefined || variant.stock > 0
+      );
+      
+      return inStockVariant ? (inStockVariant.stock ?? Infinity) : null;
+    }
+    
+    // If no other specs selected, check if ANY variant with this option is in stock
+    // This handles the case where user is selecting the first spec
+    const inStockVariant = variantsWithOption.find(variant => 
+      variant.stock === undefined || variant.stock > 0
+    );
+    
+    // Return stock if found, or null if no in-stock variant exists
+    return inStockVariant ? (inStockVariant.stock ?? Infinity) : null;
   };
 
   // NEW: Stock management - Check if variant is in stock
@@ -92,6 +152,7 @@ export default function ProductDetails() {
   };
 
   const handleSpecChange = (specName, value) => {
+    // Create new selected specs with the updated value
     const newSelectedSpecs = {
       ...selectedSpecs,
       [specName]: value
@@ -99,12 +160,43 @@ export default function ProductDetails() {
     
     setSelectedSpecs(newSelectedSpecs);
     
-    const matchingVariant = product.variants.find(variant => 
-      variant.enabled &&
-      Object.keys(newSelectedSpecs).every(key => 
-        variant.specs[key] === newSelectedSpecs[key]
-      )
-    );
+    // Find matching variant with exact spec match
+    // First try to find an exact match that is in stock
+    let matchingVariant = product.variants.find(variant => {
+      if (!variant.enabled) return false;
+      
+      // Check if all selected specs match
+      const allSelectedSpecsMatch = Object.keys(newSelectedSpecs).every(key => 
+        variant.specs && variant.specs[key] === newSelectedSpecs[key]
+      );
+      
+      // Also check that variant has all the selected spec keys
+      const variantHasAllSelectedKeys = Object.keys(newSelectedSpecs).every(key =>
+        variant.specs && variant.specs.hasOwnProperty(key)
+      );
+      
+      // Prefer in-stock variants
+      const isInStock = variant.stock === undefined || variant.stock > 0;
+      
+      return allSelectedSpecsMatch && variantHasAllSelectedKeys && isInStock;
+    });
+    
+    // If no in-stock variant found, find any matching variant (even if out of stock)
+    if (!matchingVariant) {
+      matchingVariant = product.variants.find(variant => {
+        if (!variant.enabled) return false;
+        
+        const allSelectedSpecsMatch = Object.keys(newSelectedSpecs).every(key => 
+          variant.specs && variant.specs[key] === newSelectedSpecs[key]
+        );
+        
+        const variantHasAllSelectedKeys = Object.keys(newSelectedSpecs).every(key =>
+          variant.specs && variant.specs.hasOwnProperty(key)
+        );
+        
+        return allSelectedSpecsMatch && variantHasAllSelectedKeys;
+      });
+    }
     
     if (matchingVariant) {
       setSelectedVariant(matchingVariant);
@@ -377,7 +469,7 @@ export default function ProductDetails() {
                         {/* <option value="">Select {specName}</option> */}
                         {getAvailableOptions(specName).map(option => {
                           const stock = getVariantStockForOption(specName, option);
-                          const inStock = stock === undefined || stock > 0;
+                          const inStock = stock !== null && (stock === undefined || stock > 0);
                           return (
                             <option 
                               key={option} 

@@ -4,6 +4,7 @@ import axios from "axios";
 import ProductModal from "../components/ProductModal";
 import CategoryManager from "../components/CategoryManager";
 import Breadcrumb from "../components/Breadcrumb";
+import ConfirmModal from "../components/ConfirmModal";
 import toast from "react-hot-toast";
 
 
@@ -568,7 +569,19 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
     const trackingNumber = trackingNumbers[orderId];
     
     if (!trackingNumber?.trim()) {
-      alert("Please enter tracking number");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Tracking Number Required</p>
+            <p className="text-sm text-gray-600">Please enter tracking number</p>
+          </div>
+        </div>
+      );
       return;
     }
 
@@ -581,13 +594,37 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert("Order processed successfully! Tracking information sent to customer.");
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Order Processed</p>
+            <p className="text-sm text-gray-600">Tracking information sent to customer</p>
+          </div>
+        </div>
+      );
       setTrackingNumbers(prev => ({ ...prev, [orderId]: "" }));
       setProcessingOrders(prev => ({ ...prev, [orderId]: false }));
       fetchAllData();
     } catch (error) {
       console.error("Error processing order:", error);
-      alert(error.response?.data?.message || "Error processing order");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Processing Failed</p>
+            <p className="text-sm text-gray-600">{error.response?.data?.message || "Error processing order"}</p>
+          </div>
+        </div>
+      );
       setProcessingOrders(prev => ({ ...prev, [orderId]: false }));
     }
   };
@@ -599,9 +636,13 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
     }));
   };
 
-  const pendingOrders = onlineOrders.filter(order => order.orderStatus === "Pending");
+  const pendingOrders = onlineOrders
+    .filter(order => order.orderStatus === "Pending")
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
   console.log(pendingOrders)
-  const processedOrders = onlineOrders.filter(order => order.orderStatus === "Processing");
+  const processedOrders = onlineOrders
+    .filter(order => order.orderStatus === "Processing")
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
   console.log(processedOrders)
 
   return (
@@ -628,54 +669,101 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
               <p>No pending online orders</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Order Details</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Customer Details</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Items</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Amount</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingOrders.map((order) => (
-                    <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="p-3">
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-700">#{order._id.slice(-8)}</p>
-                          <p className="text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
-                          <p className="text-xs text-gray-400">Payment: {order.paymentMethod}</p>
+            <div className="space-y-4">
+              {pendingOrders.map((order) => {
+                // Fix name display - removes duplicates
+                const getCustomerName = () => {
+                  if (order.userId?.name) {
+                    // Clean up user name if it has duplicates
+                    const name = (order.userId.name || '').trim();
+                    if (name) {
+                      const parts = name.split(/\s+/);
+                      const uniqueParts = [];
+                      parts.forEach(part => {
+                        if (part && !uniqueParts.some(existing => existing.toLowerCase() === part.toLowerCase())) {
+                          uniqueParts.push(part);
+                        }
+                      });
+                      return uniqueParts.join(' ');
+                    }
+                    return name;
+                  }
+                  const firstName = (order.guestInfo?.firstName || '').trim();
+                  const lastName = (order.guestInfo?.lastName || '').trim();
+                  
+                  // Remove duplicates within firstName or lastName
+                  const cleanFirstName = firstName ? firstName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
+                  const cleanLastName = lastName ? lastName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
+                  
+                  if (cleanFirstName && cleanLastName) {
+                    // If firstName already contains lastName, just return firstName
+                    if (cleanFirstName.toLowerCase().includes(cleanLastName.toLowerCase())) {
+                      return cleanFirstName;
+                    }
+                    // If lastName already contains firstName, just return lastName
+                    if (cleanLastName.toLowerCase().includes(cleanFirstName.toLowerCase())) {
+                      return cleanLastName;
+                    }
+                    // Normal case: combine them with a space
+                    return `${cleanFirstName} ${cleanLastName}`;
+                  }
+                  return cleanFirstName || cleanLastName || 'Guest Customer';
+                };
+
+                return (
+                  <div key={order._id} className="bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                    {/* Order Header */}
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-bold text-lg text-gray-900">Order #{order._id.slice(-8)}</p>
+                          <p className="text-sm text-gray-500 mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
                         </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="text-sm text-gray-600">
-                          <p className="font-semibold text-gray-900 mb-1">
-                            {order.userId 
-                              ? order.userId.name 
-                              : `${order.guestInfo?.firstName || ''} ${order.guestInfo?.lastName || ''}`.trim() || 'Guest Customer'
-                            }
-                          </p>
-                          <div className="space-y-0.5">
-                            <p className="text-xs text-gray-600">
-                              <span className="font-medium">Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              <span className="font-medium">Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}
-                            </p>
-                            {order.guestInfo?.address && (
-                              <p className="text-xs text-gray-600 mt-1">
-                                <span className="font-medium">Address:</span> {order.guestInfo.address}
-                                {order.guestInfo?.postalCode && `, ${order.guestInfo.postalCode}`}
-                                {order.guestInfo?.country && `, ${order.guestInfo.country}`}
-                              </p>
-                            )}
+                        <div className="flex items-center gap-3">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            order.paymentStatus === 'Paid' || order.paymentStatus === 'paid' || order.paymentMethod === 'Stripe'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {order.paymentStatus === 'Paid' || order.paymentStatus === 'paid' || order.paymentMethod === 'Stripe' ? '✅ Paid' : '⏳ Not Paid'}
+                          </span>
+                          <span className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Content */}
+                    <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Customer Details */}
+                      <div className="lg:col-span-1">
+                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer Details</h3>
+                        <div className="space-y-2">
+                          <p className="font-semibold text-gray-900">{getCustomerName()}</p>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p><span className="font-medium">📧 Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}</p>
+                            <p><span className="font-medium">📱 Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}</p>
                           </div>
+                          {(order.guestInfo?.address || order.userId?.address) && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-xs font-semibold text-gray-700 mb-1">📍 Delivery Address:</p>
+                              <div className="text-xs text-gray-600 space-y-0.5">
+                                <p>{order.guestInfo?.address || order.userId?.address || 'N/A'}</p>
+                                {order.guestInfo?.postalCode && (
+                                  <p><span className="font-medium">Postal Code:</span> {order.guestInfo.postalCode}</p>
+                                )}
+                                {order.guestInfo?.country && (
+                                  <p><span className="font-medium">Country:</span> {order.guestInfo.country}</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="text-sm text-gray-600 space-y-3">
+                      </div>
+
+                      {/* Order Items */}
+                      <div className="lg:col-span-2">
+                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Order Items ({order.items.length})</h3>
+                        <div className="space-y-3">
                           {order.items.map((item, index) => {
                             // Get variant image and specs
                             const getVariantImage = () => {
@@ -708,65 +796,78 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                             const variantSpecs = getVariantSpecs();
 
                             return (
-                              <div key={index} className="flex items-start gap-3 pb-2 border-b border-gray-100 last:border-b-0">
-                                <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                                  <img
-                                    src={variantImage}
-                                    alt={item.productId?.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-gray-900">{item.productId?.name}</p>
-                                  {variantSpecs && Object.keys(variantSpecs).length > 0 && (
-                                    <div className="mt-1 flex flex-wrap gap-1.5">
-                                      {Object.entries(variantSpecs).map(([key, value]) => (
-                                        <span key={key} className="text-xs text-gray-600">
-                                          <span className="font-medium capitalize">{key}:</span> {value}
-                                        </span>
-                                      ))}
+                              <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div className="flex items-start gap-4">
+                                  <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                                    <img
+                                      src={variantImage}
+                                      alt={item.productId?.name || item.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                    {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                                      <div className="mt-2 flex flex-wrap gap-2">
+                                        {Object.entries(variantSpecs).map(([key, value]) => (
+                                          <span key={key} className="text-xs bg-white px-2 py-1 rounded border border-gray-200 text-gray-700">
+                                            <span className="font-medium capitalize">{key}:</span> {value}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <div className="mt-2 flex items-center gap-4 text-sm">
+                                      <span className="text-gray-600">
+                                        <span className="font-medium">Quantity:</span> {item.quantity}
+                                      </span>
+                                      <span className="text-gray-600">
+                                        <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                      </span>
+                                      <span className="text-gray-700 font-semibold">
+                                        Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                      </span>
                                     </div>
-                                  )}
-                                  <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
-                                  {item.sellerId && (
-                                    <p className="text-xs text-gray-500">Seller: {item.sellerId.name}</p>
-                                  )}
+                                    {item.sellerId && (
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        <span className="font-medium">Seller:</span> {item.sellerId.name}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             );
                           })}
                         </div>
-                      </td>
-                      <td className="p-3 text-sm font-semibold text-green-600">
-                        ${order.total.toFixed(2)}
-                      </td>
-                      <td className="p-3">
-                        <div className="flex flex-col space-y-2">
-                          <input
-                            type="text"
-                            placeholder="Enter tracking number"
-                            value={trackingNumbers[order._id] || ""}
-                            onChange={(e) => handleTrackingNumberChange(order._id, e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded text-sm"
-                          />
-                          <button
-                            onClick={() => processOrder(order._id)}
-                            disabled={processingOrders[order._id] || !trackingNumbers[order._id]?.trim()}
-                            className="bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {processingOrders[order._id] ? "Processing..." : "Process & Ship"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+
+                    {/* Order Actions */}
+                    <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="text"
+                          placeholder="Enter tracking number"
+                          value={trackingNumbers[order._id] || ""}
+                          onChange={(e) => handleTrackingNumberChange(order._id, e.target.value)}
+                          className="flex-1 max-w-md p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                        <button
+                          onClick={() => processOrder(order._id)}
+                          disabled={processingOrders[order._id] || !trackingNumbers[order._id]?.trim()}
+                          className="bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {processingOrders[order._id] ? "Processing..." : "Process & Ship"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Processed Orders Table */}
+        {/* Processed Orders */}
         <div>
           <h2 className="text-lg font-semibold mb-4 text-gray-800">
             Shipped Orders ({processedOrders.length})
@@ -777,53 +878,98 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
               <p>No shipped orders</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Order Details</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Customer</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Tracking</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Items</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Amount</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Shipped Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {processedOrders.map((order) => (
-                    <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="p-3">
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-700">#{order._id.slice(-8)}</p>
-                          <p className="text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
-                        </div>
-                      </td>
-                      <td className="p-3 text-sm text-gray-600">
+            <div className="space-y-4">
+              {processedOrders.map((order) => {
+                // Fix name display - removes duplicates
+                const getCustomerName = () => {
+                  if (order.userId?.name) {
+                    // Clean up user name if it has duplicates
+                    const name = (order.userId.name || '').trim();
+                    if (name) {
+                      const parts = name.split(/\s+/);
+                      const uniqueParts = [];
+                      parts.forEach(part => {
+                        if (part && !uniqueParts.some(existing => existing.toLowerCase() === part.toLowerCase())) {
+                          uniqueParts.push(part);
+                        }
+                      });
+                      return uniqueParts.join(' ');
+                    }
+                    return name;
+                  }
+                  const firstName = (order.guestInfo?.firstName || '').trim();
+                  const lastName = (order.guestInfo?.lastName || '').trim();
+                  
+                  // Remove duplicates within firstName or lastName
+                  const cleanFirstName = firstName ? firstName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
+                  const cleanLastName = lastName ? lastName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
+                  
+                  if (cleanFirstName && cleanLastName) {
+                    // If firstName already contains lastName, just return firstName
+                    if (cleanFirstName.toLowerCase().includes(cleanLastName.toLowerCase())) {
+                      return cleanFirstName;
+                    }
+                    // If lastName already contains firstName, just return lastName
+                    if (cleanLastName.toLowerCase().includes(cleanFirstName.toLowerCase())) {
+                      return cleanLastName;
+                    }
+                    // Normal case: combine them with a space
+                    return `${cleanFirstName} ${cleanLastName}`;
+                  }
+                  return cleanFirstName || cleanLastName || 'Guest Customer';
+                };
+
+                return (
+                  <div key={order._id} className="bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                    {/* Order Header */}
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
+                      <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-semibold text-gray-900">
-                            {order.userId 
-                              ? order.userId.name 
-                              : `${order.guestInfo?.firstName || ''} ${order.guestInfo?.lastName || ''}`.trim() || 'Guest Customer'
-                            }
-                          </p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}
+                          <p className="font-bold text-lg text-gray-900">Order #{order._id.slice(-8)}</p>
+                          <p className="text-sm text-gray-500 mt-1">Ordered: {new Date(order.createdAt).toLocaleDateString()}</p>
+                          <p className="text-sm text-gray-500">Shipped: {new Date(order.updatedAt).toLocaleDateString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</p>
+                          <p className="text-sm text-blue-600 font-medium mt-1">
+                            📦 {order.trackingNumber || "N/A"}
                           </p>
                         </div>
-                      </td>
-                      <td className="p-3">
-                        <p className="text-sm text-blue-600 font-medium">
-                          {order.trackingNumber || "N/A"}
-                        </p>
-                        {order.trackingNumber && (
-                          <p className="text-xs text-gray-500">Tracking added</p>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        <div className="text-sm text-gray-600 space-y-3">
+                      </div>
+                    </div>
+
+                    {/* Order Content */}
+                    <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Customer Details */}
+                      <div className="lg:col-span-1">
+                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer Details</h3>
+                        <div className="space-y-2">
+                          <p className="font-semibold text-gray-900">{getCustomerName()}</p>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p><span className="font-medium">📧 Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}</p>
+                            <p><span className="font-medium">📱 Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}</p>
+                          </div>
+                          {(order.guestInfo?.address || order.userId?.address) && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-xs font-semibold text-gray-700 mb-1">📍 Delivery Address:</p>
+                              <div className="text-xs text-gray-600 space-y-0.5">
+                                <p>{order.guestInfo?.address || order.userId?.address || 'N/A'}</p>
+                                {order.guestInfo?.postalCode && (
+                                  <p><span className="font-medium">Postal Code:</span> {order.guestInfo.postalCode}</p>
+                                )}
+                                {order.guestInfo?.country && (
+                                  <p><span className="font-medium">Country:</span> {order.guestInfo.country}</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Order Items */}
+                      <div className="lg:col-span-2">
+                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Order Items ({order.items.length})</h3>
+                        <div className="space-y-3">
                           {order.items.map((item, index) => {
                             // Get variant image and specs
                             const getVariantImage = () => {
@@ -856,42 +1002,53 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                             const variantSpecs = getVariantSpecs();
 
                             return (
-                              <div key={index} className="flex items-start gap-3 pb-2 border-b border-gray-100 last:border-b-0">
-                                <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                                  <img
-                                    src={variantImage}
-                                    alt={item.productId?.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-gray-900">{item.productId?.name}</p>
-                                  {variantSpecs && Object.keys(variantSpecs).length > 0 && (
-                                    <div className="mt-1 flex flex-wrap gap-1.5">
-                                      {Object.entries(variantSpecs).map(([key, value]) => (
-                                        <span key={key} className="text-xs text-gray-600">
-                                          <span className="font-medium capitalize">{key}:</span> {value}
-                                        </span>
-                                      ))}
+                              <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div className="flex items-start gap-4">
+                                  <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                                    <img
+                                      src={variantImage}
+                                      alt={item.productId?.name || item.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                    {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                                      <div className="mt-2 flex flex-wrap gap-2">
+                                        {Object.entries(variantSpecs).map(([key, value]) => (
+                                          <span key={key} className="text-xs bg-white px-2 py-1 rounded border border-gray-200 text-gray-700">
+                                            <span className="font-medium capitalize">{key}:</span> {value}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <div className="mt-2 flex items-center gap-4 text-sm">
+                                      <span className="text-gray-600">
+                                        <span className="font-medium">Quantity:</span> {item.quantity}
+                                      </span>
+                                      <span className="text-gray-600">
+                                        <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                      </span>
+                                      <span className="text-gray-700 font-semibold">
+                                        Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                      </span>
                                     </div>
-                                  )}
-                                  <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity}</p>
+                                    {item.sellerId && (
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        <span className="font-medium">Seller:</span> {item.sellerId.name}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             );
                           })}
                         </div>
-                      </td>
-                      <td className="p-3 text-sm font-semibold text-green-600">
-                        ${order.total.toFixed(2)}
-                      </td>
-                      <td className="p-3 text-sm text-gray-500">
-                        {new Date(order.updatedAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -915,18 +1072,46 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert("Order processed successfully! Customer notified for pickup.");
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Order Processed</p>
+            <p className="text-sm text-gray-600">Customer notified for pickup</p>
+          </div>
+        </div>
+      );
       setProcessingOrders(prev => ({ ...prev, [orderId]: false }));
       fetchAllData();
     } catch (error) {
       console.error("Error processing order:", error);
-      alert(error.response?.data?.message || "Error processing order");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Processing Failed</p>
+            <p className="text-sm text-gray-600">{error.response?.data?.message || "Error processing order"}</p>
+          </div>
+        </div>
+      );
       setProcessingOrders(prev => ({ ...prev, [orderId]: false }));
     }
   };
 
-  const pendingOrders = pickupOrders.filter(order => order.orderStatus === "Pending");
-  const processedOrders = pickupOrders.filter(order => order.orderStatus === "Processing");
+  const pendingOrders = pickupOrders
+    .filter(order => order.orderStatus === "Pending")
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
+  const processedOrders = pickupOrders
+    .filter(order => order.orderStatus === "Processing")
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
 
   return (
     <div className="space-y-6">
@@ -952,162 +1137,222 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
               <p>No pending pickup orders</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Order Details</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Customer Details</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Outlet</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Items</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Payment</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Amount</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingOrders.map((order) => (
-                    <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="p-3">
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-700">#{order._id.slice(-8)}</p>
-                          <p className="text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
+            <div className="space-y-4">
+              {pendingOrders.map((order) => {
+                // Fix name display - removes duplicates
+                const getCustomerName = () => {
+                  if (order.userId?.name) {
+                    // Clean up user name if it has duplicates
+                    const name = (order.userId.name || '').trim();
+                    if (name) {
+                      const parts = name.split(/\s+/);
+                      const uniqueParts = [];
+                      parts.forEach(part => {
+                        if (part && !uniqueParts.some(existing => existing.toLowerCase() === part.toLowerCase())) {
+                          uniqueParts.push(part);
+                        }
+                      });
+                      return uniqueParts.join(' ');
+                    }
+                    return name;
+                  }
+                  const firstName = (order.guestInfo?.firstName || '').trim();
+                  const lastName = (order.guestInfo?.lastName || '').trim();
+                  
+                  // Remove duplicates within firstName or lastName
+                  const cleanFirstName = firstName ? firstName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
+                  const cleanLastName = lastName ? lastName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
+                  
+                  if (cleanFirstName && cleanLastName) {
+                    // If firstName already contains lastName, just return firstName
+                    if (cleanFirstName.toLowerCase().includes(cleanLastName.toLowerCase())) {
+                      return cleanFirstName;
+                    }
+                    // If lastName already contains firstName, just return lastName
+                    if (cleanLastName.toLowerCase().includes(cleanFirstName.toLowerCase())) {
+                      return cleanLastName;
+                    }
+                    // Normal case: combine them with a space
+                    return `${cleanFirstName} ${cleanLastName}`;
+                  }
+                  return cleanFirstName || cleanLastName || 'Guest Customer';
+                };
+
+                return (
+                  <div key={order._id} className="bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                    {/* Order Header */}
+                    <div className="bg-gradient-to-r from-amber-50 to-amber-100 px-6 py-4 border-b border-gray-200">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-bold text-lg text-gray-900">Order #{order._id.slice(-8)}</p>
+                          <p className="text-sm text-gray-500 mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
                         </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="text-sm text-gray-600">
-                          <p className="font-semibold text-gray-900 mb-1">
-                            {order.userId 
-                              ? order.userId.name 
-                              : `${order.guestInfo?.firstName || ''} ${order.guestInfo?.lastName || ''}`.trim() || 'Guest Customer'
-                            }
-                          </p>
-                          <div className="space-y-0.5">
-                            <p className="text-xs text-gray-600">
-                              <span className="font-medium">Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              <span className="font-medium">Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}
-                            </p>
+                        <div className="flex items-center gap-3">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            order.paymentStatus === 'Paid' || order.paymentStatus === 'paid'
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {order.paymentStatus === 'Paid' || order.paymentStatus === 'paid' ? '✅ Paid' : '⏳ Not Paid'}
+                          </span>
+                          <span className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Content */}
+                    <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Customer Details */}
+                      <div className="lg:col-span-1">
+                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer Details</h3>
+                        <div className="space-y-2">
+                          <p className="font-semibold text-gray-900">{getCustomerName()}</p>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p><span className="font-medium">📧 Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}</p>
+                            <p><span className="font-medium">📱 Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}</p>
                             {order.guestInfo?.gender && (
-                              <p className="text-xs text-gray-600 capitalize">
-                                <span className="font-medium">Gender:</span> {order.guestInfo.gender}
-                              </p>
+                              <p className="capitalize"><span className="font-medium">Gender:</span> {order.guestInfo.gender}</p>
                             )}
                           </div>
-                        </div>
-                      </td>
-                      <td className="p-3 text-sm text-gray-600">
-                        {order.outletId ? (
-                          <div>
-                            <p className="font-medium">{order.outletId.name}</p>
-                            <p className="text-xs">{order.outletId.location}</p>
-                            <p className="text-xs text-gray-500">{order.outletId.address}</p>
-                            {order.outletId.phone && (
-                              <p className="text-xs text-blue-600">📞 {order.outletId.phone}</p>
-                            )}
-                          </div>
-                        ) : (
-                          "N/A"
-                        )}
-                      </td>
-                      <td className="p-3">
-                        <div className="text-sm text-gray-600 space-y-3">
-                          {order.items.map((item, index) => {
-                            // Get variant image and specs
-                            const getVariantImage = () => {
-                              if (item.variantId && item.productId?.variants) {
-                                const variant = item.productId.variants.find(
-                                  v => v._id?.toString() === item.variantId?.toString()
-                                );
-                                if (variant && variant.images && variant.images.length > 0) {
-                                  return variant.images[0];
-                                }
-                              }
-                              return item.productId?.images?.[0] || "https://via.placeholder.com/60";
-                            };
-
-                            const getVariantSpecs = () => {
-                              if (item.variantId && item.productId?.variants) {
-                                const variant = item.productId.variants.find(
-                                  v => v._id?.toString() === item.variantId?.toString()
-                                );
-                                if (variant && variant.specs) {
-                                  return variant.specs instanceof Map 
-                                    ? Object.fromEntries(variant.specs) 
-                                    : variant.specs;
-                                }
-                              }
-                              return null;
-                            };
-
-                            const variantImage = getVariantImage();
-                            const variantSpecs = getVariantSpecs();
-
-                            return (
-                              <div key={index} className="flex items-start gap-3 pb-2 border-b border-gray-100 last:border-b-0">
-                                <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                                  <img
-                                    src={variantImage}
-                                    alt={item.productId?.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-gray-900">{item.productId?.name}</p>
-                                  {variantSpecs && Object.keys(variantSpecs).length > 0 && (
-                                    <div className="mt-1 flex flex-wrap gap-1.5">
-                                      {Object.entries(variantSpecs).map(([key, value]) => (
-                                        <span key={key} className="text-xs text-gray-600">
-                                          <span className="font-medium capitalize">{key}:</span> {value}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                  <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
-                                  {item.sellerId && (
-                                    <p className="text-xs text-gray-500">Seller: {item.sellerId.name}</p>
-                                  )}
-                                </div>
+                          {(order.guestInfo?.address || order.userId?.address) && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-xs font-semibold text-gray-700 mb-1">📍 Address:</p>
+                              <div className="text-xs text-gray-600 space-y-0.5">
+                                <p>{order.guestInfo?.address || order.userId?.address || 'N/A'}</p>
+                                {order.guestInfo?.postalCode && (
+                                  <p><span className="font-medium">Postal Code:</span> {order.guestInfo.postalCode}</p>
+                                )}
+                                {order.guestInfo?.country && (
+                                  <p><span className="font-medium">Country:</span> {order.guestInfo.country}</p>
+                                )}
                               </div>
-                            );
-                          })}
+                            </div>
+                          )}
                         </div>
-                      </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          order.paymentStatus === 'Paid' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {order.paymentStatus}
-                        </span>
-                        <p className="text-xs text-gray-500 mt-1">{order.paymentMethod}</p>
-                      </td>
-                      <td className="p-3 text-sm font-semibold text-green-600">
-                        ${order.total.toFixed(2)}
-                      </td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => processOrder(order._id)}
-                          disabled={processingOrders[order._id]}
-                          className="bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {processingOrders[order._id] ? "Processing..." : "Ready for Pickup"}
-                        </button>
-                        <p className="text-xs text-gray-500 mt-1 text-center">
-                          Notify customer
-                        </p>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+
+                      {/* Outlet & Items */}
+                      <div className="lg:col-span-2 space-y-4">
+                        {/* Outlet Details */}
+                        <div>
+                          <h3 className="font-semibold text-gray-900 mb-2 pb-2 border-b border-gray-200">Pickup Outlet</h3>
+                          {order.outletId ? (
+                            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                              <p className="font-semibold text-gray-900">{order.outletId.name}</p>
+                              <p className="text-sm text-gray-600 mt-1">{order.outletId.location}</p>
+                              <p className="text-xs text-gray-500">{order.outletId.address}</p>
+                              {order.outletId.phone && (
+                                <p className="text-xs text-blue-600 mt-1">📞 {order.outletId.phone}</p>
+                              )}
+                              {order.outletId.email && (
+                                <p className="text-xs text-blue-600">✉️ {order.outletId.email}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 text-sm">N/A</p>
+                          )}
+                        </div>
+
+                        {/* Order Items */}
+                        <div>
+                          <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Order Items ({order.items.length})</h3>
+                          <div className="space-y-3">
+                            {order.items.map((item, index) => {
+                              // Get variant image and specs
+                              const getVariantImage = () => {
+                                if (item.variantId && item.productId?.variants) {
+                                  const variant = item.productId.variants.find(
+                                    v => v._id?.toString() === item.variantId?.toString()
+                                  );
+                                  if (variant && variant.images && variant.images.length > 0) {
+                                    return variant.images[0];
+                                  }
+                                }
+                                return item.productId?.images?.[0] || "https://via.placeholder.com/60";
+                              };
+
+                              const getVariantSpecs = () => {
+                                if (item.variantId && item.productId?.variants) {
+                                  const variant = item.productId.variants.find(
+                                    v => v._id?.toString() === item.variantId?.toString()
+                                  );
+                                  if (variant && variant.specs) {
+                                    return variant.specs instanceof Map 
+                                      ? Object.fromEntries(variant.specs) 
+                                      : variant.specs;
+                                  }
+                                }
+                                return null;
+                              };
+
+                              const variantImage = getVariantImage();
+                              const variantSpecs = getVariantSpecs();
+
+                              return (
+                                <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                  <div className="flex items-start gap-4">
+                                    <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                                      <img
+                                        src={variantImage}
+                                        alt={item.productId?.name || item.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                      {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                          {Object.entries(variantSpecs).map(([key, value]) => (
+                                            <span key={key} className="text-xs bg-white px-2 py-1 rounded border border-gray-200 text-gray-700">
+                                              <span className="font-medium capitalize">{key}:</span> {value}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                      <div className="mt-2 flex items-center gap-4 text-sm">
+                                        <span className="text-gray-600">
+                                          <span className="font-medium">Quantity:</span> {item.quantity}
+                                        </span>
+                                        <span className="text-gray-600">
+                                          <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                        </span>
+                                        <span className="text-gray-700 font-semibold">
+                                          Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                        </span>
+                                      </div>
+                                      {item.sellerId && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          <span className="font-medium">Seller:</span> {item.sellerId.name}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Actions */}
+                    <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                      <button
+                        onClick={() => processOrder(order._id)}
+                        disabled={processingOrders[order._id]}
+                        className="bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {processingOrders[order._id] ? "Processing..." : "Ready for Pickup - Notify Customer"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Ready for Pickup Orders Table */}
+        {/* Ready for Pickup Orders */}
         <div>
           <h2 className="text-lg font-semibold mb-4 text-gray-800">
             Ready for Pickup ({processedOrders.length})
@@ -1118,135 +1363,200 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
               <p>No orders ready for pickup</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Order Details</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Customer</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Outlet Details</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Items</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Amount</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Ready Since</th>
-                    <th className="p-3 text-left text-sm font-semibold text-gray-600">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {processedOrders.map((order) => (
-                    <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="p-3">
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-700">#{order._id.slice(-8)}</p>
-                          <p className="text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
-                        </div>
-                      </td>
-                      <td className="p-3 text-sm text-gray-600">
+            <div className="space-y-4">
+              {processedOrders.map((order) => {
+                // Fix name display - removes duplicates
+                const getCustomerName = () => {
+                  if (order.userId?.name) {
+                    // Clean up user name if it has duplicates
+                    const name = (order.userId.name || '').trim();
+                    if (name) {
+                      const parts = name.split(/\s+/);
+                      const uniqueParts = [];
+                      parts.forEach(part => {
+                        if (part && !uniqueParts.some(existing => existing.toLowerCase() === part.toLowerCase())) {
+                          uniqueParts.push(part);
+                        }
+                      });
+                      return uniqueParts.join(' ');
+                    }
+                    return name;
+                  }
+                  const firstName = (order.guestInfo?.firstName || '').trim();
+                  const lastName = (order.guestInfo?.lastName || '').trim();
+                  
+                  // Remove duplicates within firstName or lastName
+                  const cleanFirstName = firstName ? firstName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
+                  const cleanLastName = lastName ? lastName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
+                  
+                  if (cleanFirstName && cleanLastName) {
+                    // If firstName already contains lastName, just return firstName
+                    if (cleanFirstName.toLowerCase().includes(cleanLastName.toLowerCase())) {
+                      return cleanFirstName;
+                    }
+                    // If lastName already contains firstName, just return lastName
+                    if (cleanLastName.toLowerCase().includes(cleanFirstName.toLowerCase())) {
+                      return cleanLastName;
+                    }
+                    // Normal case: combine them with a space
+                    return `${cleanFirstName} ${cleanLastName}`;
+                  }
+                  return cleanFirstName || cleanLastName || 'Guest Customer';
+                };
+
+                return (
+                  <div key={order._id} className="bg-white border-2 border-green-200 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                    {/* Order Header */}
+                    <div className="bg-gradient-to-r from-green-50 to-green-100 px-6 py-4 border-b border-gray-200">
+                      <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-semibold text-gray-900">
-                            {order.userId 
-                              ? order.userId.name 
-                              : `${order.guestInfo?.firstName || ''} ${order.guestInfo?.lastName || ''}`.trim() || 'Guest Customer'
-                            }
-                          </p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}
-                          </p>
+                          <p className="font-bold text-lg text-gray-900">Order #{order._id.slice(-8)}</p>
+                          <p className="text-sm text-gray-500 mt-1">Ordered: {new Date(order.createdAt).toLocaleDateString()}</p>
+                          <p className="text-sm text-gray-500">Ready: {new Date(order.updatedAt).toLocaleDateString()}</p>
                         </div>
-                      </td>
-                      <td className="p-3 text-sm text-gray-600">
-                        {order.outletId && (
-                          <div>
-                            <p className="font-medium">{order.outletId.name}</p>
-                            <p className="text-xs">{order.outletId.location}</p>
-                            <p className="text-xs text-gray-500">{order.outletId.address}</p>
-                            {order.outletId.phone && (
-                              <p className="text-xs text-blue-600">📞 {order.outletId.phone}</p>
-                            )}
-                            {order.outletId.email && (
-                              <p className="text-xs text-blue-600">✉️ {order.outletId.email}</p>
-                            )}
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</p>
+                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium mt-2 inline-block">
+                            ✅ Ready for Pickup
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Content */}
+                    <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Customer Details */}
+                      <div className="lg:col-span-1">
+                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer Details</h3>
+                        <div className="space-y-2">
+                          <p className="font-semibold text-gray-900">{getCustomerName()}</p>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p><span className="font-medium">📧 Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}</p>
+                            <p><span className="font-medium">📱 Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}</p>
                           </div>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        <div className="text-sm text-gray-600 space-y-3">
-                          {order.items.map((item, index) => {
-                            // Get variant image and specs
-                            const getVariantImage = () => {
-                              if (item.variantId && item.productId?.variants) {
-                                const variant = item.productId.variants.find(
-                                  v => v._id?.toString() === item.variantId?.toString()
-                                );
-                                if (variant && variant.images && variant.images.length > 0) {
-                                  return variant.images[0];
-                                }
-                              }
-                              return item.productId?.images?.[0] || "https://via.placeholder.com/60";
-                            };
-
-                            const getVariantSpecs = () => {
-                              if (item.variantId && item.productId?.variants) {
-                                const variant = item.productId.variants.find(
-                                  v => v._id?.toString() === item.variantId?.toString()
-                                );
-                                if (variant && variant.specs) {
-                                  return variant.specs instanceof Map 
-                                    ? Object.fromEntries(variant.specs) 
-                                    : variant.specs;
-                                }
-                              }
-                              return null;
-                            };
-
-                            const variantImage = getVariantImage();
-                            const variantSpecs = getVariantSpecs();
-
-                            return (
-                              <div key={index} className="flex items-start gap-3 pb-2 border-b border-gray-100 last:border-b-0">
-                                <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                                  <img
-                                    src={variantImage}
-                                    alt={item.productId?.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-gray-900">{item.productId?.name}</p>
-                                  {variantSpecs && Object.keys(variantSpecs).length > 0 && (
-                                    <div className="mt-1 flex flex-wrap gap-1.5">
-                                      {Object.entries(variantSpecs).map(([key, value]) => (
-                                        <span key={key} className="text-xs text-gray-600">
-                                          <span className="font-medium capitalize">{key}:</span> {value}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                  <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity}</p>
-                                </div>
+                          {(order.guestInfo?.address || order.userId?.address) && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-xs font-semibold text-gray-700 mb-1">📍 Address:</p>
+                              <div className="text-xs text-gray-600 space-y-0.5">
+                                <p>{order.guestInfo?.address || order.userId?.address || 'N/A'}</p>
+                                {order.guestInfo?.postalCode && (
+                                  <p><span className="font-medium">Postal Code:</span> {order.guestInfo.postalCode}</p>
+                                )}
+                                {order.guestInfo?.country && (
+                                  <p><span className="font-medium">Country:</span> {order.guestInfo.country}</p>
+                                )}
                               </div>
-                            );
-                          })}
+                            </div>
+                          )}
                         </div>
-                      </td>
-                      <td className="p-3 text-sm font-semibold text-green-600">
-                        ${order.total.toFixed(2)}
-                      </td>
-                      <td className="p-3 text-sm text-gray-500">
-                        {new Date(order.updatedAt).toLocaleDateString()}
-                      </td>
-                      <td className="p-3">
-                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                          Ready for Pickup
-                        </span>
-                        <p className="text-xs text-gray-500 mt-1">Customer notified</p>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+
+                      {/* Outlet & Items */}
+                      <div className="lg:col-span-2 space-y-4">
+                        {/* Outlet Details */}
+                        <div>
+                          <h3 className="font-semibold text-gray-900 mb-2 pb-2 border-b border-gray-200">Pickup Outlet</h3>
+                          {order.outletId ? (
+                            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                              <p className="font-semibold text-gray-900">{order.outletId.name}</p>
+                              <p className="text-sm text-gray-600 mt-1">{order.outletId.location}</p>
+                              <p className="text-xs text-gray-500">{order.outletId.address}</p>
+                              {order.outletId.phone && (
+                                <p className="text-xs text-blue-600 mt-1">📞 {order.outletId.phone}</p>
+                              )}
+                              {order.outletId.email && (
+                                <p className="text-xs text-blue-600">✉️ {order.outletId.email}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 text-sm">N/A</p>
+                          )}
+                        </div>
+
+                        {/* Order Items */}
+                        <div>
+                          <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Order Items ({order.items.length})</h3>
+                          <div className="space-y-3">
+                            {order.items.map((item, index) => {
+                              // Get variant image and specs
+                              const getVariantImage = () => {
+                                if (item.variantId && item.productId?.variants) {
+                                  const variant = item.productId.variants.find(
+                                    v => v._id?.toString() === item.variantId?.toString()
+                                  );
+                                  if (variant && variant.images && variant.images.length > 0) {
+                                    return variant.images[0];
+                                  }
+                                }
+                                return item.productId?.images?.[0] || "https://via.placeholder.com/60";
+                              };
+
+                              const getVariantSpecs = () => {
+                                if (item.variantId && item.productId?.variants) {
+                                  const variant = item.productId.variants.find(
+                                    v => v._id?.toString() === item.variantId?.toString()
+                                  );
+                                  if (variant && variant.specs) {
+                                    return variant.specs instanceof Map 
+                                      ? Object.fromEntries(variant.specs) 
+                                      : variant.specs;
+                                  }
+                                }
+                                return null;
+                              };
+
+                              const variantImage = getVariantImage();
+                              const variantSpecs = getVariantSpecs();
+
+                              return (
+                                <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                  <div className="flex items-start gap-4">
+                                    <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                                      <img
+                                        src={variantImage}
+                                        alt={item.productId?.name || item.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                      {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                          {Object.entries(variantSpecs).map(([key, value]) => (
+                                            <span key={key} className="text-xs bg-white px-2 py-1 rounded border border-gray-200 text-gray-700">
+                                              <span className="font-medium capitalize">{key}:</span> {value}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                      <div className="mt-2 flex items-center gap-4 text-sm">
+                                        <span className="text-gray-600">
+                                          <span className="font-medium">Quantity:</span> {item.quantity}
+                                        </span>
+                                        <span className="text-gray-600">
+                                          <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                        </span>
+                                        <span className="text-gray-700 font-semibold">
+                                          Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                        </span>
+                                      </div>
+                                      {item.sellerId && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          <span className="font-medium">Seller:</span> {item.sellerId.name}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1264,10 +1574,34 @@ const SellerFormsManagement = ({ forms, fetchAllData, token }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchAllData();
-      alert("Form marked as processed!");
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Form Processed</p>
+            <p className="text-sm text-gray-600">Form marked as processed</p>
+          </div>
+        </div>
+      );
     } catch (err) {
       console.error("Error processing form:", err);
-      alert("Error processing form");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Processing Failed</p>
+            <p className="text-sm text-gray-600">Error processing form</p>
+          </div>
+        </div>
+      );
     }
   };
 
@@ -1398,10 +1732,34 @@ const SellerRequestsManagement = ({ sellers, fetchAllData, token }) => {
         }
       );
       fetchAllData();
-      alert("Seller approved successfully!");
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Seller Approved</p>
+            <p className="text-sm text-gray-600">Seller approved successfully</p>
+          </div>
+        </div>
+      );
     } catch (err) {
       console.log(err);
-      alert("Error approving seller");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Approval Failed</p>
+            <p className="text-sm text-gray-600">Error approving seller</p>
+          </div>
+        </div>
+      );
     }
   };
 
@@ -1415,10 +1773,34 @@ const SellerRequestsManagement = ({ sellers, fetchAllData, token }) => {
         }
       );
       fetchAllData();
-      alert("Seller rejected successfully!");
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Seller Rejected</p>
+            <p className="text-sm text-gray-600">Seller rejected successfully</p>
+          </div>
+        </div>
+      );
     } catch (err) {
       console.log(err);
-      alert("Error rejecting seller");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Rejection Failed</p>
+            <p className="text-sm text-gray-600">Error rejecting seller</p>
+          </div>
+        </div>
+      );
     }
   };
 
@@ -1487,8 +1869,12 @@ const SellerRequestsManagement = ({ sellers, fetchAllData, token }) => {
 
 // Fixed Seller Candidates Orders
 const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
-  const pendingOrders = orders.filter(order => order.orderStatus === "Pending");
-  const processedOrders = orders.filter(order => order.orderStatus === "Processing");
+  const pendingOrders = orders
+    .filter(order => order.orderStatus === "Pending")
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
+  const processedOrders = orders
+    .filter(order => order.orderStatus === "Processing")
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
 
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
@@ -1542,10 +1928,17 @@ const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
                         ))[0]}
                     </td>
                     <td className="p-3 text-sm text-gray-600">
-                      {order.userId 
-                        ? order.userId.name 
-                        : `${order.guestInfo?.firstName} ${order.guestInfo?.lastName}`
-                      }
+                      {(() => {
+                        if (order.userId?.name) {
+                          return order.userId.name;
+                        }
+                        const firstName = (order.guestInfo?.firstName || '').trim();
+                        const lastName = (order.guestInfo?.lastName || '').trim();
+                        if (firstName && lastName) {
+                          return `${firstName} ${lastName}`;
+                        }
+                        return firstName || lastName || 'Guest Customer';
+                      })()}
                     </td>
                     <td className="p-3 text-sm text-gray-600">
                       {order.items.filter(item => item.sellerId?.role === "seller_candidate").length} item(s)
@@ -1637,6 +2030,7 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
   const [formData, setFormData] = useState({
     name: "", location: "", address: "", phone: "", email: ""
   });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, outletId: null });
 
   const resetForm = () => {
     setFormData({ name: "", location: "", address: "", phone: "", email: "" });
@@ -1662,12 +2056,36 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
       await axios.post(`${import.meta.env.VITE_API_URL}/outlets`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      alert("Outlet created successfully!");
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Outlet Created</p>
+            <p className="text-sm text-gray-600">Outlet created successfully</p>
+          </div>
+        </div>
+      );
       resetForm();
       fetchAllData();
     } catch (error) {
       console.error("Error creating outlet:", error);
-      alert("Failed to create outlet");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Creation Failed</p>
+            <p className="text-sm text-gray-600">Failed to create outlet</p>
+          </div>
+        </div>
+      );
     }
   };
 
@@ -1677,28 +2095,79 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
       await axios.put(`${import.meta.env.VITE_API_URL}/outlets/${editingOutlet}`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      alert("Outlet updated successfully!");
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Outlet Updated</p>
+            <p className="text-sm text-gray-600">Outlet updated successfully</p>
+          </div>
+        </div>
+      );
       resetForm();
       fetchAllData();
     } catch (error) {
       console.error("Error updating outlet:", error);
-      alert("Failed to update outlet");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Update Failed</p>
+            <p className="text-sm text-gray-600">Failed to update outlet</p>
+          </div>
+        </div>
+      );
     }
   };
 
-  const deleteOutlet = async (outletId) => {
-    if (!window.confirm("Are you sure you want to delete this outlet?")) {
-      return;
-    }
+  const handleDeleteClick = (outletId) => {
+    setDeleteModal({ isOpen: true, outletId });
+  };
+
+  const deleteOutlet = async () => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/outlets/${outletId}`, {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/outlets/${deleteModal.outletId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      alert("Outlet deleted successfully!");
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Outlet Deleted</p>
+            <p className="text-sm text-gray-600">Outlet deleted successfully</p>
+          </div>
+        </div>
+      );
+      setDeleteModal({ isOpen: false, outletId: null });
       fetchAllData();
     } catch (error) {
       console.error("Error deleting outlet:", error);
-      alert("Failed to delete outlet");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Deletion Failed</p>
+            <p className="text-sm text-gray-600">Failed to delete outlet</p>
+          </div>
+        </div>
+      );
+      setDeleteModal({ isOpen: false, outletId: null });
     }
   };
 
@@ -1792,7 +2261,7 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
                   ✏️ Edit
                 </button>
                 <button
-                  onClick={() => deleteOutlet(outlet._id)}
+                  onClick={() => handleDeleteClick(outlet._id)}
                   className="text-red-600 hover:text-red-800 text-sm font-medium"
                   title="Delete"
                 >
@@ -1807,6 +2276,17 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
           </div>
         ))}
       </div>
+
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, outletId: null })}
+        onConfirm={deleteOutlet}
+        title="Delete Outlet"
+        message="Are you sure you want to delete this outlet? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   );
 };
@@ -1816,17 +2296,48 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [variantQuantities, setVariantQuantities] = useState({});
   const [savingQuantities, setSavingQuantities] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, productId: null });
 
-  const deleteProduct = async (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        await axios.delete(`${import.meta.env.VITE_API_URL}/products/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        fetchAllData();
-      } catch (err) {
-        console.log(err);
-      }
+  const handleDeleteClick = (productId) => {
+    setDeleteModal({ isOpen: true, productId });
+  };
+
+  const deleteProduct = async () => {
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/products/${deleteModal.productId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Product Deleted</p>
+            <p className="text-sm text-gray-600">Product deleted successfully</p>
+          </div>
+        </div>
+      );
+      setDeleteModal({ isOpen: false, productId: null });
+      fetchAllData();
+    } catch (err) {
+      console.log(err);
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Deletion Failed</p>
+            <p className="text-sm text-gray-600">Failed to delete product</p>
+          </div>
+        </div>
+      );
+      setDeleteModal({ isOpen: false, productId: null });
     }
   };
 
@@ -1870,10 +2381,34 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
       setVariantQuantities({});
       
       // Show success message
-      alert("Quantities updated successfully!");
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Quantities Updated</p>
+            <p className="text-sm text-gray-600">Quantities updated successfully</p>
+          </div>
+        </div>
+      );
     } catch (err) {
       console.error("Error updating quantities:", err);
-      alert("Failed to update quantities. Please try again.");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Update Failed</p>
+            <p className="text-sm text-gray-600">Failed to update quantities. Please try again</p>
+          </div>
+        </div>
+      );
     } finally {
       setSavingQuantities(false);
     }
@@ -1969,7 +2504,7 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
                       Edit
                     </button>
                     <button
-                      onClick={() => deleteProduct(product._id)}
+                      onClick={() => handleDeleteClick(product._id)}
                       className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
                     >
                       Delete
@@ -2057,6 +2592,17 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, productId: null })}
+        onConfirm={deleteProduct}
+        title="Delete Product"
+        message="Are you sure you want to delete this product? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   );
 };
@@ -2074,10 +2620,34 @@ const FeaturedProductsManagement = ({ products, fetchAllData, token }) => {
 
       // Update local state
       fetchAllData();
-      alert(res.data.message);
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Featured Status Updated</p>
+            <p className="text-sm text-gray-600">{res.data.message}</p>
+          </div>
+        </div>
+      );
     } catch (error) {
       console.error("Error toggling featured:", error);
-      alert("Error updating featured status");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Update Failed</p>
+            <p className="text-sm text-gray-600">Error updating featured status</p>
+          </div>
+        </div>
+      );
     }
   };
 

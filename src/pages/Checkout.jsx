@@ -3,7 +3,8 @@ import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import Breadcrumb from "../components/Breadcrumb"; // Add this import
+import Breadcrumb from "../components/Breadcrumb";
+import toast from "react-hot-toast";
 
 // Country list
 const COUNTRIES = [
@@ -122,7 +123,19 @@ export default function Checkout() {
 
   const handleStripeCheckout = async () => {
     if (!validateForm()) {
-      alert("Please fill all required fields correctly");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Validation Error</p>
+            <p className="text-sm text-gray-600">Please fill all required fields correctly</p>
+          </div>
+        </div>
+      );
       return;
     }
 
@@ -172,7 +185,19 @@ export default function Checkout() {
       window.location.href = res.data.url;
     } catch (error) {
       console.error("Stripe checkout failed:", error);
-      alert(error.response?.data?.message || "Checkout failed");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Checkout Failed</p>
+            <p className="text-sm text-gray-600">{error.response?.data?.message || "Checkout failed"}</p>
+          </div>
+        </div>
+      );
     } finally {
       setLoading(false);
     }
@@ -180,7 +205,19 @@ export default function Checkout() {
 
   const handlePickupOrder = async () => {
     if (!validateForm()) {
-      alert("Please fill all required fields correctly");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Validation Error</p>
+            <p className="text-sm text-gray-600">Please fill all required fields correctly</p>
+          </div>
+        </div>
+      );
       return;
     }
 
@@ -244,7 +281,19 @@ export default function Checkout() {
       navigate("/success");
     } catch (error) {
       console.error("Pickup order failed:", error);
-      alert(error.response?.data?.message || "Order failed");
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Order Failed</p>
+            <p className="text-sm text-gray-600">{error.response?.data?.message || "Order failed"}</p>
+          </div>
+        </div>
+      );
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function SellToCompany() {
   const { user } = useContext(AuthContext);
@@ -76,7 +77,19 @@ export default function SellToCompany() {
       );
       
       console.log("Form submitted:", res.data);
-      alert("Form submitted successfully!");
+      toast.success(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Form Submitted</p>
+            <p className="text-sm text-gray-600">Form submitted successfully</p>
+          </div>
+        </div>
+      );
       setProductName("");
       setQuantity("");
       setPrice("");
@@ -85,7 +98,19 @@ export default function SellToCompany() {
       console.error("Form submission error:", err);
       const errorMsg = err.response?.data?.message || "Error submitting form";
       setError(errorMsg);
-      alert(errorMsg);
+      toast.error(
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Submission Failed</p>
+            <p className="text-sm text-gray-600">{errorMsg}</p>
+          </div>
+        </div>
+      );
     } finally {
       setLoading(false);
     }
