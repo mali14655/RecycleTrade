@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import Breadcrumb from "../components/Breadcrumb";
@@ -27,20 +27,28 @@ const Products = () => {
     sortBy: 'featured'
   });
 
-  // Pagination
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 12;
+  
+  // Track previous filter values to detect actual filter changes
+  const prevFiltersRef = useRef({
+    search: filters.search,
+    category: filters.category,
+    minPrice: filters.minPrice,
+    maxPrice: filters.maxPrice
+  });
 
-  // Debounced fetch function
-  const fetchProducts = useCallback(async () => {
+  // Fetch function without useCallback to avoid dependency issues
+  const fetchProducts = async (currentFilters) => {
     try {
       setLoading(true);
       const params = {};
       
-      if (filters.search) params.search = filters.search;
-      if (filters.category) params.category = filters.category;
-      if (filters.minPrice) params.minPrice = filters.minPrice;
-      if (filters.maxPrice) params.maxPrice = filters.maxPrice;
+      if (currentFilters.search) params.search = currentFilters.search;
+      if (currentFilters.category) params.category = currentFilters.category;
+      if (currentFilters.minPrice) params.minPrice = currentFilters.minPrice;
+      if (currentFilters.maxPrice) params.maxPrice = currentFilters.maxPrice;
 
       console.log("Fetching with params:", params);
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/products`, { params });
@@ -51,7 +59,7 @@ const Products = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters.search, filters.category, filters.minPrice, filters.maxPrice]);
+  };
 
   // Update URL when filters change (without triggering fetch)
   useEffect(() => {
@@ -72,14 +80,42 @@ const Products = () => {
     }
   }, [heroCategory]);
 
-  // Debounced fetch effect
+  // Track if this is the initial mount
+  const isInitialMount = useRef(true);
+
+  // Main effect for fetching products and handling page reset
   useEffect(() => {
+    const filtersChanged = 
+      prevFiltersRef.current.search !== filters.search ||
+      prevFiltersRef.current.category !== filters.category ||
+      prevFiltersRef.current.minPrice !== filters.minPrice ||
+      prevFiltersRef.current.maxPrice !== filters.maxPrice;
+
+    // Reset to page 1 when filters actually change (not on initial mount)
+    if (filtersChanged && !isInitialMount.current) {
+      setCurrentPage(1);
+    }
+
+    // Update ref with current filter values
+    prevFiltersRef.current = {
+      search: filters.search,
+      category: filters.category,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice
+    };
+
+    // Mark initial mount as complete
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    }
+
+    // Debounced fetch - effect only runs when filter values change, so we always fetch
     const timeoutId = setTimeout(() => {
-      fetchProducts();
-    }, 300); // 300ms debounce to prevent continuous fetching
+      fetchProducts(filters);
+    }, 300);
     
     return () => clearTimeout(timeoutId);
-  }, [fetchProducts]);
+  }, [filters.search, filters.category, filters.minPrice, filters.maxPrice]); // Depend on individual values, NOT the entire filters object
 
   // Handle category change
   const handleCategoryChange = (category) => {
@@ -87,7 +123,6 @@ const Products = () => {
       ...prev, 
       category: category 
     }));
-    setCurrentPage(1);
   };
 
   // Handle price change
@@ -97,13 +132,11 @@ const Products = () => {
       minPrice: priceRange.min > 0 ? priceRange.min.toString() : '',
       maxPrice: priceRange.max < 10000 ? priceRange.max.toString() : ''
     }));
-    setCurrentPage(1);
   };
 
   // Handle search change
   const handleSearchChange = (search) => {
     setFilters(prev => ({ ...prev, search }));
-    setCurrentPage(1);
   };
 
   // Handle sort change
@@ -132,14 +165,22 @@ const Products = () => {
   // Handle page change
   const handlePageChange = (page) => {
     setCurrentPage(page);
+    // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Calculate pagination
+  const totalPages = Math.ceil(products.length / productsPerPage);
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
-  const totalPages = Math.ceil(products.length / productsPerPage);
+
+  // Safety check: Only reset if current page is beyond available pages after products load
+  useEffect(() => {
+    if (!loading && products.length > 0 && totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [loading, products.length, totalPages, currentPage]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -194,24 +235,23 @@ const Products = () => {
                     productsPerPage={productsPerPage}
                   />
                 )}
-              </>
-            )}
 
-            {!loading && products.length === 0 && (
-              <div className="text-center py-12">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">No products found</h3>
-                <p className="text-gray-600">Try adjusting your filters or search terms.</p>
-              </div>
+                {!loading && products.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">No products found</h3>
+                    <p className="text-gray-600">Try adjusting your filters or search terms.</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
-
     </div>
   );
 };
