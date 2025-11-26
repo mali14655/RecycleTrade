@@ -560,6 +560,13 @@ const DashboardOverview = ({ user, dashboardData, data }) => {
 const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
   const [processingOrders, setProcessingOrders] = useState({});
   const [trackingNumbers, setTrackingNumbers] = useState({});
+  // NEW: State for selected processed orders
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  // NEW: Modal states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const onlineOrders = orders.filter(order => 
     order.deliveryMethod === "delivery" && order.paymentMethod === "Stripe"
@@ -634,6 +641,102 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
       ...prev,
       [orderId]: value
     }));
+  };
+
+  // NEW: Handle checkbox change
+  const handleCheckboxChange = (orderId) => {
+    setSelectedOrders(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  // NEW: Handle select all
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedOrders(processedOrders.map(order => order._id));
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  // NEW: Export PDF
+  const handleExportPDF = () => {
+    if (processedOrders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+    setShowExportModal(true);
+  };
+
+  const confirmExportPDF = async () => {
+    try {
+      setIsExporting(true);
+      setShowExportModal(false);
+      const orderIds = selectedOrders.length > 0 ? selectedOrders : processedOrders.map(o => o._id);
+      
+      // Build query string with multiple orderIds parameters
+      const params = new URLSearchParams();
+      orderIds.forEach(id => params.append('orderIds', id));
+      
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/orders/processed/export-pdf?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: 'blob'
+        }
+      );
+
+      // Create blob and download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `processed-orders-${Date.now()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success(`PDF exported successfully with ${orderIds.length} order(s)`);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Failed to export PDF. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // NEW: Delete selected orders
+  const handleDeleteSelected = () => {
+    if (selectedOrders.length === 0) {
+      toast.error("Please select at least one order to delete");
+      return;
+    }
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteOrders = async () => {
+    try {
+      setIsDeleting(true);
+      setShowDeleteModal(false);
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/orders/processed/bulk-delete`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          data: { orderIds: selectedOrders }
+        }
+      );
+
+      toast.success(`Successfully deleted ${selectedOrders.length} order(s)`);
+      setSelectedOrders([]);
+      fetchAllData();
+    } catch (error) {
+      console.error("Error deleting orders:", error);
+      toast.error(error.response?.data?.message || "Failed to delete orders. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const pendingOrders = onlineOrders
@@ -869,9 +972,69 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
 
         {/* Processed Orders */}
         <div>
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">
-            Shipped Orders ({processedOrders.length})
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Shipped Orders ({processedOrders.length})
+              </h2>
+              {processedOrders.length > 0 && (
+                <button
+                  onClick={() => handleSelectAll(selectedOrders.length !== processedOrders.length)}
+                  className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium"
+                >
+                  {selectedOrders.length === processedOrders.length ? "Deselect All" : "Select All"}
+                </button>
+              )}
+            </div>
+            {processedOrders.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExportPDF}
+                  disabled={isExporting}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                >
+                  {isExporting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Export PDF {selectedOrders.length > 0 ? `(${selectedOrders.length})` : '(All)'}
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={isDeleting || selectedOrders.length === 0}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                >
+                  {isDeleting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete Selected ({selectedOrders.length})
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
           
           {processedOrders.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
@@ -920,7 +1083,16 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                 };
 
                 return (
-                  <div key={order._id} className="bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                  <div key={order._id} className="bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow relative">
+                    {/* Checkbox */}
+                    <div className="absolute top-4 right-4 z-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedOrders.includes(order._id)}
+                        onChange={() => handleCheckboxChange(order._id)}
+                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                    </div>
                     {/* Order Header */}
                     <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
                       <div className="flex justify-between items-start">
@@ -1053,12 +1225,45 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
           )}
         </div>
       </div>
+
+      {/* NEW: Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeleteOrders}
+        title="Delete Processed Orders"
+        message={`Are you sure you want to delete ${selectedOrders.length} processed order(s)? This action cannot be undone and the orders will be permanently removed from the database.`}
+        confirmText="Delete Orders"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeleting}
+      />
+
+      {/* NEW: Export PDF Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onConfirm={confirmExportPDF}
+        title="Export Orders to PDF"
+        message={`You are about to export ${selectedOrders.length > 0 ? selectedOrders.length : processedOrders.length} processed order(s) to PDF. The PDF will be downloaded to your device.`}
+        confirmText="Export PDF"
+        cancelText="Cancel"
+        type="info"
+        isLoading={isExporting}
+      />
     </div>
   );
 };
 // Fixed Pickup Orders Management with proper details
 const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
   const [processingOrders, setProcessingOrders] = useState({});
+  // NEW: State for selected processed orders
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  // NEW: Modal states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const pickupOrders = orders.filter(order => order.deliveryMethod === "pickup");
 
@@ -1103,6 +1308,102 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
         </div>
       );
       setProcessingOrders(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
+
+  // NEW: Handle checkbox change
+  const handleCheckboxChange = (orderId) => {
+    setSelectedOrders(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  // NEW: Handle select all
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedOrders(processedOrders.map(order => order._id));
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  // NEW: Export PDF
+  const handleExportPDF = () => {
+    if (processedOrders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+    setShowExportModal(true);
+  };
+
+  const confirmExportPDF = async () => {
+    try {
+      setIsExporting(true);
+      setShowExportModal(false);
+      const orderIds = selectedOrders.length > 0 ? selectedOrders : processedOrders.map(o => o._id);
+      
+      // Build query string with multiple orderIds parameters
+      const params = new URLSearchParams();
+      orderIds.forEach(id => params.append('orderIds', id));
+      
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/orders/processed/export-pdf?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: 'blob'
+        }
+      );
+
+      // Create blob and download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `processed-orders-${Date.now()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success(`PDF exported successfully with ${orderIds.length} order(s)`);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Failed to export PDF. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // NEW: Delete selected orders
+  const handleDeleteSelected = () => {
+    if (selectedOrders.length === 0) {
+      toast.error("Please select at least one order to delete");
+      return;
+    }
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteOrders = async () => {
+    try {
+      setIsDeleting(true);
+      setShowDeleteModal(false);
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/orders/processed/bulk-delete`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          data: { orderIds: selectedOrders }
+        }
+      );
+
+      toast.success(`Successfully deleted ${selectedOrders.length} order(s)`);
+      setSelectedOrders([]);
+      fetchAllData();
+    } catch (error) {
+      console.error("Error deleting orders:", error);
+      toast.error(error.response?.data?.message || "Failed to delete orders. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1354,9 +1655,69 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
 
         {/* Ready for Pickup Orders */}
         <div>
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">
-            Ready for Pickup ({processedOrders.length})
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Ready for Pickup ({processedOrders.length})
+              </h2>
+              {processedOrders.length > 0 && (
+                <button
+                  onClick={() => handleSelectAll(selectedOrders.length !== processedOrders.length)}
+                  className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium"
+                >
+                  {selectedOrders.length === processedOrders.length ? "Deselect All" : "Select All"}
+                </button>
+              )}
+            </div>
+            {processedOrders.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExportPDF}
+                  disabled={isExporting}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                >
+                  {isExporting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Export PDF {selectedOrders.length > 0 ? `(${selectedOrders.length})` : '(All)'}
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={isDeleting || selectedOrders.length === 0}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                >
+                  {isDeleting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete Selected ({selectedOrders.length})
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
           
           {processedOrders.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
@@ -1405,7 +1766,16 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                 };
 
                 return (
-                  <div key={order._id} className="bg-white border-2 border-green-200 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                  <div key={order._id} className="bg-white border-2 border-green-200 rounded-xl shadow-md hover:shadow-lg transition-shadow relative">
+                    {/* Checkbox */}
+                    <div className="absolute top-4 right-4 z-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedOrders.includes(order._id)}
+                        onChange={() => handleCheckboxChange(order._id)}
+                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                    </div>
                     {/* Order Header */}
                     <div className="bg-gradient-to-r from-green-50 to-green-100 px-6 py-4 border-b border-gray-200">
                       <div className="flex justify-between items-start">
@@ -1561,6 +1931,32 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
           )}
         </div>
       </div>
+
+      {/* NEW: Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeleteOrders}
+        title="Delete Processed Orders"
+        message={`Are you sure you want to delete ${selectedOrders.length} processed order(s)? This action cannot be undone and the orders will be permanently removed from the database.`}
+        confirmText="Delete Orders"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeleting}
+      />
+
+      {/* NEW: Export PDF Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onConfirm={confirmExportPDF}
+        title="Export Orders to PDF"
+        message={`You are about to export ${selectedOrders.length > 0 ? selectedOrders.length : processedOrders.length} processed order(s) to PDF. The PDF will be downloaded to your device.`}
+        confirmText="Export PDF"
+        cancelText="Cancel"
+        type="info"
+        isLoading={isExporting}
+      />
     </div>
   );
 };
@@ -1869,12 +2265,116 @@ const SellerRequestsManagement = ({ sellers, fetchAllData, token }) => {
 
 // Fixed Seller Candidates Orders
 const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
+  // NEW: State for selected processed orders
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  // NEW: Modal states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+
   const pendingOrders = orders
     .filter(order => order.orderStatus === "Pending")
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
   const processedOrders = orders
     .filter(order => order.orderStatus === "Processing")
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
+
+  // NEW: Handle checkbox change
+  const handleCheckboxChange = (orderId) => {
+    setSelectedOrders(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  // NEW: Handle select all
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedOrders(processedOrders.map(order => order._id));
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  // NEW: Export PDF
+  const handleExportPDF = () => {
+    if (processedOrders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+    setShowExportModal(true);
+  };
+
+  const confirmExportPDF = async () => {
+    try {
+      setIsExporting(true);
+      setShowExportModal(false);
+      const orderIds = selectedOrders.length > 0 ? selectedOrders : processedOrders.map(o => o._id);
+      
+      // Build query string with multiple orderIds parameters
+      const params = new URLSearchParams();
+      orderIds.forEach(id => params.append('orderIds', id));
+      
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/orders/processed/export-pdf?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: 'blob'
+        }
+      );
+
+      // Create blob and download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `processed-orders-${Date.now()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success(`PDF exported successfully with ${orderIds.length} order(s)`);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Failed to export PDF. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // NEW: Delete selected orders
+  const handleDeleteSelected = () => {
+    if (selectedOrders.length === 0) {
+      toast.error("Please select at least one order to delete");
+      return;
+    }
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteOrders = async () => {
+    try {
+      setIsDeleting(true);
+      setShowDeleteModal(false);
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/orders/processed/bulk-delete`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          data: { orderIds: selectedOrders }
+        }
+      );
+
+      toast.success(`Successfully deleted ${selectedOrders.length} order(s)`);
+      setSelectedOrders([]);
+      fetchAllData();
+    } catch (error) {
+      console.error("Error deleting orders:", error);
+      toast.error(error.response?.data?.message || "Failed to delete orders. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
@@ -1959,9 +2459,69 @@ const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
 
       {/* Processed Orders */}
       <div>
-        <h2 className="text-lg font-semibold mb-4 text-gray-800">
-          Processed Orders ({processedOrders.length})
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Processed Orders ({processedOrders.length})
+            </h2>
+            {processedOrders.length > 0 && (
+              <button
+                onClick={() => handleSelectAll(selectedOrders.length !== processedOrders.length)}
+                className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium"
+              >
+                {selectedOrders.length === processedOrders.length ? "Deselect All" : "Select All"}
+              </button>
+            )}
+          </div>
+          {processedOrders.length > 0 && (
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportPDF}
+                disabled={isExporting}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+              >
+                {isExporting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export PDF {selectedOrders.length > 0 ? `(${selectedOrders.length})` : '(All)'}
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleDeleteSelected}
+                disabled={isDeleting || selectedOrders.length === 0}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+              >
+                {isDeleting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete Selected ({selectedOrders.length})
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
         
         {processedOrders.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
@@ -1972,6 +2532,14 @@ const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="p-3 text-left text-sm font-semibold text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={selectedOrders.length === processedOrders.length && processedOrders.length > 0}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                  </th>
                   <th className="p-3 text-left text-sm font-semibold text-gray-600">Order ID</th>
                   <th className="p-3 text-left text-sm font-semibold text-gray-600">Seller</th>
                   <th className="p-3 text-left text-sm font-semibold text-gray-600">Customer</th>
@@ -1983,6 +2551,14 @@ const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
               <tbody>
                 {processedOrders.map((order) => (
                   <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="p-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedOrders.includes(order._id)}
+                        onChange={() => handleCheckboxChange(order._id)}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </td>
                     <td className="p-3 text-sm font-medium text-gray-700">
                       #{order._id.slice(-8)}
                     </td>
@@ -2010,6 +2586,32 @@ const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
           </div>
         )}
       </div>
+
+      {/* NEW: Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeleteOrders}
+        title="Delete Processed Orders"
+        message={`Are you sure you want to delete ${selectedOrders.length} processed order(s)? This action cannot be undone and the orders will be permanently removed from the database.`}
+        confirmText="Delete Orders"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeleting}
+      />
+
+      {/* NEW: Export PDF Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onConfirm={confirmExportPDF}
+        title="Export Orders to PDF"
+        message={`You are about to export ${selectedOrders.length > 0 ? selectedOrders.length : processedOrders.length} processed order(s) to PDF. The PDF will be downloaded to your device.`}
+        confirmText="Export PDF"
+        cancelText="Cancel"
+        type="info"
+        isLoading={isExporting}
+      />
     </div>
   );
 };
