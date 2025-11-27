@@ -19,6 +19,8 @@ const DashboardSidebar = ({ activeSection, setActiveSection, user }) => {
     { id: "products", label: "Product Management", icon: "📦" },
     { id: "online-orders", label: "Online Paid Orders", icon: "🚚" },
     { id: "pickup-orders", label: "Pickup Orders", icon: "🏪" },
+    { id: "online-processed", label: "Online Paid Processed", icon: "✅" },
+    { id: "pickup-processed", label: "Pickup Processed", icon: "✅" },
     { id: "featured-products", label: "Featured Products", icon: "⭐" },
     { id: "seller-candidates-orders", label: "Seller Candidates Orders", icon: "👥" },
     { id: "seller-requests", label: "Seller Requests", icon: "👤" },
@@ -278,6 +280,21 @@ export default function Dashboard() {
       
       case "pickup-orders":
         return <PickupOrdersManagement 
+          orders={companyOrders} 
+          fetchAllData={fetchAllData}
+          token={token}
+        />;
+      
+      case "online-processed":
+        return <OnlinePaidProcessedOrders 
+          orders={companyOrders} 
+          fetchAllData={fetchAllData}
+          token={token}
+          user={user}
+        />;
+      
+      case "pickup-processed":
+        return <PickupProcessedOrders 
           orders={companyOrders} 
           fetchAllData={fetchAllData}
           token={token}
@@ -560,13 +577,8 @@ const DashboardOverview = ({ user, dashboardData, data }) => {
 const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
   const [processingOrders, setProcessingOrders] = useState({});
   const [trackingNumbers, setTrackingNumbers] = useState({});
-  // NEW: State for selected processed orders
-  const [selectedOrders, setSelectedOrders] = useState([]);
-  const [isExporting, setIsExporting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  // NEW: Modal states
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
+  // NEW: Search state
+  const [searchQuery, setSearchQuery] = useState("");
 
   const onlineOrders = orders.filter(order => 
     order.deliveryMethod === "delivery" && order.paymentMethod === "Stripe"
@@ -739,18 +751,26 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
     }
   };
 
-  const pendingOrders = onlineOrders
-    .filter(order => order.orderStatus === "Pending")
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
-  console.log(pendingOrders)
-  const processedOrders = onlineOrders
-    .filter(order => order.orderStatus === "Processing")
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
-  console.log(processedOrders)
+  // Filter orders by search query (order ID)
+  const filterOrdersBySearch = (orderList) => {
+    if (!searchQuery.trim()) return orderList;
+    const query = searchQuery.toLowerCase().trim();
+    return orderList.filter(order => 
+      order._id.toLowerCase().includes(query) || 
+      order._id.slice(-8).toLowerCase().includes(query)
+    );
+  };
+
+  // Only show pending orders (processed orders moved to separate section)
+  const pendingOrders = filterOrdersBySearch(
+    onlineOrders
+      .filter(order => order.orderStatus === "Pending")
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+  );
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Online Paid Orders</h1>
@@ -758,6 +778,27 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
           </div>
           <div className="text-sm text-gray-500">
             Total: {onlineOrders.length} orders
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by Order ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+            <svg
+              className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
         </div>
 
@@ -970,290 +1011,13 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
           )}
         </div>
 
-        {/* Processed Orders */}
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Shipped Orders ({processedOrders.length})
-              </h2>
-              {processedOrders.length > 0 && (
-                <button
-                  onClick={() => handleSelectAll(selectedOrders.length !== processedOrders.length)}
-                  className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium"
-                >
-                  {selectedOrders.length === processedOrders.length ? "Deselect All" : "Select All"}
-                </button>
-              )}
-            </div>
-            {processedOrders.length > 0 && (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleExportPDF}
-                  disabled={isExporting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
-                >
-                  {isExporting ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Exporting...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Export PDF {selectedOrders.length > 0 ? `(${selectedOrders.length})` : '(All)'}
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleDeleteSelected}
-                  disabled={isDeleting || selectedOrders.length === 0}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
-                >
-                  {isDeleting ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Delete Selected ({selectedOrders.length})
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-          
-          {processedOrders.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>No shipped orders</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {processedOrders.map((order) => {
-                // Fix name display - removes duplicates
-                const getCustomerName = () => {
-                  if (order.userId?.name) {
-                    // Clean up user name if it has duplicates
-                    const name = (order.userId.name || '').trim();
-                    if (name) {
-                      const parts = name.split(/\s+/);
-                      const uniqueParts = [];
-                      parts.forEach(part => {
-                        if (part && !uniqueParts.some(existing => existing.toLowerCase() === part.toLowerCase())) {
-                          uniqueParts.push(part);
-                        }
-                      });
-                      return uniqueParts.join(' ');
-                    }
-                    return name;
-                  }
-                  const firstName = (order.guestInfo?.firstName || '').trim();
-                  const lastName = (order.guestInfo?.lastName || '').trim();
-                  
-                  // Remove duplicates within firstName or lastName
-                  const cleanFirstName = firstName ? firstName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
-                  const cleanLastName = lastName ? lastName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
-                  
-                  if (cleanFirstName && cleanLastName) {
-                    // If firstName already contains lastName, just return firstName
-                    if (cleanFirstName.toLowerCase().includes(cleanLastName.toLowerCase())) {
-                      return cleanFirstName;
-                    }
-                    // If lastName already contains firstName, just return lastName
-                    if (cleanLastName.toLowerCase().includes(cleanFirstName.toLowerCase())) {
-                      return cleanLastName;
-                    }
-                    // Normal case: combine them with a space
-                    return `${cleanFirstName} ${cleanLastName}`;
-                  }
-                  return cleanFirstName || cleanLastName || 'Guest Customer';
-                };
-
-                return (
-                  <div key={order._id} className="bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow relative">
-                    {/* Checkbox */}
-                    <div className="absolute top-4 right-4 z-10">
-                      <input
-                        type="checkbox"
-                        checked={selectedOrders.includes(order._id)}
-                        onChange={() => handleCheckboxChange(order._id)}
-                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                      />
-                    </div>
-                    {/* Order Header */}
-                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-bold text-lg text-gray-900">Order #{order._id.slice(-8)}</p>
-                          <p className="text-sm text-gray-500 mt-1">Ordered: {new Date(order.createdAt).toLocaleDateString()}</p>
-                          <p className="text-sm text-gray-500">Shipped: {new Date(order.updatedAt).toLocaleDateString()}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</p>
-                          <p className="text-sm text-blue-600 font-medium mt-1">
-                            📦 {order.trackingNumber || "N/A"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Order Content */}
-                    <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      {/* Customer Details */}
-                      <div className="lg:col-span-1">
-                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer Details</h3>
-                        <div className="space-y-2">
-                          <p className="font-semibold text-gray-900">{getCustomerName()}</p>
-                          <div className="space-y-1 text-sm text-gray-600">
-                            <p><span className="font-medium">📧 Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}</p>
-                            <p><span className="font-medium">📱 Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}</p>
-                          </div>
-                          {(order.guestInfo?.address || order.userId?.address) && (
-                            <div className="mt-3 pt-3 border-t border-gray-200">
-                              <p className="text-xs font-semibold text-gray-700 mb-1">📍 Delivery Address:</p>
-                              <div className="text-xs text-gray-600 space-y-0.5">
-                                <p>{order.guestInfo?.address || order.userId?.address || 'N/A'}</p>
-                                {order.guestInfo?.postalCode && (
-                                  <p><span className="font-medium">Postal Code:</span> {order.guestInfo.postalCode}</p>
-                                )}
-                                {order.guestInfo?.country && (
-                                  <p><span className="font-medium">Country:</span> {order.guestInfo.country}</p>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Order Items */}
-                      <div className="lg:col-span-2">
-                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Order Items ({order.items.length})</h3>
-                        <div className="space-y-3">
-                          {order.items.map((item, index) => {
-                            // Get variant image and specs
-                            const getVariantImage = () => {
-                              if (item.variantId && item.productId?.variants) {
-                                const variant = item.productId.variants.find(
-                                  v => v._id?.toString() === item.variantId?.toString()
-                                );
-                                if (variant && variant.images && variant.images.length > 0) {
-                                  return variant.images[0];
-                                }
-                              }
-                              return item.productId?.images?.[0] || "https://via.placeholder.com/60";
-                            };
-
-                            const getVariantSpecs = () => {
-                              if (item.variantId && item.productId?.variants) {
-                                const variant = item.productId.variants.find(
-                                  v => v._id?.toString() === item.variantId?.toString()
-                                );
-                                if (variant && variant.specs) {
-                                  return variant.specs instanceof Map 
-                                    ? Object.fromEntries(variant.specs) 
-                                    : variant.specs;
-                                }
-                              }
-                              return null;
-                            };
-
-                            const variantImage = getVariantImage();
-                            const variantSpecs = getVariantSpecs();
-
-                            return (
-                              <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                <div className="flex items-start gap-4">
-                                  <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
-                                    <img
-                                      src={variantImage}
-                                      alt={item.productId?.name || item.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
-                                    {variantSpecs && Object.keys(variantSpecs).length > 0 && (
-                                      <div className="mt-2 flex flex-wrap gap-2">
-                                        {Object.entries(variantSpecs).map(([key, value]) => (
-                                          <span key={key} className="text-xs bg-white px-2 py-1 rounded border border-gray-200 text-gray-700">
-                                            <span className="font-medium capitalize">{key}:</span> {value}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    )}
-                                    <div className="mt-2 flex items-center gap-4 text-sm">
-                                      <span className="text-gray-600">
-                                        <span className="font-medium">Quantity:</span> {item.quantity}
-                                      </span>
-                                      <span className="text-gray-600">
-                                        <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
-                                      </span>
-                                      <span className="text-gray-700 font-semibold">
-                                        Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
-                                      </span>
-                                    </div>
-                                    {item.sellerId && (
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        <span className="font-medium">Seller:</span> {item.sellerId.name}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {/* Processed Orders - REMOVED: Now in separate "Online Paid Processed" section */}
       </div>
 
-      {/* NEW: Delete Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={confirmDeleteOrders}
-        title="Delete Processed Orders"
-        message={`Are you sure you want to delete ${selectedOrders.length} processed order(s)? This action cannot be undone and the orders will be permanently removed from the database.`}
-        confirmText="Delete Orders"
-        cancelText="Cancel"
-        type="danger"
-        isLoading={isDeleting}
-      />
-
-      {/* NEW: Export PDF Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        onConfirm={confirmExportPDF}
-        title="Export Orders to PDF"
-        message={`You are about to export ${selectedOrders.length > 0 ? selectedOrders.length : processedOrders.length} processed order(s) to PDF. The PDF will be downloaded to your device.`}
-        confirmText="Export PDF"
-        cancelText="Cancel"
-        type="info"
-        isLoading={isExporting}
-      />
     </div>
   );
 };
+
 // Fixed Pickup Orders Management with proper details
 const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
   const [processingOrders, setProcessingOrders] = useState({});
@@ -1264,6 +1028,8 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
   // NEW: Modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  // NEW: Search state
+  const [searchQuery, setSearchQuery] = useState("");
 
   const pickupOrders = orders.filter(order => order.deliveryMethod === "pickup");
 
@@ -1407,12 +1173,27 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
     }
   };
 
-  const pendingOrders = pickupOrders
-    .filter(order => order.orderStatus === "Pending")
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
-  const processedOrders = pickupOrders
-    .filter(order => order.orderStatus === "Processing")
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
+  // Filter orders by search query (order ID)
+  const filterOrdersBySearch = (orderList) => {
+    if (!searchQuery.trim()) return orderList;
+    const query = searchQuery.toLowerCase().trim();
+    return orderList.filter(order => 
+      order._id.toLowerCase().includes(query) || 
+      order._id.slice(-8).toLowerCase().includes(query)
+    );
+  };
+
+  const pendingOrders = filterOrdersBySearch(
+    pickupOrders
+      .filter(order => order.orderStatus === "Pending")
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+  );
+  
+  const processedOrders = filterOrdersBySearch(
+    pickupOrders
+      .filter(order => order.orderStatus === "Processing")
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+  );
 
   return (
     <div className="space-y-6">
@@ -1424,6 +1205,27 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
           </div>
           <div className="text-sm text-gray-500">
             Total: {pickupOrders.length} orders
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by Order ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+            <svg
+              className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
         </div>
 
@@ -1652,311 +1454,7 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
             </div>
           )}
         </div>
-
-        {/* Ready for Pickup Orders */}
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Ready for Pickup ({processedOrders.length})
-              </h2>
-              {processedOrders.length > 0 && (
-                <button
-                  onClick={() => handleSelectAll(selectedOrders.length !== processedOrders.length)}
-                  className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium"
-                >
-                  {selectedOrders.length === processedOrders.length ? "Deselect All" : "Select All"}
-                </button>
-              )}
-            </div>
-            {processedOrders.length > 0 && (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleExportPDF}
-                  disabled={isExporting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
-                >
-                  {isExporting ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Exporting...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Export PDF {selectedOrders.length > 0 ? `(${selectedOrders.length})` : '(All)'}
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleDeleteSelected}
-                  disabled={isDeleting || selectedOrders.length === 0}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
-                >
-                  {isDeleting ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Delete Selected ({selectedOrders.length})
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-          
-          {processedOrders.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>No orders ready for pickup</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {processedOrders.map((order) => {
-                // Fix name display - removes duplicates
-                const getCustomerName = () => {
-                  if (order.userId?.name) {
-                    // Clean up user name if it has duplicates
-                    const name = (order.userId.name || '').trim();
-                    if (name) {
-                      const parts = name.split(/\s+/);
-                      const uniqueParts = [];
-                      parts.forEach(part => {
-                        if (part && !uniqueParts.some(existing => existing.toLowerCase() === part.toLowerCase())) {
-                          uniqueParts.push(part);
-                        }
-                      });
-                      return uniqueParts.join(' ');
-                    }
-                    return name;
-                  }
-                  const firstName = (order.guestInfo?.firstName || '').trim();
-                  const lastName = (order.guestInfo?.lastName || '').trim();
-                  
-                  // Remove duplicates within firstName or lastName
-                  const cleanFirstName = firstName ? firstName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
-                  const cleanLastName = lastName ? lastName.split(/\s+/).filter((v, i, a) => a.indexOf(v) === i).join(' ') : '';
-                  
-                  if (cleanFirstName && cleanLastName) {
-                    // If firstName already contains lastName, just return firstName
-                    if (cleanFirstName.toLowerCase().includes(cleanLastName.toLowerCase())) {
-                      return cleanFirstName;
-                    }
-                    // If lastName already contains firstName, just return lastName
-                    if (cleanLastName.toLowerCase().includes(cleanFirstName.toLowerCase())) {
-                      return cleanLastName;
-                    }
-                    // Normal case: combine them with a space
-                    return `${cleanFirstName} ${cleanLastName}`;
-                  }
-                  return cleanFirstName || cleanLastName || 'Guest Customer';
-                };
-
-                return (
-                  <div key={order._id} className="bg-white border-2 border-green-200 rounded-xl shadow-md hover:shadow-lg transition-shadow relative">
-                    {/* Checkbox */}
-                    <div className="absolute top-4 right-4 z-10">
-                      <input
-                        type="checkbox"
-                        checked={selectedOrders.includes(order._id)}
-                        onChange={() => handleCheckboxChange(order._id)}
-                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                      />
-                    </div>
-                    {/* Order Header */}
-                    <div className="bg-gradient-to-r from-green-50 to-green-100 px-6 py-4 border-b border-gray-200">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-bold text-lg text-gray-900">Order #{order._id.slice(-8)}</p>
-                          <p className="text-sm text-gray-500 mt-1">Ordered: {new Date(order.createdAt).toLocaleDateString()}</p>
-                          <p className="text-sm text-gray-500">Ready: {new Date(order.updatedAt).toLocaleDateString()}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</p>
-                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium mt-2 inline-block">
-                            ✅ Ready for Pickup
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Order Content */}
-                    <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      {/* Customer Details */}
-                      <div className="lg:col-span-1">
-                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer Details</h3>
-                        <div className="space-y-2">
-                          <p className="font-semibold text-gray-900">{getCustomerName()}</p>
-                          <div className="space-y-1 text-sm text-gray-600">
-                            <p><span className="font-medium">📧 Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}</p>
-                            <p><span className="font-medium">📱 Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}</p>
-                          </div>
-                          {(order.guestInfo?.address || order.userId?.address) && (
-                            <div className="mt-3 pt-3 border-t border-gray-200">
-                              <p className="text-xs font-semibold text-gray-700 mb-1">📍 Address:</p>
-                              <div className="text-xs text-gray-600 space-y-0.5">
-                                <p>{order.guestInfo?.address || order.userId?.address || 'N/A'}</p>
-                                {order.guestInfo?.postalCode && (
-                                  <p><span className="font-medium">Postal Code:</span> {order.guestInfo.postalCode}</p>
-                                )}
-                                {order.guestInfo?.country && (
-                                  <p><span className="font-medium">Country:</span> {order.guestInfo.country}</p>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Outlet & Items */}
-                      <div className="lg:col-span-2 space-y-4">
-                        {/* Outlet Details */}
-                        <div>
-                          <h3 className="font-semibold text-gray-900 mb-2 pb-2 border-b border-gray-200">Pickup Outlet</h3>
-                          {order.outletId ? (
-                            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                              <p className="font-semibold text-gray-900">{order.outletId.name}</p>
-                              <p className="text-sm text-gray-600 mt-1">{order.outletId.location}</p>
-                              <p className="text-xs text-gray-500">{order.outletId.address}</p>
-                              {order.outletId.phone && (
-                                <p className="text-xs text-blue-600 mt-1">📞 {order.outletId.phone}</p>
-                              )}
-                              {order.outletId.email && (
-                                <p className="text-xs text-blue-600">✉️ {order.outletId.email}</p>
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-gray-500 text-sm">N/A</p>
-                          )}
-                        </div>
-
-                        {/* Order Items */}
-                        <div>
-                          <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Order Items ({order.items.length})</h3>
-                          <div className="space-y-3">
-                            {order.items.map((item, index) => {
-                              // Get variant image and specs
-                              const getVariantImage = () => {
-                                if (item.variantId && item.productId?.variants) {
-                                  const variant = item.productId.variants.find(
-                                    v => v._id?.toString() === item.variantId?.toString()
-                                  );
-                                  if (variant && variant.images && variant.images.length > 0) {
-                                    return variant.images[0];
-                                  }
-                                }
-                                return item.productId?.images?.[0] || "https://via.placeholder.com/60";
-                              };
-
-                              const getVariantSpecs = () => {
-                                if (item.variantId && item.productId?.variants) {
-                                  const variant = item.productId.variants.find(
-                                    v => v._id?.toString() === item.variantId?.toString()
-                                  );
-                                  if (variant && variant.specs) {
-                                    return variant.specs instanceof Map 
-                                      ? Object.fromEntries(variant.specs) 
-                                      : variant.specs;
-                                  }
-                                }
-                                return null;
-                              };
-
-                              const variantImage = getVariantImage();
-                              const variantSpecs = getVariantSpecs();
-
-                              return (
-                                <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                  <div className="flex items-start gap-4">
-                                    <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
-                                      <img
-                                        src={variantImage}
-                                        alt={item.productId?.name || item.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
-                                      {variantSpecs && Object.keys(variantSpecs).length > 0 && (
-                                        <div className="mt-2 flex flex-wrap gap-2">
-                                          {Object.entries(variantSpecs).map(([key, value]) => (
-                                            <span key={key} className="text-xs bg-white px-2 py-1 rounded border border-gray-200 text-gray-700">
-                                              <span className="font-medium capitalize">{key}:</span> {value}
-                                            </span>
-                                          ))}
-                                        </div>
-                                      )}
-                                      <div className="mt-2 flex items-center gap-4 text-sm">
-                                        <span className="text-gray-600">
-                                          <span className="font-medium">Quantity:</span> {item.quantity}
-                                        </span>
-                                        <span className="text-gray-600">
-                                          <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
-                                        </span>
-                                        <span className="text-gray-700 font-semibold">
-                                          Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
-                                        </span>
-                                      </div>
-                                      {item.sellerId && (
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          <span className="font-medium">Seller:</span> {item.sellerId.name}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </div>
-
-      {/* NEW: Delete Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={confirmDeleteOrders}
-        title="Delete Processed Orders"
-        message={`Are you sure you want to delete ${selectedOrders.length} processed order(s)? This action cannot be undone and the orders will be permanently removed from the database.`}
-        confirmText="Delete Orders"
-        cancelText="Cancel"
-        type="danger"
-        isLoading={isDeleting}
-      />
-
-      {/* NEW: Export PDF Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        onConfirm={confirmExportPDF}
-        title="Export Orders to PDF"
-        message={`You are about to export ${selectedOrders.length > 0 ? selectedOrders.length : processedOrders.length} processed order(s) to PDF. The PDF will be downloaded to your device.`}
-        confirmText="Export PDF"
-        cancelText="Cancel"
-        type="info"
-        isLoading={isExporting}
-      />
     </div>
   );
 };
@@ -2263,6 +1761,725 @@ const SellerRequestsManagement = ({ sellers, fetchAllData, token }) => {
   );
 };
 
+// NEW: Online Paid Processed Orders Component
+const OnlinePaidProcessedOrders = ({ orders, fetchAllData, token, user }) => {
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const onlineOrders = orders.filter(order => 
+    order.deliveryMethod === "delivery" && order.paymentMethod === "Stripe"
+  );
+
+  // Filter orders by search query (order ID)
+  const filterOrdersBySearch = (orderList) => {
+    if (!searchQuery.trim()) return orderList;
+    const query = searchQuery.toLowerCase().trim();
+    return orderList.filter(order => 
+      order._id.toLowerCase().includes(query) || 
+      order._id.slice(-8).toLowerCase().includes(query)
+    );
+  };
+
+  const processedOrders = filterOrdersBySearch(
+    onlineOrders
+      .filter(order => order.orderStatus === "Processing")
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+  );
+
+  const handleCheckboxChange = (orderId) => {
+    setSelectedOrders(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedOrders(processedOrders.map(order => order._id));
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  const handleExportPDF = () => {
+    if (processedOrders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+    setShowExportModal(true);
+  };
+
+  const confirmExportPDF = async () => {
+    try {
+      setIsExporting(true);
+      setShowExportModal(false);
+      const orderIds = selectedOrders.length > 0 ? selectedOrders : processedOrders.map(o => o._id);
+      
+      const params = new URLSearchParams();
+      orderIds.forEach(id => params.append('orderIds', id));
+      
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/orders/processed/export-pdf?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: 'blob'
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `online-processed-orders-${Date.now()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success(`PDF exported successfully with ${orderIds.length} order(s)`);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Failed to export PDF. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedOrders.length === 0) {
+      toast.error("Please select at least one order to delete");
+      return;
+    }
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteOrders = async () => {
+    try {
+      setIsDeleting(true);
+      setShowDeleteModal(false);
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/orders/processed/bulk-delete`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          data: { orderIds: selectedOrders }
+        }
+      );
+
+      toast.success(`Successfully deleted ${selectedOrders.length} order(s)`);
+      setSelectedOrders([]);
+      fetchAllData();
+    } catch (error) {
+      console.error("Error deleting orders:", error);
+      toast.error(error.response?.data?.message || "Failed to delete orders. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Online Paid Processed Orders</h1>
+            <p className="text-gray-600">View and manage processed online paid orders</p>
+          </div>
+          <div className="text-sm text-gray-500">
+            Total: {processedOrders.length} orders
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by Order ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+            <svg
+              className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Processed Orders Section */}
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Processed Orders ({processedOrders.length})
+              </h2>
+              {processedOrders.length > 0 && (
+                <button
+                  onClick={() => handleSelectAll(selectedOrders.length !== processedOrders.length)}
+                  className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium"
+                >
+                  {selectedOrders.length === processedOrders.length ? "Deselect All" : "Select All"}
+                </button>
+              )}
+            </div>
+            {processedOrders.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExportPDF}
+                  disabled={isExporting}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                >
+                  {isExporting ? "Exporting..." : `Export PDF ${selectedOrders.length > 0 ? `(${selectedOrders.length})` : '(All)'}`}
+                </button>
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={isDeleting || selectedOrders.length === 0}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                >
+                  {isDeleting ? "Deleting..." : `Delete ${selectedOrders.length > 0 ? `(${selectedOrders.length})` : ''}`}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {processedOrders.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4">
+              {processedOrders.map((order) => (
+                <div key={order._id} className="bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow relative">
+                  <div className="absolute top-4 right-4 z-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedOrders.includes(order._id)}
+                      onChange={() => handleCheckboxChange(order._id)}
+                      className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                    />
+                  </div>
+                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-lg text-gray-900">Order #{order._id.slice(-8)}</p>
+                        <p className="text-sm text-gray-500 mt-1">Ordered: {new Date(order.createdAt).toLocaleDateString()}</p>
+                        <p className="text-sm text-gray-500">Shipped: {new Date(order.updatedAt).toLocaleDateString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</p>
+                        <p className="text-sm text-blue-600 font-medium mt-1">
+                          📦 {order.trackingNumber || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Order Content */}
+                  <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Customer Details */}
+                    <div className="lg:col-span-1">
+                      <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer Details</h3>
+                      <div className="space-y-2">
+                        <p className="font-semibold text-gray-900">{order.userId?.name || order.guestInfo?.name || "N/A"}</p>
+                        <div className="space-y-1 text-sm text-gray-600">
+                          <p><span className="font-medium">📧 Email:</span> {order.userId?.email || order.guestInfo?.email || 'N/A'}</p>
+                          <p><span className="font-medium">📱 Phone:</span> {order.userId?.phone || order.guestInfo?.phone || 'N/A'}</p>
+                        </div>
+                        {(order.guestInfo?.address || order.userId?.address) && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-xs font-semibold text-gray-700 mb-1">📍 Delivery Address:</p>
+                            <div className="text-xs text-gray-600 space-y-0.5">
+                              <p>{order.guestInfo?.address || order.userId?.address || 'N/A'}</p>
+                              {order.guestInfo?.postalCode && (
+                                <p><span className="font-medium">Postal Code:</span> {order.guestInfo.postalCode}</p>
+                              )}
+                              {order.guestInfo?.country && (
+                                <p><span className="font-medium">Country:</span> {order.guestInfo.country}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Order Items */}
+                    <div className="lg:col-span-2">
+                      <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Order Items ({order.items?.length || 0})</h3>
+                      <div className="space-y-3">
+                        {order.items?.map((item, index) => {
+                          // Get variant image and specs
+                          const getVariantImage = () => {
+                            if (item.variantId && item.productId?.variants) {
+                              const variant = item.productId.variants.find(
+                                v => v._id?.toString() === item.variantId?.toString()
+                              );
+                              if (variant && variant.images && variant.images.length > 0) {
+                                return variant.images[0];
+                              }
+                            }
+                            return item.productId?.images?.[0] || "https://via.placeholder.com/60";
+                          };
+
+                          const getVariantSpecs = () => {
+                            if (item.variantId && item.productId?.variants) {
+                              const variant = item.productId.variants.find(
+                                v => v._id?.toString() === item.variantId?.toString()
+                              );
+                              if (variant && variant.specs) {
+                                return variant.specs instanceof Map 
+                                  ? Object.fromEntries(variant.specs) 
+                                  : variant.specs;
+                              }
+                            }
+                            return null;
+                          };
+
+                          const variantImage = getVariantImage();
+                          const variantSpecs = getVariantSpecs();
+
+                          return (
+                            <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                              <div className="flex items-start gap-4">
+                                <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                                  <img
+                                    src={variantImage}
+                                    alt={item.productId?.name || item.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                  {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                      {Object.entries(variantSpecs).map(([key, value]) => (
+                                        <span key={key} className="text-xs bg-white px-2 py-1 rounded border border-gray-200 text-gray-700">
+                                          <span className="font-medium capitalize">{key}:</span> {value}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <div className="mt-2 flex items-center gap-4 text-sm">
+                                    <span className="text-gray-600">
+                                      <span className="font-medium">Quantity:</span> {item.quantity}
+                                    </span>
+                                    <span className="text-gray-600">
+                                      <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                    </span>
+                                    <span className="text-gray-700 font-semibold">
+                                      Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                    </span>
+                                  </div>
+                                  {item.sellerId && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      <span className="font-medium">Seller:</span> {item.sellerId.name}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-lg">No processed orders found</p>
+              {searchQuery && <p className="text-sm mt-2">Try a different search term</p>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeleteOrders}
+        title="Delete Processed Orders"
+        message={`Are you sure you want to delete ${selectedOrders.length} processed order(s)? This action cannot be undone.`}
+      />
+
+      <ConfirmModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onConfirm={confirmExportPDF}
+        title="Export Processed Orders"
+        message={`You are about to export ${selectedOrders.length > 0 ? selectedOrders.length : processedOrders.length} processed order(s) to PDF. The PDF will be downloaded to your device.`}
+      />
+    </div>
+  );
+};
+
+// NEW: Pickup Processed Orders Component
+const PickupProcessedOrders = ({ orders, fetchAllData, token }) => {
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const pickupOrders = orders.filter(order => order.deliveryMethod === "pickup");
+
+  // Filter orders by search query (order ID)
+  const filterOrdersBySearch = (orderList) => {
+    if (!searchQuery.trim()) return orderList;
+    const query = searchQuery.toLowerCase().trim();
+    return orderList.filter(order => 
+      order._id.toLowerCase().includes(query) || 
+      order._id.slice(-8).toLowerCase().includes(query)
+    );
+  };
+
+  const processedOrders = filterOrdersBySearch(
+    pickupOrders
+      .filter(order => order.orderStatus === "Processing")
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+  );
+
+  const handleCheckboxChange = (orderId) => {
+    setSelectedOrders(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedOrders(processedOrders.map(order => order._id));
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  const handleExportPDF = () => {
+    if (processedOrders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+    setShowExportModal(true);
+  };
+
+  const confirmExportPDF = async () => {
+    try {
+      setIsExporting(true);
+      setShowExportModal(false);
+      const orderIds = selectedOrders.length > 0 ? selectedOrders : processedOrders.map(o => o._id);
+      
+      const params = new URLSearchParams();
+      orderIds.forEach(id => params.append('orderIds', id));
+      
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/orders/processed/export-pdf?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: 'blob'
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `pickup-processed-orders-${Date.now()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success(`PDF exported successfully with ${orderIds.length} order(s)`);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Failed to export PDF. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedOrders.length === 0) {
+      toast.error("Please select at least one order to delete");
+      return;
+    }
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteOrders = async () => {
+    try {
+      setIsDeleting(true);
+      setShowDeleteModal(false);
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/orders/processed/bulk-delete`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          data: { orderIds: selectedOrders }
+        }
+      );
+
+      toast.success(`Successfully deleted ${selectedOrders.length} order(s)`);
+      setSelectedOrders([]);
+      fetchAllData();
+    } catch (error) {
+      console.error("Error deleting orders:", error);
+      toast.error(error.response?.data?.message || "Failed to delete orders. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Pickup Processed Orders</h1>
+            <p className="text-gray-600">View and manage processed pickup orders</p>
+          </div>
+          <div className="text-sm text-gray-500">
+            Total: {processedOrders.length} orders
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by Order ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+            <svg
+              className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Processed Orders Section */}
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Processed Orders ({processedOrders.length})
+              </h2>
+              {processedOrders.length > 0 && (
+                <button
+                  onClick={() => handleSelectAll(selectedOrders.length !== processedOrders.length)}
+                  className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium"
+                >
+                  {selectedOrders.length === processedOrders.length ? "Deselect All" : "Select All"}
+                </button>
+              )}
+            </div>
+            {processedOrders.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExportPDF}
+                  disabled={isExporting}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                >
+                  {isExporting ? "Exporting..." : `Export PDF ${selectedOrders.length > 0 ? `(${selectedOrders.length})` : '(All)'}`}
+                </button>
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={isDeleting || selectedOrders.length === 0}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                >
+                  {isDeleting ? "Deleting..." : `Delete ${selectedOrders.length > 0 ? `(${selectedOrders.length})` : ''}`}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {processedOrders.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4">
+              {processedOrders.map((order) => (
+                <div key={order._id} className="bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow relative">
+                  <div className="absolute top-4 right-4 z-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedOrders.includes(order._id)}
+                      onChange={() => handleCheckboxChange(order._id)}
+                      className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                    />
+                  </div>
+                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-lg text-gray-900">Order #{order._id.slice(-8)}</p>
+                        <p className="text-sm text-gray-500 mt-1">Ordered: {new Date(order.createdAt).toLocaleDateString()}</p>
+                        <p className="text-sm text-gray-500">Processed: {new Date(order.updatedAt).toLocaleDateString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</p>
+                        {order.outletId && (
+                          <p className="text-sm text-blue-600 font-medium mt-1">
+                            🏪 {order.outletId.name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Order Content */}
+                  <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Customer Details */}
+                    <div className="lg:col-span-1">
+                      <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer Details</h3>
+                      <div className="space-y-2">
+                        <p className="font-semibold text-gray-900">{order.userId?.name || order.guestInfo?.name || "N/A"}</p>
+                        <div className="space-y-1 text-sm text-gray-600">
+                          <p><span className="font-medium">📧 Email:</span> {order.userId?.email || order.guestInfo?.email || 'N/A'}</p>
+                          <p><span className="font-medium">📱 Phone:</span> {order.userId?.phone || order.guestInfo?.phone || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Outlet & Items */}
+                    <div className="lg:col-span-2 space-y-4">
+                      {/* Outlet Details */}
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-2 pb-2 border-b border-gray-200">Pickup Outlet</h3>
+                        {order.outletId ? (
+                          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                            <p className="font-semibold text-gray-900">{order.outletId.name}</p>
+                            <p className="text-sm text-gray-600 mt-1">{order.outletId.location || order.outletId.address}</p>
+                            <p className="text-xs text-gray-500">{order.outletId.address}</p>
+                            {order.outletId.phone && (
+                              <p className="text-xs text-blue-600 mt-1">📞 {order.outletId.phone}</p>
+                            )}
+                            {order.outletId.email && (
+                              <p className="text-xs text-blue-600">✉️ {order.outletId.email}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-sm">N/A</p>
+                        )}
+                      </div>
+
+                      {/* Order Items */}
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Order Items ({order.items?.length || 0})</h3>
+                        <div className="space-y-3">
+                          {order.items?.map((item, index) => {
+                            // Get variant image and specs
+                            const getVariantImage = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.images && variant.images.length > 0) {
+                                  return variant.images[0];
+                                }
+                              }
+                              return item.productId?.images?.[0] || "https://via.placeholder.com/60";
+                            };
+
+                            const getVariantSpecs = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.specs) {
+                                  return variant.specs instanceof Map 
+                                    ? Object.fromEntries(variant.specs) 
+                                    : variant.specs;
+                                }
+                              }
+                              return null;
+                            };
+
+                            const variantImage = getVariantImage();
+                            const variantSpecs = getVariantSpecs();
+
+                            return (
+                              <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div className="flex items-start gap-4">
+                                  <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                                    <img
+                                      src={variantImage}
+                                      alt={item.productId?.name || item.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                    {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                                      <div className="mt-2 flex flex-wrap gap-2">
+                                        {Object.entries(variantSpecs).map(([key, value]) => (
+                                          <span key={key} className="text-xs bg-white px-2 py-1 rounded border border-gray-200 text-gray-700">
+                                            <span className="font-medium capitalize">{key}:</span> {value}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <div className="mt-2 flex items-center gap-4 text-sm">
+                                      <span className="text-gray-600">
+                                        <span className="font-medium">Quantity:</span> {item.quantity}
+                                      </span>
+                                      <span className="text-gray-600">
+                                        <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                      </span>
+                                      <span className="text-gray-700 font-semibold">
+                                        Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                      </span>
+                                    </div>
+                                    {item.sellerId && (
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        <span className="font-medium">Seller:</span> {item.sellerId.name}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-lg">No processed orders found</p>
+              {searchQuery && <p className="text-sm mt-2">Try a different search term</p>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeleteOrders}
+        title="Delete Processed Orders"
+        message={`Are you sure you want to delete ${selectedOrders.length} processed order(s)? This action cannot be undone.`}
+      />
+
+      <ConfirmModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onConfirm={confirmExportPDF}
+        title="Export Processed Orders"
+        message={`You are about to export ${selectedOrders.length > 0 ? selectedOrders.length : processedOrders.length} processed order(s) to PDF. The PDF will be downloaded to your device.`}
+      />
+    </div>
+  );
+};
+
 // Fixed Seller Candidates Orders
 const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
   // NEW: State for selected processed orders
@@ -2272,13 +2489,30 @@ const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
   // NEW: Modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  // NEW: Search state
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const pendingOrders = orders
-    .filter(order => order.orderStatus === "Pending")
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
-  const processedOrders = orders
-    .filter(order => order.orderStatus === "Processing")
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first (4pm, 5pm, 6pm...)
+  // Filter orders by search query (order ID)
+  const filterOrdersBySearch = (orderList) => {
+    if (!searchQuery.trim()) return orderList;
+    const query = searchQuery.toLowerCase().trim();
+    return orderList.filter(order => 
+      order._id.toLowerCase().includes(query) || 
+      order._id.slice(-8).toLowerCase().includes(query)
+    );
+  };
+
+  const pendingOrders = filterOrdersBySearch(
+    orders
+      .filter(order => order.orderStatus === "Pending")
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+  );
+  
+  const processedOrders = filterOrdersBySearch(
+    orders
+      .filter(order => order.orderStatus === "Processing")
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+  );
 
   // NEW: Handle checkbox change
   const handleCheckboxChange = (orderId) => {
@@ -2385,6 +2619,27 @@ const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
         </div>
         <div className="text-sm text-gray-500">
           Total: {orders.length} orders
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search by Order ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
+          <svg
+            className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
       </div>
 
