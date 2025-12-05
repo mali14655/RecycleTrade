@@ -152,12 +152,23 @@ const Navbar = () => {
               {/* User Menu */}
               {user ? (
                 <div className="relative">
-                  <button
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="text-gray-700 hover:text-gray-900 transition-colors"
-                  >
-                    <User size={20} className="sm:w-5 sm:h-5" />
-                  </button>
+                  {/* NEW: For buyers, clicking icon goes directly to profile */}
+                  {user.user?.role === "buyer" ? (
+                    <Link
+                      to="/profile"
+                      className="text-gray-700 hover:text-gray-900 transition-colors"
+                      title="Go to Profile"
+                    >
+                      <User size={20} className="sm:w-5 sm:h-5" />
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                      className="text-gray-700 hover:text-gray-900 transition-colors"
+                    >
+                      <User size={20} className="sm:w-5 sm:h-5" />
+                    </button>
+                  )}
 
                   {isUserMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 font-sans">
@@ -169,6 +180,27 @@ const Navbar = () => {
                           {user.user?.role?.replace("_", " ")}
                         </p>
                       </div>
+                      {/* NEW: Profile link for buyers */}
+                      {user.user?.role === "buyer" && (
+                        <Link
+                          to="/profile"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                        >
+                          <User size={16} />
+                          My Profile
+                        </Link>
+                      )}
+                      {user.user?.role === "admin" && (
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                        >
+                          <User size={16} />
+                          Dashboard
+                        </Link>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"

@@ -2,6 +2,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
+import ScrollToTop from "./components/ScrollToTop";
 import Home from "./pages/Home"; // This will use new UI
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -16,15 +17,29 @@ import Orders from "./pages/Orders.jsx";
 import Success from "./pages/Success";
 import Cancel from "./pages/Cancel";
 import TrackOrder from "./pages/TrackOrder.jsx";
+import Profile from "./pages/Profile.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
+import VerifyEmail from "./pages/VerifyEmail.jsx";
+import NotFound from "./pages/NotFound.jsx";
+import About from "./pages/About.jsx";
+import Terms from "./pages/Terms.jsx";
+import Privacy from "./pages/Privacy.jsx";
+import Contact from "./pages/Contact.jsx";
+import Cookies from "./pages/Cookies.jsx";
 import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
     <Layout>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
@@ -52,6 +67,15 @@ function App() {
         />
 
         <Route
+          path="/profile"
+          element={
+            <ProtectedRoute roles={["buyer"]}>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/orders"
           element={
             <ProtectedRoute roles={["buyer", "seller", "seller_candidate"]}>
@@ -59,6 +83,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Legal and Info Pages */}
+        <Route path="/about" element={<About />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/cookies" element={<Cookies />} />
+
+        {/* 404 - Must be last */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster
         position="top-center"

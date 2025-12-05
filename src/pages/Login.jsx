@@ -6,10 +6,13 @@ import bgImage from "../assets/loginPagesBg.jpg";
 import { FiUser } from "react-icons/fi";
 import toast from 'react-hot-toast';
 import Breadcrumb from '../components/Breadcrumb';
+import { buildApiEndpoint } from '../utils/api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // NEW: Restore rememberMe preference from localStorage
+  const [rememberMe, setRememberMe] = useState(localStorage.getItem("rememberMe") === "true");
   const [loading, setLoading] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -47,11 +50,21 @@ export default function Login() {
     );
     
     try {
+      const endpoint = buildApiEndpoint('auth/login');
+      console.log('[LOGIN] Calling endpoint:', endpoint);
+      
       const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/auth/login`,
-        { email, password },
+        endpoint,
+        { email, password, rememberMe }, // NEW: Include rememberMe
         { withCredentials: true }
       );
+
+      // NEW: Store remember me preference
+      if (rememberMe) {
+        localStorage.setItem("rememberMe", "true");
+      } else {
+        localStorage.removeItem("rememberMe");
+      }
 
       // Call login() from AuthContext
       login(res.data.accessToken, res.data.user);
@@ -89,17 +102,53 @@ export default function Login() {
         );
       }, 800);
 
-      // Redirect based on role (existing logic)
+      // NEW: Redirect buyers to profile instead of dashboard
       setTimeout(() => {
         if (res.data.user.role === "seller") {
           navigate('/sell-to-company');
         } else {
-          navigate('/dashboard');
+          navigate('/profile'); // NEW: Redirect to profile for buyers
         }
       }, 1200);
       
     } catch (err) {
       console.error(err.response?.data || err.message);
+      
+      // NEW: Handle email verification required
+      if (err.response?.data?.requiresVerification) {
+        setTimeout(() => {
+          toast.error(
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Email Not Verified</p>
+                <p className="text-sm text-gray-600">{err.response?.data?.message || 'Please verify your email first'}</p>
+              </div>
+            </div>, 
+            {
+              id: toastId,
+              duration: 5000,
+              position: "top-center",
+              style: {
+                background: '#ffffff',
+                color: '#1f2937',
+                borderRadius: '12px',
+                border: '1px solid #e5e7eb',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                padding: '16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                maxWidth: '380px'
+              },
+            }
+          );
+        }, 800);
+        return;
+      }
       
       // Show error toast
       setTimeout(() => {
@@ -221,16 +270,18 @@ export default function Login() {
               <label className="flex items-center gap-2.5 cursor-pointer">
                 <input
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black accent-black"
                 />
                 <span className="text-base text-gray-800">Remember me</span>
               </label>
-              <a
-                href="#"
+              <Link
+                to="/forgot-password"
                 className="text-base text-gray-900 hover:text-black font-medium"
               >
                 Forgot Password?
-              </a>
+              </Link>
             </div>
 
             {/* Sign In Button */}
@@ -255,13 +306,13 @@ export default function Login() {
         {/* Footer Text */}
         <p className="text-center text-sm text-white/80 mt-10">
           By continuing, you agree to our{" "}
-          <a href="#" className="text-white font-semibold hover:underline">
+          <Link to="/terms" className="text-white font-semibold hover:underline">
             Terms of Service
-          </a>{" "}
+          </Link>{" "}
           and{" "}
-          <a href="#" className="text-white font-semibold hover:underline">
+          <Link to="/privacy" className="text-white font-semibold hover:underline">
             Privacy Policy
-          </a>
+          </Link>
         </p>
       </div>
     </div>

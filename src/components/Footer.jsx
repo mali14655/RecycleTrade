@@ -68,7 +68,7 @@ const Footer = () => {
                   Phones
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link
                   to="/products?category=accessories"
                   className="text-gray-400 hover:text-white text-sm transition-colors"
@@ -91,7 +91,7 @@ const Footer = () => {
                 >
                   New Products
                 </Link>
-              </li>
+              </li> */}
             </ul>
           </div>
 
@@ -99,30 +99,6 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Support</h3>
             <ul className="space-y-3">
-              <li>
-                <Link
-                  to="/help"
-                  className="text-gray-400 hover:text-white text-sm transition-colors"
-                >
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/shipping"
-                  className="text-gray-400 hover:text-white text-sm transition-colors"
-                >
-                  Shipping & Returns
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/warranty"
-                  className="text-gray-400 hover:text-white text-sm transition-colors"
-                >
-                  Warranty
-                </Link>
-              </li>
               <li>
                 <Link
                   to="/contact"
@@ -160,30 +136,6 @@ const Footer = () => {
                   className="text-gray-400 hover:text-white text-sm transition-colors"
                 >
                   Sell Your Device
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/sustainability"
-                  className="text-gray-400 hover:text-white text-sm transition-colors"
-                >
-                  Sustainability
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/careers"
-                  className="text-gray-400 hover:text-white text-sm transition-colors"
-                >
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/press"
-                  className="text-gray-400 hover:text-white text-sm transition-colors"
-                >
-                  Press
                 </Link>
               </li>
             </ul>

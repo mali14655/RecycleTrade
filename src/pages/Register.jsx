@@ -5,13 +5,14 @@ import bgImage from "../assets/loginPagesBg.jpg";
 import { FiUserPlus } from "react-icons/fi";
 import toast from "react-hot-toast";
 import Breadcrumb from "../components/Breadcrumb";
+import { buildApiEndpoint } from "../utils/api";
 
 export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("buyer");
+  // const [role, setRole] = useState("buyer"); // COMMENTED OUT: Only buyer registration
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
 
@@ -48,60 +49,114 @@ export default function Register() {
     );
     
     try {
+      const endpoint = buildApiEndpoint('auth/register');
+      console.log('[REGISTER] Calling endpoint:', endpoint);
+      
       const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/auth/register`,
+        endpoint,
         {
           name,
           email,
           password,
           phone,
-          role,
+          role: "buyer", // NEW: Force buyer role
         },
         { withCredentials: true }
       );
 
-      localStorage.setItem("accessToken", res.data.accessToken);
+      // NEW: Don't set token - user needs to verify email first
+      // User is NOT logged in until email is verified
+      // No accessToken or refreshToken is returned from backend
+      // localStorage.setItem("accessToken", res.data.accessToken); // COMMENTED: No token until verification
       
-      // Show success toast
+      // NEW: Show different message based on email sending status
       setTimeout(() => {
-        toast.success(
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-gray-900">Account Created</p>
-              <p className="text-sm text-gray-600">Welcome to Mobitrade!</p>
-            </div>
-          </div>, 
-          {
-            id: toastId,
-            duration: 3000,
-            position: "top-center",
-            style: {
-              background: '#ffffff',
-              color: '#1f2937',
-              borderRadius: '12px',
-              border: '1px solid #e5e7eb',
-              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-              padding: '16px',
-              fontSize: '14px',
-              fontWeight: '500',
-              maxWidth: '380px'
-            },
-          }
-        );
+        if (res.data.emailSent === false) {
+          // Email sending failed
+          toast.error(
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Account Created</p>
+                <p className="text-sm text-gray-600">Verification email could not be sent. Please use 'Resend Verification' on the login page.</p>
+              </div>
+            </div>, 
+            {
+              id: toastId,
+              duration: 6000,
+              position: "top-center",
+              style: {
+                background: '#ffffff',
+                color: '#1f2937',
+                borderRadius: '12px',
+                border: '1px solid #e5e7eb',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                padding: '16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                maxWidth: '380px'
+              },
+            }
+          );
+        } else {
+          // Email sent successfully
+          toast.success(
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Account Created</p>
+                <p className="text-sm text-gray-600">Please check your email to verify your account</p>
+              </div>
+            </div>, 
+            {
+              id: toastId,
+              duration: 5000,
+              position: "top-center",
+              style: {
+                background: '#ffffff',
+                color: '#1f2937',
+                borderRadius: '12px',
+                border: '1px solid #e5e7eb',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                padding: '16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                maxWidth: '380px'
+              },
+            }
+          );
+        }
       }, 800);
 
-      // Redirect after success
+      // NEW: Redirect to login page after registration
       setTimeout(() => {
-        nav("/dashboard");
-      }, 1200);
+        nav("/login");
+      }, 2000);
       
     } catch (err) {
       console.error(err.response?.data || err.message);
+      
+      // NEW: Show better error messages
+      let errorMessage = 'Registration error';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+        // Improve specific error messages
+        if (errorMessage.includes('already registered') || errorMessage.includes('Email already')) {
+          errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+        } else if (errorMessage.includes('email') && errorMessage.includes('invalid')) {
+          errorMessage = 'Please enter a valid email address.';
+        } else if (errorMessage.includes('password') && errorMessage.includes('length')) {
+          errorMessage = 'Password must be at least 6 characters long.';
+        }
+      }
       
       // Show error toast
       setTimeout(() => {
@@ -114,12 +169,12 @@ export default function Register() {
             </div>
             <div>
               <p className="font-medium text-gray-900">Registration Failed</p>
-              <p className="text-sm text-gray-600">{err.response?.data?.message || 'Registration error'}</p>
+              <p className="text-sm text-gray-600">{errorMessage}</p>
             </div>
           </div>, 
           {
             id: toastId,
-            duration: 4000,
+            duration: 5000,
             position: "top-center",
             style: {
               background: '#ffffff',
@@ -233,8 +288,8 @@ export default function Register() {
               />
             </div>
 
-            {/* Account Type Select */}
-            <div>
+            {/* Account Type Select - COMMENTED OUT: Only buyer registration for now */}
+            {/* <div>
               <label className="block text-base font-semibold text-gray-900 mb-3">
                 Account Type
               </label>
@@ -248,10 +303,10 @@ export default function Register() {
                 <option value="seller_candidate">Seller (C2C)</option>
                 <option value="seller">Seller to Company</option>
               </select>
-            </div>
+            </div> */}
 
-            {/* Phone Input (only for sellers) */}
-            {(role === "seller" || role === "seller_candidate") && (
+            {/* Phone Input (only for sellers) - COMMENTED OUT */}
+            {/* {(role === "seller" || role === "seller_candidate") && (
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-3">
                   Phone Number
@@ -263,7 +318,7 @@ export default function Register() {
                   className="w-full px-5 py-4 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base text-gray-700 placeholder:text-gray-400"
                 />
               </div>
-            )}
+            )} */}
 
             {/* Create Account Button */}
             <button 
@@ -287,13 +342,13 @@ export default function Register() {
         {/* Footer Text */}
         <p className="text-center text-sm text-white/80 mt-10">
           By continuing, you agree to our{" "}
-          <a href="#" className="text-white font-semibold hover:underline">
+          <Link to="/terms" className="text-white font-semibold hover:underline">
             Terms of Service
-          </a>{" "}
+          </Link>{" "}
           and{" "}
-          <a href="#" className="text-white font-semibold hover:underline">
+          <Link to="/privacy" className="text-white font-semibold hover:underline">
             Privacy Policy
-          </a>
+          </Link>
         </p>
       </div>
     </div>

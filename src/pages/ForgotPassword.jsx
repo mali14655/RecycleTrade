@@ -1,0 +1,249 @@
+import React, { useState } from "react";
+import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
+import bgImage from "../assets/loginPagesBg.jpg";
+import { FiMail } from "react-icons/fi";
+import toast from "react-hot-toast";
+import { buildApiEndpoint } from "../utils/api";
+
+export default function ForgotPassword() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const toastId = toast.loading(
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 bg-black/10 rounded-full flex items-center justify-center">
+          <FiMail size={16} className="text-black" />
+        </div>
+        <div>
+          <p className="font-medium text-gray-900">Sending Reset Link</p>
+          <p className="text-sm text-gray-600">Please wait...</p>
+        </div>
+      </div>,
+      {
+        position: "top-center",
+        duration: 2000,
+        style: {
+          background: "#ffffff",
+          color: "#1f2937",
+          borderRadius: "12px",
+          border: "1px solid #e5e7eb",
+          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+          padding: "16px",
+          fontSize: "14px",
+          fontWeight: "500",
+          maxWidth: "380px",
+        },
+      }
+    );
+
+    try {
+      // NEW: Use utility function to build correct API endpoint
+      const endpoint = buildApiEndpoint('auth/forgot-password');
+      console.log('[FORGOT-PASSWORD] Calling endpoint:', endpoint);
+      
+      const res = await axios.post(endpoint, {
+        email,
+      }, {
+        withCredentials: true
+      });
+
+      // NEW: Check if email was actually sent
+      if (res.data.emailSent === false) {
+        setTimeout(() => {
+          toast.error(
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Email Not Sent</p>
+                <p className="text-sm text-gray-600">{res.data.message || "Password reset email could not be sent. Please try again later or contact support."}</p>
+              </div>
+            </div>,
+            {
+              id: toastId,
+              duration: 6000,
+              position: "top-center",
+              style: {
+                background: "#ffffff",
+                color: "#1f2937",
+                borderRadius: "12px",
+                border: "1px solid #e5e7eb",
+                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                padding: "16px",
+                fontSize: "14px",
+                fontWeight: "500",
+                maxWidth: "380px",
+              },
+            }
+          );
+        }, 800);
+        return;
+      }
+
+      setTimeout(() => {
+        toast.success(
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">Reset Link Sent</p>
+              <p className="text-sm text-gray-600">Check your email for password reset instructions</p>
+            </div>
+          </div>,
+          {
+            id: toastId,
+            duration: 5000,
+            position: "top-center",
+            style: {
+              background: "#ffffff",
+              color: "#1f2937",
+              borderRadius: "12px",
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              padding: "16px",
+              fontSize: "14px",
+              fontWeight: "500",
+              maxWidth: "380px",
+            },
+          }
+        );
+      }, 800);
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (err) {
+      console.error('[FORGOT-PASSWORD] Error:', err);
+      console.error('[FORGOT-PASSWORD] Response:', err.response);
+      console.error('[FORGOT-PASSWORD] Endpoint used:', buildApiEndpoint('auth/forgot-password'));
+      
+      let errorMessage = "Failed to send reset link";
+      let errorDetails = null;
+      
+      if (err.response?.status === 404) {
+        errorMessage = "Route not found. Please check if the server is running and has the latest code deployed.";
+      } else if (err.response?.data?.emailSent === false) {
+        // Email service failed
+        errorMessage = err.response.data.message || "Email could not be sent.";
+        errorDetails = err.response.data.suggestion || err.response.data.error;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+        errorDetails = err.response.data.suggestion || err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setTimeout(() => {
+        toast.error(
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">Error</p>
+              <p className="text-sm text-gray-600">{errorMessage}</p>
+              {errorDetails && (
+                <p className="text-xs text-gray-500 mt-1">{errorDetails}</p>
+              )}
+              <p className="text-xs text-gray-500 mt-2">
+                💡 Check server logs or contact support. Make sure email service (Resend/Gmail) is configured.
+              </p>
+            </div>
+          </div>,
+          {
+            id: toastId,
+            duration: 5000,
+            position: "top-center",
+            style: {
+              background: "#ffffff",
+              color: "#1f2937",
+              borderRadius: "12px",
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              padding: "16px",
+              fontSize: "14px",
+              fontWeight: "500",
+              maxWidth: "380px",
+            },
+          }
+        );
+      }, 800);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className="min-h-screen relative overflow-hidden"
+      style={{
+        backgroundImage: `url(${bgImage})`,
+        backgroundPosition: "center center",
+        backgroundSize: "cover",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      <div className="absolute top-0 left-0 right-0 bottom-0 bg-black/30"></div>
+
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-12">
+        <div className="flex flex-col gap-5 text-center mb-6">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <div className="w-14 h-14 bg-black rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white text-3xl font-bold">M</span>
+            </div>
+            <span className="text-white text-5xl font-bold tracking-tight">Mobitrade</span>
+          </div>
+          <div className="text-white text-lg font-medium">
+            <span>Reset Your Password</span>
+          </div>
+        </div>
+
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 sm:p-10">
+          <form onSubmit={submit} className="space-y-6">
+            <div>
+              <label className="block text-base font-semibold text-gray-900 mb-3">Email</label>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                placeholder="your@email.com"
+                className="w-full px-5 py-4 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base text-gray-700 placeholder:text-gray-400"
+                required
+              />
+            </div>
+
+            <button
+              disabled={loading}
+              type="submit"
+              className="w-full bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-900 transition-colors mt-8 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Sending..." : "Send Reset Link"}
+            </button>
+
+            <p className="text-center text-base text-gray-700 pt-4">
+              Remember your password?{" "}
+              <Link to="/login" className="text-black font-semibold hover:underline">
+                Sign in here
+              </Link>
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+

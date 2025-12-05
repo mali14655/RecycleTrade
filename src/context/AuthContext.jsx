@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
+import { buildApiEndpoint } from "../utils/api";
 
 export const AuthContext = createContext();
 
@@ -16,14 +17,44 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/auth/me`, {
+      const endpoint = buildApiEndpoint('auth/me');
+      const res = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true, // NEW: Include cookies for refresh token
       });
       setUser(res.data);
     } catch (err) {
-      console.error("Error fetching user:", err);
-      setUser(null);
-      localStorage.removeItem("accessToken");
+      // NEW: If token expired, try to refresh it
+      if (err.response?.status === 401 && err.response?.data?.message !== 'No token') {
+        try {
+          console.log("Access token expired, attempting to refresh...");
+          const refreshEndpoint = buildApiEndpoint('auth/refresh');
+          
+          const refreshRes = await axios.post(
+            refreshEndpoint,
+            {},
+            { withCredentials: true } // Include refresh token cookie
+          );
+          
+          // Update token and retry
+          localStorage.setItem("accessToken", refreshRes.data.accessToken);
+          setUser(refreshRes.data.user);
+          console.log("Token refreshed successfully");
+        } catch (refreshErr) {
+          console.error("Token refresh failed:", refreshErr);
+          // Refresh failed, clear everything
+          setUser(null);
+          localStorage.removeItem("accessToken");
+        }
+      } else if (err.response?.data?.requiresVerification) {
+        // User not verified
+        setUser(null);
+        localStorage.removeItem("accessToken");
+      } else {
+        // Other error
+        setUser(null);
+        localStorage.removeItem("accessToken");
+      }
     }
     setLoading(false);
   };
@@ -36,11 +67,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("accessToken", token);
     setUser(userData);
     
-    // Redirect based on role immediately after login
+    // NEW: Redirect based on role - buyers go to profile instead of dashboard
     if (userData?.role === "seller") {
       window.location.href = "/sell-to-company";
     } else {
-      window.location.href = "/dashboard";
+      window.location.href = "/profile"; // NEW: Redirect buyers to profile
     }
   };
 
