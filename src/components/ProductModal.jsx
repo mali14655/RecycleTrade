@@ -207,13 +207,102 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
-          timeout: 120000
+          timeout: 240000 // 4 minutes timeout to match backend
         }
       );
-      console.log("Images uploaded successfully:", response.data.images);
-      return response.data.images || [];
+      
+      // Log response for debugging
+      console.log("Upload response:", {
+        status: response.status,
+        data: response.data,
+        images: response.data.images,
+        uploaded: response.data.uploaded,
+        failed: response.data.failed
+      });
+      
+      // Always return images array, even if empty
+      const imageUrls = response.data.images || [];
+      
+      // Handle partial success (207 status) or when some files failed
+      if (response.status === 207 || (response.data.failed && response.data.failed > 0)) {
+        const uploaded = response.data.uploaded || imageUrls.length || 0;
+        const failed = response.data.failed || 0;
+        
+        if (uploaded > 0 && failed > 0) {
+          // Partial success - some uploaded, some failed
+          toast.warning(
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Partial Upload</p>
+                <p className="text-sm text-gray-600">{uploaded} uploaded, {failed} failed. {failed > 0 ? 'Please try uploading failed images again.' : ''}</p>
+              </div>
+            </div>
+          );
+        } else if (uploaded === 0 && failed > 0) {
+          // All failed - this should be caught by error handler, but handle it here too
+          throw new Error(response.data.message || 'All uploads failed');
+        }
+        
+        return imageUrls;
+      }
+      
+      // Full success
+      if (imageUrls.length > 0) {
+        console.log("Images uploaded successfully:", imageUrls);
+      }
+      return imageUrls;
     } catch (error) {
       console.error('Error uploading images:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      // Check if response has data (might be 500 with images array)
+      if (error.response?.data?.images !== undefined) {
+        // Backend returned error but with images array (partial failure)
+        const imageUrls = error.response.data.images || [];
+        if (imageUrls.length > 0) {
+          // Some images uploaded despite error
+          toast.warning(
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Partial Upload</p>
+                <p className="text-sm text-gray-600">{error.response.data.message || 'Some images failed to upload'}</p>
+              </div>
+            </div>
+          );
+          return imageUrls;
+        }
+      }
+      
+      // Check if it's a network/connection error
+      const isNetworkError = error.code === 'ECONNRESET' || 
+                            error.code === 'ETIMEDOUT' ||
+                            error.code === 'ECONNABORTED' ||
+                            error.message?.includes('timeout') ||
+                            error.message?.includes('Network Error');
+      
+      // Check if it's a file size error
+      const isFileSizeError = error.response?.status === 413 || 
+                             error.message?.includes('too large');
+      
+      let errorMessage = 'Upload failed. Please try again.';
+      if (isNetworkError) {
+        errorMessage = 'Network connection error. Please check your internet connection and try again.';
+      } else if (isFileSizeError) {
+        errorMessage = 'File too large. Maximum size is 5MB per file.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
       
       // Error toast for image upload
       toast.error(
@@ -225,15 +314,12 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
           </div>
           <div>
             <p className="font-medium text-gray-900">Upload Failed</p>
-            <p className="text-sm text-gray-600">Please try again</p>
+            <p className="text-sm text-gray-600">{errorMessage}</p>
           </div>
         </div>
       );
       
-      if (error.code === 'ECONNRESET' || error.response?.status === 413) {
-        throw new Error('Upload failed: File too large or network issue. Please try smaller files.');
-      }
-      throw new Error('Failed to upload images. Please try again.');
+      throw new Error(errorMessage);
     } finally {
       setUploading(false);
     }

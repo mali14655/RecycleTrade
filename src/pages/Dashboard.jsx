@@ -21,6 +21,7 @@ const DashboardSidebar = ({ activeSection, setActiveSection, user }) => {
     { id: "pickup-orders", label: "Pickup Orders", icon: "🏪" },
     { id: "online-processed", label: "Online Paid Processed", icon: "✅" },
     { id: "pickup-processed", label: "Pickup Processed", icon: "✅" },
+    { id: "cancelled-orders", label: "Cancelled Orders", icon: "❌" },
     { id: "featured-products", label: "Featured Products", icon: "⭐" },
     { id: "seller-candidates-orders", label: "Seller Candidates Orders", icon: "👥" },
     { id: "seller-requests", label: "Seller Requests", icon: "👤" },
@@ -134,6 +135,7 @@ export default function Dashboard() {
   const [sellerForms, setSellerForms] = useState([]);
   const [sellerOrders, setSellerOrders] = useState([]);
   const [companyOrders, setCompanyOrders] = useState([]);
+  const [cancelledOrders, setCancelledOrders] = useState([]);
   const [sellerCandidateOrders, setSellerCandidateOrders] = useState([]);
   const [outlets, setOutlets] = useState([]);
   const [myProducts, setMyProducts] = useState([]);
@@ -168,6 +170,7 @@ export default function Dashboard() {
           sellersRes, 
           formsRes, 
           ordersRes,
+          cancelledOrdersRes,
           outletsRes
         ] = await Promise.all([
           axios.get(`${import.meta.env.VITE_API_URL}/admin/seller-requests`, 
@@ -176,6 +179,8 @@ export default function Dashboard() {
             { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`${import.meta.env.VITE_API_URL}/orders/all`, 
             { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${import.meta.env.VITE_API_URL}/orders/cancelled`, 
+            { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`${import.meta.env.VITE_API_URL}/outlets/all`, 
             { headers: { Authorization: `Bearer ${token}` } })
         ]);
@@ -183,6 +188,7 @@ export default function Dashboard() {
         setPendingSellers(sellersRes.data);
         setSellerForms(formsRes.data);
         setCompanyOrders(ordersRes.data);
+        setCancelledOrders(cancelledOrdersRes.data);
         setOutlets(outletsRes.data);
 
         // For seller candidate orders, filter from all orders
@@ -300,6 +306,13 @@ export default function Dashboard() {
           token={token}
         />;
       
+      case "cancelled-orders":
+        return <CancelledOrdersManagement 
+          orders={cancelledOrders} 
+          fetchAllData={fetchAllData}
+          token={token}
+        />;
+      
       case "featured-products":
         return <FeaturedProductsManagement 
           products={allProducts} 
@@ -391,6 +404,9 @@ function getSectionTitle(section) {
     "products": "Product Management",
     "online-orders": "Online Paid Orders",
     "pickup-orders": "Pickup Orders",
+    "online-processed": "Online Paid Processed",
+    "pickup-processed": "Pickup Processed",
+    "cancelled-orders": "Cancelled Orders",
     "featured-products": "Featured Products",
     "seller-candidates-orders": "Seller Candidates Orders",
     "seller-requests": "Seller Requests",
@@ -580,8 +596,12 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
   // NEW: Search state
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Show paid orders AND pending payment orders (not cancelled)
   const onlineOrders = orders.filter(order => 
-    order.deliveryMethod === "delivery" && order.paymentMethod === "Stripe"
+    order.deliveryMethod === "delivery" && 
+    order.paymentMethod === "Stripe" && 
+    order.orderStatus !== "Cancelled" &&
+    (order.paymentStatus === "Paid" || order.paymentStatus === "Pending")
   );
 
   const processOrder = async (orderId) => {
@@ -865,11 +885,17 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                         </div>
                         <div className="flex items-center gap-3">
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            order.paymentStatus === 'Paid' || order.paymentStatus === 'paid' || order.paymentMethod === 'Stripe'
+                            order.paymentStatus === 'Paid' || order.paymentStatus === 'paid'
                               ? 'bg-green-100 text-green-800'
+                              : order.paymentStatus === 'Cancelled' || order.paymentStatus === 'Failed'
+                              ? 'bg-red-100 text-red-800'
                               : 'bg-yellow-100 text-yellow-800'
                           }`}>
-                            {order.paymentStatus === 'Paid' || order.paymentStatus === 'paid' || order.paymentMethod === 'Stripe' ? '✅ Paid' : '⏳ Not Paid'}
+                            {order.paymentStatus === 'Paid' || order.paymentStatus === 'paid' 
+                              ? '✅ Paid' 
+                              : order.paymentStatus === 'Cancelled' || order.paymentStatus === 'Failed'
+                              ? '❌ ' + (order.paymentStatus === 'Failed' ? 'Payment Failed' : 'Cancelled')
+                              : '⏳ Pending'}
                           </span>
                           <span className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</span>
                         </div>
@@ -1293,10 +1319,16 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                         <div className="flex items-center gap-3">
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             order.paymentStatus === 'Paid' || order.paymentStatus === 'paid'
-                              ? 'bg-green-100 text-green-800' 
+                              ? 'bg-green-100 text-green-800'
+                              : order.paymentStatus === 'Cancelled' || order.paymentStatus === 'Failed'
+                              ? 'bg-red-100 text-red-800'
                               : 'bg-yellow-100 text-yellow-800'
                           }`}>
-                            {order.paymentStatus === 'Paid' || order.paymentStatus === 'paid' ? '✅ Paid' : '⏳ Not Paid'}
+                            {order.paymentStatus === 'Paid' || order.paymentStatus === 'paid' 
+                              ? '✅ Paid' 
+                              : order.paymentStatus === 'Cancelled' || order.paymentStatus === 'Failed'
+                              ? '❌ ' + (order.paymentStatus === 'Failed' ? 'Payment Failed' : 'Cancelled')
+                              : '⏳ Pending'}
                           </span>
                           <span className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</span>
                         </div>
@@ -1770,8 +1802,12 @@ const OnlinePaidProcessedOrders = ({ orders, fetchAllData, token, user }) => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // NEW: Only show paid and processed orders
   const onlineOrders = orders.filter(order => 
-    order.deliveryMethod === "delivery" && order.paymentMethod === "Stripe"
+    order.deliveryMethod === "delivery" && 
+    order.paymentMethod === "Stripe" && 
+    order.paymentStatus === "Paid" &&
+    order.orderStatus === "Processing"
   );
 
   // Filter orders by search query (order ID)
@@ -2112,6 +2148,229 @@ const OnlinePaidProcessedOrders = ({ orders, fetchAllData, token, user }) => {
         title="Export Processed Orders"
         message={`You are about to export ${selectedOrders.length > 0 ? selectedOrders.length : processedOrders.length} processed order(s) to PDF. The PDF will be downloaded to your device.`}
       />
+    </div>
+  );
+};
+
+// NEW: Cancelled Orders Management Component
+const CancelledOrdersManagement = ({ orders, fetchAllData, token }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter orders by search query
+  const filterOrdersBySearch = (orderList) => {
+    if (!searchQuery.trim()) return orderList;
+    const query = searchQuery.toLowerCase().trim();
+    return orderList.filter(order => 
+      order._id.toLowerCase().includes(query) || 
+      order._id.slice(-8).toLowerCase().includes(query) ||
+      (order.userId?.email && order.userId.email.toLowerCase().includes(query)) ||
+      (order.guestInfo?.email && order.guestInfo.email.toLowerCase().includes(query))
+    );
+  };
+
+  const filteredCancelledOrders = filterOrdersBySearch(
+    orders.sort((a, b) => new Date(b.cancelledAt || b.createdAt) - new Date(a.cancelledAt || a.createdAt))
+  );
+
+  const getCustomerName = (order) => {
+    if (order.userId?.name) return order.userId.name;
+    const firstName = (order.guestInfo?.firstName || '').trim();
+    const lastName = (order.guestInfo?.lastName || '').trim();
+    if (firstName && lastName) return `${firstName} ${lastName}`;
+    return firstName || lastName || 'Guest Customer';
+  };
+
+  const getCancellationReasonText = (reason) => {
+    const reasons = {
+      'abandoned': 'Payment not completed within 5 minutes',
+      'user_cancelled': 'Cancelled by user',
+      'stripe_cancelled': 'Cancelled on Stripe checkout page',
+      'payment_failed': 'Payment failed',
+      'stock_unavailable': 'Stock unavailable'
+    };
+    return reasons[reason] || reason || 'Unknown reason';
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Cancelled Orders</h1>
+            <p className="text-gray-600">View all cancelled orders and their reasons</p>
+          </div>
+          <div className="text-sm text-gray-500">
+            Total: {filteredCancelledOrders.length} cancelled orders
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by Order ID or Email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+            <svg
+              className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Cancelled Orders List */}
+        <div>
+          {filteredCancelledOrders.length > 0 ? (
+            <div className="space-y-4">
+              {filteredCancelledOrders.map((order) => {
+                return (
+                  <div key={order._id} className="bg-white border-2 border-red-200 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                    {/* Order Header */}
+                    <div className="bg-gradient-to-r from-red-50 to-red-100 px-6 py-4 border-b border-red-200">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-bold text-lg text-gray-900">Order #{order._id.slice(-8)}</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Created: {new Date(order.createdAt).toLocaleDateString()} | 
+                            Cancelled: {order.cancelledAt ? new Date(order.cancelledAt).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            ❌ Cancelled
+                          </span>
+                          <span className="text-lg font-bold text-gray-600">${order.total.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Content */}
+                    <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Customer Details */}
+                      <div className="lg:col-span-1">
+                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer Details</h3>
+                        <div className="space-y-2">
+                          <p className="font-semibold text-gray-900">{getCustomerName(order)}</p>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p><span className="font-medium">📧 Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}</p>
+                            <p><span className="font-medium">📱 Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}</p>
+                          </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <h4 className="font-semibold text-gray-900 mb-2">Cancellation Details</h4>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Reason:</span> {getCancellationReasonText(order.cancellationReason)}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            <span className="font-medium">Payment Status:</span> 
+                            <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                              order.paymentStatus === 'Failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {order.paymentStatus}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Order Items */}
+                      <div className="lg:col-span-2">
+                        <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Order Items ({order.items?.length || 0})</h3>
+                        <div className="space-y-3">
+                          {order.items?.map((item, index) => {
+                            const getVariantImage = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.images && variant.images.length > 0) {
+                                  return variant.images[0];
+                                }
+                              }
+                              return item.productId?.images?.[0] || "https://via.placeholder.com/60";
+                            };
+
+                            const getVariantSpecs = () => {
+                              if (item.variantId && item.productId?.variants) {
+                                const variant = item.productId.variants.find(
+                                  v => v._id?.toString() === item.variantId?.toString()
+                                );
+                                if (variant && variant.specs) {
+                                  return variant.specs instanceof Map 
+                                    ? Object.fromEntries(variant.specs) 
+                                    : variant.specs;
+                                }
+                              }
+                              return null;
+                            };
+
+                            const variantImage = getVariantImage();
+                            const variantSpecs = getVariantSpecs();
+
+                            return (
+                              <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div className="flex items-start gap-4">
+                                  <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                                    <img
+                                      src={variantImage}
+                                      alt={item.productId?.name || item.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                    {variantSpecs && Object.keys(variantSpecs).length > 0 && (
+                                      <div className="mt-2 flex flex-wrap gap-2">
+                                        {Object.entries(variantSpecs).map(([key, value]) => (
+                                          <span key={key} className="text-xs bg-white px-2 py-1 rounded border border-gray-200 text-gray-700">
+                                            <span className="font-medium capitalize">{key}:</span> {value}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <div className="mt-2 flex items-center gap-4 text-sm">
+                                      <span className="text-gray-600">
+                                        <span className="font-medium">Quantity:</span> {item.quantity}
+                                      </span>
+                                      <span className="text-gray-600">
+                                        <span className="font-medium">Price:</span> <span className="font-semibold text-gray-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                      </span>
+                                      <span className="text-gray-700 font-semibold">
+                                        Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="flex justify-between items-center">
+                            <span className="text-lg font-semibold text-gray-900">Total:</span>
+                            <span className="text-xl font-bold text-gray-600">${order.total.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-lg">No cancelled orders found</p>
+              {searchQuery && <p className="text-sm mt-2">Try a different search term</p>}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
