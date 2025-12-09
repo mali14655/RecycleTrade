@@ -67,11 +67,13 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("accessToken", token);
     setUser(userData);
     
-    // NEW: Redirect based on role - buyers go to profile instead of dashboard
-    if (userData?.role === "seller") {
+    // NEW: Redirect based on role
+    if (userData?.role === "admin") {
+      window.location.href = "/dashboard"; // Admin goes to dashboard
+    } else if (userData?.role === "seller") {
       window.location.href = "/sell-to-company";
     } else {
-      window.location.href = "/profile"; // NEW: Redirect buyers to profile
+      window.location.href = "/profile"; // Buyers go to profile
     }
   };
 

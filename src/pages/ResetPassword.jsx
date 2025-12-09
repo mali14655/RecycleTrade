@@ -120,8 +120,13 @@ export default function ResetPassword() {
         );
       }, 800);
 
+      // NEW: Redirect based on user role - admin goes to admin login, others to client login
       setTimeout(() => {
-        navigate("/login");
+        if (response.data.userRole === "admin") {
+          navigate("/admin/login");
+        } else {
+          navigate("/login");
+        }
       }, 2000);
     } catch (err) {
       setTimeout(() => {

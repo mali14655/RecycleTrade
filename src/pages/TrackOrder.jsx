@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import Breadcrumb from "../components/Breadcrumb";
+import { buildApiEndpoint } from "../utils/api";
 
 export default function TrackOrder() {
   const [orderId, setOrderId] = useState("");
@@ -20,7 +21,8 @@ export default function TrackOrder() {
     setOrder(null);
 
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/orders/track/${orderId}`);
+      const endpoint = buildApiEndpoint(`orders/track/${orderId}`);
+      const res = await axios.get(endpoint);
       setOrder(res.data);
     } catch (err) {
       setError("Order not found. Please check your order ID or tracking number.");
@@ -120,14 +122,42 @@ export default function TrackOrder() {
             </div>
           </div>
 
-          {/* Tracking Information */}
+          {/* Tracking Information - Only shows if tracking number exists */}
           {order.trackingNumber && (
             <div className="bg-blue-50 p-4 rounded-lg mb-6">
-              <h3 className="font-semibold mb-2">Tracking Information</h3>
-              <p><strong>Tracking Number:</strong> {order.trackingNumber}</p>
-              <p className="text-sm text-blue-600 mt-1">
-                Your order has been shipped and can be tracked using the number above.
-              </p>
+              <h3 className="font-semibold mb-3">DHL Tracking Information</h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1"><strong>Tracking Number:</strong></p>
+                  <p className="text-lg font-semibold text-gray-900">{order.trackingNumber}</p>
+                </div>
+                <div className="pt-3 border-t border-blue-200">
+                  <p className="text-sm text-gray-600 mb-3">
+                    Track your package with DHL (embedded tracking):
+                  </p>
+                  {/* Embedded DHL Tracking - Users stay on your website */}
+                  <div className="w-full border border-gray-300 rounded-lg overflow-hidden bg-white">
+                    <iframe
+                      src={`https://www.dhl.com/en/express/tracking.html?AWB=${order.trackingNumber}`}
+                      title="DHL Package Tracking"
+                      className="w-full h-96 md:h-[500px] border-0"
+                      allow="fullscreen"
+                      loading="lazy"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    If the tracking widget doesn't load, you can also{" "}
+                    <a
+                      href={`https://www.dhl.com/en/express/tracking.html?AWB=${order.trackingNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      open DHL tracking in a new tab
+                    </a>
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
