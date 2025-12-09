@@ -26,6 +26,14 @@ export default function VerifyEmail() {
     try {
       const endpoint = buildApiEndpoint('auth/verify-email');
       console.log('[VERIFY-EMAIL] Calling endpoint:', endpoint);
+      console.log('[VERIFY-EMAIL] Token from URL:', verificationToken ? `${verificationToken.substring(0, 20)}...` : 'none');
+      console.log('[VERIFY-EMAIL] Token length:', verificationToken?.length);
+      console.log('[VERIFY-EMAIL] Full URL:', window.location.href);
+      
+      if (!verificationToken) {
+        toast.error("No verification token found in the link. Please check your email.");
+        return;
+      }
       
       await axios.post(endpoint, {
         token: verificationToken,
@@ -40,7 +48,32 @@ export default function VerifyEmail() {
         navigate("/login");
       }, 2000);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Verification failed");
+      console.error('[VERIFY-EMAIL] Error:', err);
+      console.error('[VERIFY-EMAIL] Response:', err.response?.data);
+      
+      const errorMessage = err.response?.data?.message || "Verification failed";
+      const isExpired = err.response?.data?.expired;
+      const isInvalid = err.response?.data?.invalid;
+      
+      if (isExpired) {
+        toast.error(
+          <div>
+            <p className="font-semibold">Verification Link Expired</p>
+            <p className="text-sm">Please request a new verification email.</p>
+          </div>,
+          { duration: 5000 }
+        );
+      } else if (isInvalid) {
+        toast.error(
+          <div>
+            <p className="font-semibold">Invalid Verification Link</p>
+            <p className="text-sm">Please check your email or request a new verification link.</p>
+          </div>,
+          { duration: 5000 }
+        );
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
