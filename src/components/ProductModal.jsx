@@ -1218,6 +1218,22 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                           JSON.stringify(v.specs) === JSON.stringify(variant.specs)
                         );
                         
+                        // NEW: Filter variant specs to only show multiple specs
+                        // Get multiple spec names from category
+                        const multipleSpecNames = selectedCategory?.specs
+                          ?.filter(spec => spec.type === 'multiple')
+                          .map(spec => spec.name) || [];
+                        
+                        // Filter variant specs to only include multiple specs
+                        const variantSpecsObj = variant.specs instanceof Map 
+                          ? Object.fromEntries(variant.specs) 
+                          : (variant.specs || {});
+                        
+                        // Only show specs that are marked as 'multiple' in category
+                        const displaySpecs = selectedCategory && multipleSpecNames.length > 0
+                          ? Object.entries(variantSpecsObj).filter(([key]) => multipleSpecNames.includes(key))
+                          : Object.entries(variantSpecsObj); // Fallback: show all (should be only multiple specs anyway)
+                        
                         return (
                           <div key={index} className={`border rounded p-3 transition-all ${
                             isSelected 
@@ -1233,7 +1249,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                               />
                               <div className="flex-1">
                                 <div className="font-medium text-sm">
-                                  {Object.entries(variant.specs).map(([key, value]) => (
+                                  {displaySpecs.map(([key, value]) => (
                                     <span key={key} className="mr-2">
                                       {key}: <strong>{value}</strong>
                                     </span>
@@ -1279,13 +1295,30 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                     </p>
                   )}
                   <div className="space-y-6">
-                    {selectedVariants.map((variant, index) => (
+                    {selectedVariants.map((variant, index) => {
+                      // NEW: Filter variant specs to only show multiple specs
+                      // Get multiple spec names from category
+                      const multipleSpecNames = selectedCategory?.specs
+                        ?.filter(spec => spec.type === 'multiple')
+                        .map(spec => spec.name) || [];
+                      
+                      // Filter variant specs to only include multiple specs
+                      const variantSpecsObj = variant.specs instanceof Map 
+                        ? Object.fromEntries(variant.specs) 
+                        : (variant.specs || {});
+                      
+                      // Only show specs that are marked as 'multiple' in category
+                      const displaySpecs = selectedCategory && multipleSpecNames.length > 0
+                        ? Object.entries(variantSpecsObj).filter(([key]) => multipleSpecNames.includes(key))
+                        : Object.entries(variantSpecsObj); // Fallback: show all (should be only multiple specs anyway)
+                      
+                      return (
                       <div key={index} className="border rounded p-4 bg-gray-50">
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <h5 className="font-semibold text-lg">Variant {index + 1}</h5>
                             <div className="text-sm text-gray-600">
-                              {Object.entries(variant.specs).map(([key, value]) => (
+                              {displaySpecs.map(([key, value]) => (
                                 <span key={key} className="mr-3">
                                   {key}: <strong>{value}</strong>
                                 </span>
@@ -1375,7 +1408,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                           )}
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
