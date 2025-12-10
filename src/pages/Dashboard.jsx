@@ -449,7 +449,7 @@ const DashboardOverview = ({ user, dashboardData, data }) => {
   const stats = [
     { 
       label: "Total Revenue", 
-      value: `$${totalRevenue.toFixed(2)}`, 
+      value: `€${totalRevenue.toFixed(2)}`, 
       color: "green",
       description: "Revenue from online paid orders"
     },
@@ -560,7 +560,7 @@ const DashboardOverview = ({ user, dashboardData, data }) => {
                       </span>
                     </td>
                     <td className="p-3 text-sm font-semibold text-green-600">
-                      ${order.total?.toFixed(2)}
+                      €{order.total?.toFixed(2)}
                     </td>
                     <td className="p-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -597,12 +597,15 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Show paid orders AND pending payment orders (not cancelled)
-  const onlineOrders = orders.filter(order => 
-    order.deliveryMethod === "delivery" && 
-    order.paymentMethod === "Stripe" && 
-    order.orderStatus !== "Cancelled" &&
-    (order.paymentStatus === "Paid" || order.paymentStatus === "Pending")
-  );
+  // Filter for online paid orders (delivery + Stripe + Paid/Pending)
+  const onlineOrders = orders.filter(order => {
+    const isDelivery = order.deliveryMethod === "delivery";
+    const isStripe = order.paymentMethod === "Stripe";
+    const isNotCancelled = order.orderStatus !== "Cancelled";
+    const isPaidOrPending = order.paymentStatus === "Paid" || order.paymentStatus === "Pending";
+    
+    return isDelivery && isStripe && isNotCancelled && isPaidOrPending;
+  });
 
   const processOrder = async (orderId) => {
     const trackingNumber = trackingNumbers[orderId];
@@ -784,9 +787,17 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
   // Only show pending orders (processed orders moved to separate section)
   const pendingOrders = filterOrdersBySearch(
     onlineOrders
-      .filter(order => order.orderStatus === "Pending")
+      .filter(order => order.orderStatus === "Pending" && order.paymentStatus === "Paid")
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
   );
+  
+  // Debug: Log orders to see what we're getting
+  console.log("🔍 Online Paid Orders Debug:", {
+    totalOrders: orders.length,
+    onlineOrders: onlineOrders.length,
+    pendingOrders: pendingOrders.length,
+    sampleOrder: onlineOrders[0]
+  });
 
   return (
     <div className="space-y-6">
@@ -897,7 +908,7 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                               ? '❌ ' + (order.paymentStatus === 'Failed' ? 'Payment Failed' : 'Cancelled')
                               : '⏳ Pending'}
                           </span>
-                          <span className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</span>
+                          <span className="text-lg font-bold text-green-600">€{order.total.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -910,8 +921,8 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                         <div className="space-y-2">
                           <p className="font-semibold text-gray-900">{getCustomerName()}</p>
                           <div className="space-y-1 text-sm text-gray-600">
-                            <p><span className="font-medium">📧 Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}</p>
-                            <p><span className="font-medium">📱 Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}</p>
+                            <p><span className="font-medium">📧 Email:</span> {order.guestInfo?.email || order.userId?.email || 'N/A'}</p>
+                            <p><span className="font-medium">📱 Phone:</span> {order.guestInfo?.phone || order.userId?.phone || 'N/A'}</p>
                           </div>
                           {(order.guestInfo?.address || order.userId?.address) && (
                             <div className="mt-3 pt-3 border-t border-gray-200">
@@ -949,17 +960,37 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                             };
 
                             const getVariantSpecs = () => {
+                              let variantSpecsObj = null;
+                              
                               if (item.variantId && item.productId?.variants) {
                                 const variant = item.productId.variants.find(
                                   v => v._id?.toString() === item.variantId?.toString()
                                 );
                                 if (variant && variant.specs) {
-                                  return variant.specs instanceof Map 
+                                  variantSpecsObj = variant.specs instanceof Map 
                                     ? Object.fromEntries(variant.specs) 
                                     : variant.specs;
                                 }
                               }
-                              return null;
+                              
+                              // NEW: Filter out single specs - exclude specs that exist in product.specs
+                              // Single specs should be in product.specs, multiple specs should be in variant.specs
+                              if (variantSpecsObj && item.productId?.specs) {
+                                const productSpecsObj = item.productId.specs instanceof Map 
+                                  ? Object.fromEntries(item.productId.specs) 
+                                  : item.productId.specs;
+                                
+                                const productSpecKeys = Object.keys(productSpecsObj);
+                                
+                                // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+                                const filteredSpecs = Object.entries(variantSpecsObj).filter(
+                                  ([key]) => !productSpecKeys.includes(key)
+                                );
+                                
+                                return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
+                              }
+                              
+                              return variantSpecsObj;
                             };
 
                             const variantImage = getVariantImage();
@@ -991,10 +1022,10 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                                         <span className="font-medium">Quantity:</span> {item.quantity}
                                       </span>
                                       <span className="text-gray-600">
-                                        <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                        <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">€{item.price?.toFixed(2) || '0.00'}</span>
                                       </span>
                                       <span className="text-gray-700 font-semibold">
-                                        Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                        Subtotal: €{((item.quantity || 1) * (item.price || 0)).toFixed(2)}
                                       </span>
                                     </div>
                                     {item.sellerId && (
@@ -1330,7 +1361,7 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                               ? '❌ ' + (order.paymentStatus === 'Failed' ? 'Payment Failed' : 'Cancelled')
                               : '⏳ Pending'}
                           </span>
-                          <span className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</span>
+                          <span className="text-lg font-bold text-green-600">€{order.total.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -1343,8 +1374,8 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                         <div className="space-y-2">
                           <p className="font-semibold text-gray-900">{getCustomerName()}</p>
                           <div className="space-y-1 text-sm text-gray-600">
-                            <p><span className="font-medium">📧 Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}</p>
-                            <p><span className="font-medium">📱 Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}</p>
+                            <p><span className="font-medium">📧 Email:</span> {order.guestInfo?.email || order.userId?.email || 'N/A'}</p>
+                            <p><span className="font-medium">📱 Phone:</span> {order.guestInfo?.phone || order.userId?.phone || 'N/A'}</p>
                             {order.guestInfo?.gender && (
                               <p className="capitalize"><span className="font-medium">Gender:</span> {order.guestInfo.gender}</p>
                             )}
@@ -1407,17 +1438,37 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                               };
 
                               const getVariantSpecs = () => {
+                                let variantSpecsObj = null;
+                                
                                 if (item.variantId && item.productId?.variants) {
                                   const variant = item.productId.variants.find(
                                     v => v._id?.toString() === item.variantId?.toString()
                                   );
                                   if (variant && variant.specs) {
-                                    return variant.specs instanceof Map 
+                                    variantSpecsObj = variant.specs instanceof Map 
                                       ? Object.fromEntries(variant.specs) 
                                       : variant.specs;
                                   }
                                 }
-                                return null;
+                                
+                                // NEW: Filter out single specs - exclude specs that exist in product.specs
+                                // Single specs should be in product.specs, multiple specs should be in variant.specs
+                                if (variantSpecsObj && item.productId?.specs) {
+                                  const productSpecsObj = item.productId.specs instanceof Map 
+                                    ? Object.fromEntries(item.productId.specs) 
+                                    : item.productId.specs;
+                                  
+                                  const productSpecKeys = Object.keys(productSpecsObj);
+                                  
+                                  // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+                                  const filteredSpecs = Object.entries(variantSpecsObj).filter(
+                                    ([key]) => !productSpecKeys.includes(key)
+                                  );
+                                  
+                                  return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
+                                }
+                                
+                                return variantSpecsObj;
                               };
 
                               const variantImage = getVariantImage();
@@ -1449,10 +1500,10 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                                           <span className="font-medium">Quantity:</span> {item.quantity}
                                         </span>
                                         <span className="text-gray-600">
-                                          <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                          <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">€{item.price?.toFixed(2) || '0.00'}</span>
                                         </span>
                                         <span className="text-gray-700 font-semibold">
-                                          Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                          Subtotal: €{((item.quantity || 1) * (item.price || 0)).toFixed(2)}
                                         </span>
                                       </div>
                                       {item.sellerId && (
@@ -1576,9 +1627,9 @@ const SellerFormsManagement = ({ forms, fetchAllData, token }) => {
                     <td className="p-3 text-sm font-medium text-gray-700">{form.productName}</td>
                     <td className="p-3 text-sm text-gray-600">{form.sellerId?.name || "Unknown"}</td>
                     <td className="p-3 text-sm text-gray-600">{form.quantity}</td>
-                    <td className="p-3 text-sm text-gray-600">${form.price}</td>
+                    <td className="p-3 text-sm text-gray-600">€{form.price}</td>
                     <td className="p-3 text-sm font-semibold text-green-600">
-                      ${(form.quantity * form.price).toFixed(2)}
+                      €{(form.quantity * form.price).toFixed(2)}
                     </td>
                     <td className="p-3 text-sm text-gray-500">
                       {new Date(form.createdAt).toLocaleDateString()}
@@ -1628,9 +1679,9 @@ const SellerFormsManagement = ({ forms, fetchAllData, token }) => {
                     <td className="p-3 text-sm font-medium text-gray-700">{form.productName}</td>
                     <td className="p-3 text-sm text-gray-600">{form.sellerId?.name || "Unknown"}</td>
                     <td className="p-3 text-sm text-gray-600">{form.quantity}</td>
-                    <td className="p-3 text-sm text-gray-600">${form.price}</td>
+                    <td className="p-3 text-sm text-gray-600">€{form.price}</td>
                     <td className="p-3 text-sm font-semibold text-green-600">
-                      ${(form.quantity * form.price).toFixed(2)}
+                      €{(form.quantity * form.price).toFixed(2)}
                     </td>
                     <td className="p-3 text-sm text-gray-500">
                       {new Date(form.updatedAt).toLocaleDateString()}
@@ -1826,6 +1877,36 @@ const OnlinePaidProcessedOrders = ({ orders, fetchAllData, token, user }) => {
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
   );
 
+  // Helper function to get customer name
+  const getCustomerName = (order) => {
+    // First, try to get name from guestInfo (form data)
+    const firstName = (order.guestInfo?.firstName || '').trim();
+    const lastName = (order.guestInfo?.lastName || '').trim();
+    
+    if (firstName || lastName) {
+      if (firstName && lastName) return `${firstName} ${lastName}`;
+      return firstName || lastName || 'Guest Customer';
+    }
+    
+    // Fallback to userId name only if no guestInfo exists
+    if (order.userId?.name) {
+      const name = (order.userId.name || '').trim();
+      if (name) {
+        const parts = name.split(/\s+/);
+        const uniqueParts = [];
+        parts.forEach(part => {
+          if (part && !uniqueParts.some(existing => existing.toLowerCase() === part.toLowerCase())) {
+            uniqueParts.push(part);
+          }
+        });
+        return uniqueParts.join(' ');
+      }
+      return name;
+    }
+    
+    return 'Guest Customer';
+  };
+
   const handleCheckboxChange = (orderId) => {
     setSelectedOrders(prev => 
       prev.includes(orderId) 
@@ -2006,7 +2087,7 @@ const OnlinePaidProcessedOrders = ({ orders, fetchAllData, token, user }) => {
                         <p className="text-sm text-gray-500">Shipped: {new Date(order.updatedAt).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-green-600">€{order.total.toFixed(2)}</p>
                         <p className="text-sm text-blue-600 font-medium mt-1">
                           📦 {order.trackingNumber || "N/A"}
                         </p>
@@ -2019,10 +2100,10 @@ const OnlinePaidProcessedOrders = ({ orders, fetchAllData, token, user }) => {
                     <div className="lg:col-span-1">
                       <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer Details</h3>
                       <div className="space-y-2">
-                        <p className="font-semibold text-gray-900">{order.userId?.name || order.guestInfo?.name || "N/A"}</p>
-                        <div className="space-y-1 text-sm text-gray-600">
-                          <p><span className="font-medium">📧 Email:</span> {order.userId?.email || order.guestInfo?.email || 'N/A'}</p>
-                          <p><span className="font-medium">📱 Phone:</span> {order.userId?.phone || order.guestInfo?.phone || 'N/A'}</p>
+                          <p className="font-semibold text-gray-900">{getCustomerName(order) || "N/A"}</p>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p><span className="font-medium">📧 Email:</span> {order.guestInfo?.email || order.userId?.email || 'N/A'}</p>
+                            <p><span className="font-medium">📱 Phone:</span> {order.guestInfo?.phone || order.userId?.phone || 'N/A'}</p>
                         </div>
                         {(order.guestInfo?.address || order.userId?.address) && (
                           <div className="mt-3 pt-3 border-t border-gray-200">
@@ -2060,17 +2141,37 @@ const OnlinePaidProcessedOrders = ({ orders, fetchAllData, token, user }) => {
                           };
 
                           const getVariantSpecs = () => {
+                            let variantSpecsObj = null;
+                            
                             if (item.variantId && item.productId?.variants) {
                               const variant = item.productId.variants.find(
                                 v => v._id?.toString() === item.variantId?.toString()
                               );
                               if (variant && variant.specs) {
-                                return variant.specs instanceof Map 
+                                variantSpecsObj = variant.specs instanceof Map 
                                   ? Object.fromEntries(variant.specs) 
                                   : variant.specs;
                               }
                             }
-                            return null;
+                            
+                            // NEW: Filter out single specs - exclude specs that exist in product.specs
+                            // Single specs should be in product.specs, multiple specs should be in variant.specs
+                            if (variantSpecsObj && item.productId?.specs) {
+                              const productSpecsObj = item.productId.specs instanceof Map 
+                                ? Object.fromEntries(item.productId.specs) 
+                                : item.productId.specs;
+                              
+                              const productSpecKeys = Object.keys(productSpecsObj);
+                              
+                              // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+                              const filteredSpecs = Object.entries(variantSpecsObj).filter(
+                                ([key]) => !productSpecKeys.includes(key)
+                              );
+                              
+                              return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
+                            }
+                            
+                            return variantSpecsObj;
                           };
 
                           const variantImage = getVariantImage();
@@ -2102,10 +2203,10 @@ const OnlinePaidProcessedOrders = ({ orders, fetchAllData, token, user }) => {
                                       <span className="font-medium">Quantity:</span> {item.quantity}
                                     </span>
                                     <span className="text-gray-600">
-                                      <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                      <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">€{item.price?.toFixed(2) || '0.00'}</span>
                                     </span>
                                     <span className="text-gray-700 font-semibold">
-                                      Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                      Subtotal: €{((item.quantity || 1) * (item.price || 0)).toFixed(2)}
                                     </span>
                                   </div>
                                   {item.sellerId && (
@@ -2246,7 +2347,7 @@ const CancelledOrdersManagement = ({ orders, fetchAllData, token }) => {
                           <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                             ❌ Cancelled
                           </span>
-                          <span className="text-lg font-bold text-gray-600">${order.total.toFixed(2)}</span>
+                          <span className="text-lg font-bold text-gray-600">€{order.total.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -2259,8 +2360,8 @@ const CancelledOrdersManagement = ({ orders, fetchAllData, token }) => {
                         <div className="space-y-2">
                           <p className="font-semibold text-gray-900">{getCustomerName(order)}</p>
                           <div className="space-y-1 text-sm text-gray-600">
-                            <p><span className="font-medium">📧 Email:</span> {order.userId ? order.userId.email : order.guestInfo?.email || 'N/A'}</p>
-                            <p><span className="font-medium">📱 Phone:</span> {order.userId ? order.userId.phone : order.guestInfo?.phone || 'N/A'}</p>
+                            <p><span className="font-medium">📧 Email:</span> {order.guestInfo?.email || order.userId?.email || 'N/A'}</p>
+                            <p><span className="font-medium">📱 Phone:</span> {order.guestInfo?.phone || order.userId?.phone || 'N/A'}</p>
                           </div>
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-200">
@@ -2297,17 +2398,37 @@ const CancelledOrdersManagement = ({ orders, fetchAllData, token }) => {
                             };
 
                             const getVariantSpecs = () => {
+                              let variantSpecsObj = null;
+                              
                               if (item.variantId && item.productId?.variants) {
                                 const variant = item.productId.variants.find(
                                   v => v._id?.toString() === item.variantId?.toString()
                                 );
                                 if (variant && variant.specs) {
-                                  return variant.specs instanceof Map 
+                                  variantSpecsObj = variant.specs instanceof Map 
                                     ? Object.fromEntries(variant.specs) 
                                     : variant.specs;
                                 }
                               }
-                              return null;
+                              
+                              // NEW: Filter out single specs - exclude specs that exist in product.specs
+                              // Single specs should be in product.specs, multiple specs should be in variant.specs
+                              if (variantSpecsObj && item.productId?.specs) {
+                                const productSpecsObj = item.productId.specs instanceof Map 
+                                  ? Object.fromEntries(item.productId.specs) 
+                                  : item.productId.specs;
+                                
+                                const productSpecKeys = Object.keys(productSpecsObj);
+                                
+                                // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+                                const filteredSpecs = Object.entries(variantSpecsObj).filter(
+                                  ([key]) => !productSpecKeys.includes(key)
+                                );
+                                
+                                return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
+                              }
+                              
+                              return variantSpecsObj;
                             };
 
                             const variantImage = getVariantImage();
@@ -2342,7 +2463,7 @@ const CancelledOrdersManagement = ({ orders, fetchAllData, token }) => {
                                         <span className="font-medium">Price:</span> <span className="font-semibold text-gray-600">${item.price?.toFixed(2) || '0.00'}</span>
                                       </span>
                                       <span className="text-gray-700 font-semibold">
-                                        Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                        Subtotal: €{((item.quantity || 1) * (item.price || 0)).toFixed(2)}
                                       </span>
                                     </div>
                                   </div>
@@ -2354,7 +2475,7 @@ const CancelledOrdersManagement = ({ orders, fetchAllData, token }) => {
                         <div className="mt-4 pt-4 border-t border-gray-200">
                           <div className="flex justify-between items-center">
                             <span className="text-lg font-semibold text-gray-900">Total:</span>
-                            <span className="text-xl font-bold text-gray-600">${order.total.toFixed(2)}</span>
+                            <span className="text-xl font-bold text-gray-600">€{order.total.toFixed(2)}</span>
                           </div>
                         </div>
                       </div>
@@ -2401,6 +2522,36 @@ const PickupProcessedOrders = ({ orders, fetchAllData, token }) => {
       .filter(order => order.orderStatus === "Processing")
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
   );
+
+  // Helper function to get customer name
+  const getCustomerName = (order) => {
+    // First, try to get name from guestInfo (form data)
+    const firstName = (order.guestInfo?.firstName || '').trim();
+    const lastName = (order.guestInfo?.lastName || '').trim();
+    
+    if (firstName || lastName) {
+      if (firstName && lastName) return `${firstName} ${lastName}`;
+      return firstName || lastName || 'Guest Customer';
+    }
+    
+    // Fallback to userId name only if no guestInfo exists
+    if (order.userId?.name) {
+      const name = (order.userId.name || '').trim();
+      if (name) {
+        const parts = name.split(/\s+/);
+        const uniqueParts = [];
+        parts.forEach(part => {
+          if (part && !uniqueParts.some(existing => existing.toLowerCase() === part.toLowerCase())) {
+            uniqueParts.push(part);
+          }
+        });
+        return uniqueParts.join(' ');
+      }
+      return name;
+    }
+    
+    return 'Guest Customer';
+  };
 
   const handleCheckboxChange = (orderId) => {
     setSelectedOrders(prev => 
@@ -2582,7 +2733,7 @@ const PickupProcessedOrders = ({ orders, fetchAllData, token }) => {
                         <p className="text-sm text-gray-500">Processed: {new Date(order.updatedAt).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-green-600">${order.total.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-green-600">€{order.total.toFixed(2)}</p>
                         {order.outletId && (
                           <p className="text-sm text-blue-600 font-medium mt-1">
                             🏪 {order.outletId.name}
@@ -2597,10 +2748,10 @@ const PickupProcessedOrders = ({ orders, fetchAllData, token }) => {
                     <div className="lg:col-span-1">
                       <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer Details</h3>
                       <div className="space-y-2">
-                        <p className="font-semibold text-gray-900">{order.userId?.name || order.guestInfo?.name || "N/A"}</p>
-                        <div className="space-y-1 text-sm text-gray-600">
-                          <p><span className="font-medium">📧 Email:</span> {order.userId?.email || order.guestInfo?.email || 'N/A'}</p>
-                          <p><span className="font-medium">📱 Phone:</span> {order.userId?.phone || order.guestInfo?.phone || 'N/A'}</p>
+                          <p className="font-semibold text-gray-900">{getCustomerName(order) || "N/A"}</p>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p><span className="font-medium">📧 Email:</span> {order.guestInfo?.email || order.userId?.email || 'N/A'}</p>
+                            <p><span className="font-medium">📱 Phone:</span> {order.guestInfo?.phone || order.userId?.phone || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
@@ -2646,17 +2797,37 @@ const PickupProcessedOrders = ({ orders, fetchAllData, token }) => {
                             };
 
                             const getVariantSpecs = () => {
+                              let variantSpecsObj = null;
+                              
                               if (item.variantId && item.productId?.variants) {
                                 const variant = item.productId.variants.find(
                                   v => v._id?.toString() === item.variantId?.toString()
                                 );
                                 if (variant && variant.specs) {
-                                  return variant.specs instanceof Map 
+                                  variantSpecsObj = variant.specs instanceof Map 
                                     ? Object.fromEntries(variant.specs) 
                                     : variant.specs;
                                 }
                               }
-                              return null;
+                              
+                              // NEW: Filter out single specs - exclude specs that exist in product.specs
+                              // Single specs should be in product.specs, multiple specs should be in variant.specs
+                              if (variantSpecsObj && item.productId?.specs) {
+                                const productSpecsObj = item.productId.specs instanceof Map 
+                                  ? Object.fromEntries(item.productId.specs) 
+                                  : item.productId.specs;
+                                
+                                const productSpecKeys = Object.keys(productSpecsObj);
+                                
+                                // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+                                const filteredSpecs = Object.entries(variantSpecsObj).filter(
+                                  ([key]) => !productSpecKeys.includes(key)
+                                );
+                                
+                                return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
+                              }
+                              
+                              return variantSpecsObj;
                             };
 
                             const variantImage = getVariantImage();
@@ -2688,10 +2859,10 @@ const PickupProcessedOrders = ({ orders, fetchAllData, token }) => {
                                         <span className="font-medium">Quantity:</span> {item.quantity}
                                       </span>
                                       <span className="text-gray-600">
-                                        <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                        <span className="font-medium">Price:</span> <span className="font-semibold text-green-600">€{item.price?.toFixed(2) || '0.00'}</span>
                                       </span>
                                       <span className="text-gray-700 font-semibold">
-                                        Subtotal: ${((item.quantity || 1) * (item.price || 0)).toFixed(2)}
+                                        Subtotal: €{((item.quantity || 1) * (item.price || 0)).toFixed(2)}
                                       </span>
                                     </div>
                                     {item.sellerId && (
@@ -3413,6 +3584,7 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
   const [variantQuantities, setVariantQuantities] = useState({});
   const [savingQuantities, setSavingQuantities] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, productId: null });
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const handleDeleteClick = (productId) => {
     setDeleteModal({ isOpen: true, productId });
@@ -3458,8 +3630,24 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
   };
 
   // NEW: Open quantity edit modal
-  const openQuantityEdit = (product) => {
+  const openQuantityEdit = async (product) => {
     setSelectedProduct(product);
+    
+    // NEW: Fetch category to filter multiple specs
+    // Handle categoryRef - could be ObjectId string or populated object
+    const categoryRefId = product.categoryRef?._id || product.categoryRef;
+    
+    if (categoryRefId) {
+      try {
+        const categoryRes = await axios.get(`${import.meta.env.VITE_API_URL}/categories/${categoryRefId}`);
+        setSelectedCategory(categoryRes.data);
+      } catch (err) {
+        console.error("Error fetching category:", err);
+        setSelectedCategory(null);
+      }
+    } else {
+      setSelectedCategory(null);
+    }
     
     // Initialize variant quantities from product
     const quantities = {};
@@ -3495,6 +3683,7 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
       setShowQuantityModal(false);
       setSelectedProduct(null);
       setVariantQuantities({});
+      setSelectedCategory(null);
       
       // Show success message
       toast.success(
@@ -3644,6 +3833,7 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
                   setShowQuantityModal(false);
                   setSelectedProduct(null);
                   setVariantQuantities({});
+                  setSelectedCategory(null);
                 }}
                 className="text-red-600 font-bold text-lg hover:text-red-800"
               >
@@ -3652,19 +3842,39 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
             </div>
 
             <div className="space-y-4">
-              {selectedProduct.variants.map((variant, index) => (
+              {selectedProduct.variants.map((variant, index) => {
+                // NEW: Filter specs to only show multiple specs (not single specs)
+                // Get multiple spec names from category
+                const multipleSpecNames = selectedCategory?.specs
+                  ?.filter(spec => spec.type === 'multiple')
+                  .map(spec => spec.name) || [];
+                
+                // Filter variant specs to only include multiple specs
+                const variantSpecsObj = variant.specs instanceof Map 
+                  ? Object.fromEntries(variant.specs) 
+                  : (variant.specs || {});
+                
+                // NEW: Only show specs that are marked as 'multiple' in category
+                // Since variants should only contain multiple specs (after ProductModal changes),
+                // we filter based on category. If category is not available, show all variant specs
+                // (which should already be only multiple specs for new products)
+                const displaySpecs = selectedCategory && multipleSpecNames.length > 0
+                  ? Object.entries(variantSpecsObj).filter(([key]) => multipleSpecNames.includes(key))
+                  : Object.entries(variantSpecsObj); // Fallback: show all (should be only multiple specs anyway)
+                
+                return (
                 <div key={index} className="border rounded p-4 bg-gray-50">
                   <div className="mb-2">
                     <h3 className="font-semibold text-sm">
                       Variant {index + 1}
-                      {variant.specs && Object.keys(variant.specs).length > 0 && (
+                      {displaySpecs.length > 0 && (
                         <span className="ml-2 text-xs text-gray-600">
-                          ({Object.entries(variant.specs).map(([key, value]) => `${key}: ${value}`).join(', ')})
+                          ({displaySpecs.map(([key, value]) => `${key}: ${value}`).join(', ')})
                         </span>
                       )}
                     </h3>
                     {variant.price !== undefined && (
-                      <p className="text-xs text-gray-500">Price: ${variant.price}</p>
+                      <p className="text-xs text-gray-500">Price: €{variant.price}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-4">
@@ -3682,7 +3892,8 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
                     </span>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
@@ -3691,6 +3902,7 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
                   setShowQuantityModal(false);
                   setSelectedProduct(null);
                   setVariantQuantities({});
+                  setSelectedCategory(null);
                 }}
                 className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
                 disabled={savingQuantities}
@@ -3879,3 +4091,4 @@ const FeaturedProductsManagement = ({ products, fetchAllData, token }) => {
     </div>
   );
 };
+

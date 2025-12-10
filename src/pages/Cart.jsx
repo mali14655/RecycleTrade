@@ -75,9 +75,21 @@ export default function Cart() {
           {/* Cart Items Section */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-6">
-                Shopping Card
-              </h1>
+              <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Shopping Cart
+                </h1>
+                <button
+                  onClick={() => {
+                    if (window.confirm("Are you sure you want to clear your cart?")) {
+                      clearCart();
+                    }
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
+                >
+                  Clear Cart
+                </button>
+              </div>
               {/* Table Header - Desktop Only */}
               <div className="hidden sm:grid sm:grid-cols-12 sm:gap-4 pb-4 border-b border-gray-200 text-xs font-semibold text-gray-700 uppercase tracking-wide">
                 <div className="col-span-1 text-center">PRODUCTS</div>

@@ -84,7 +84,7 @@ export default function FeaturedProductManager() {
         {products.map(product => (
           <div key={product._id} className="border p-4 rounded">
             <h3 className="font-bold">{product.name}</h3>
-            <p>Price: ${product.price}</p>
+            <p>Price: €{product.price}</p>
             <p>Category: {product.category}</p>
             <button
               onClick={() => toggleFeatured(product._id, product.featured)}

@@ -130,7 +130,7 @@ export default function ProductCard({ product }) {
         <div className="mt-auto">
           <div className="flex items-center justify-between">
             <p className="text-gray-900 font-semibold text-lg">
-              ${displayPrice}
+              €{displayPrice}
             </p>
             {/* Stock management - Stock status badge */}
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${

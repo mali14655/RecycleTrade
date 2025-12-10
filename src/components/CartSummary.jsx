@@ -17,12 +17,12 @@ const CartSummary = ({ total, onCheckout }) => {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-4">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Card Totals</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-6">Cart Totals</h2>
       <div className="space-y-4 mb-6">
         {/* Sub-total */}
         <div className="flex justify-between items-center">
           <span className="text-gray-600">Sub-total:</span>
-          <span className="text-gray-900 font-semibold">${subtotal.toFixed(2)}</span>
+          <span className="text-gray-900 font-semibold">€{subtotal.toFixed(2)}</span>
         </div>
         {/* Shipping */}
         <div className="flex justify-between items-center">
@@ -42,7 +42,7 @@ const CartSummary = ({ total, onCheckout }) => {
         {/* Total */}
         <div className="flex justify-between items-center pt-2">
           <span className="text-lg font-semibold text-gray-900">Total:</span>
-          <span className="text-xl font-bold text-gray-900">${subtotal.toFixed(2)} USD</span>
+          <span className="text-xl font-bold text-gray-900">€{subtotal.toFixed(2)} EUR</span>
         </div>
       </div>
       {/* Checkout Button */}

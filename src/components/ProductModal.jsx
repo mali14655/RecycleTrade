@@ -397,6 +397,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
   const generateVariants = () => {
     console.log("Generating variants with specs:", { multipleSpecs, singleSpecs });
     
+    // NEW: Only parse multiple specs for variant generation
     // Parse comma-separated values into arrays for multiple specs
     const parsedMultipleSpecs = {};
     let hasMultipleSpecs = false;
@@ -414,10 +415,9 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
       }
     }
 
-    // Check if we have any specs at all (single or multiple)
-    const hasSingleSpecs = Object.keys(singleSpecs).some(key => singleSpecs[key] && singleSpecs[key].trim());
-    
-    if (!hasMultipleSpecs && !hasSingleSpecs) {
+    // NEW: Only require multiple specs for variant generation
+    // Single specs will be stored in product.specs, not in variant.specs
+    if (!hasMultipleSpecs) {
       toast.error(
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
@@ -426,40 +426,23 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             </svg>
           </div>
           <div>
-            <p className="font-medium text-gray-900">Missing Information</p>
-            <p className="text-sm text-gray-600">Please enter values for at least one specification</p>
+            <p className="font-medium text-gray-900">Missing Multiple Specifications</p>
+            <p className="text-sm text-gray-600">Please enter values for at least one multiple specification to generate variants</p>
           </div>
         </div>
       );
       return;
     }
 
-    let combinations = [];
+    // NEW: Generate combinations only from multiple specs
+    // Single specs are NOT included in variant.specs - they go to product.specs only
+    const combinations = generateCombinations(parsedMultipleSpecs);
     
-    if (hasMultipleSpecs) {
-      // Generate combinations from multiple specs
-      combinations = generateCombinations(parsedMultipleSpecs);
-    } else {
-      // If only single specs, create one combination with all single specs
-      combinations = [{}];
-    }
+    console.log("Generated combinations (multiple specs only):", combinations);
     
-    // Add single specs to all combinations
-    const finalCombinations = combinations.map(combo => {
-      const finalCombo = { ...combo };
-      // Add all single specs to each combination
-      for (const [key, value] of Object.entries(singleSpecs)) {
-        if (value && value.trim()) {
-          finalCombo[key] = value.trim();
-        }
-      }
-      return finalCombo;
-    });
-    
-    console.log("Generated combinations:", finalCombinations);
-    
-    const variants = finalCombinations.map((combo, index) => ({
-      specs: combo,
+    // NEW: Variants only contain multiple specs, not single specs
+    const variants = combinations.map((combo, index) => ({
+      specs: combo, // Only multiple specs here
       price: parseFloat(price) || 0,
       sku: `${name.replace(/\s+/g, '').toUpperCase().slice(0, 10)}-${index + 1}`,
       enabled: true,
@@ -1171,8 +1154,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                       type="button"
                       onClick={generateVariants}
                       disabled={
-                        !Object.keys(multipleSpecs).some(key => multipleSpecs[key] && multipleSpecs[key].trim()) &&
-                        !Object.keys(singleSpecs).some(key => singleSpecs[key] && singleSpecs[key].trim())
+                        !Object.keys(multipleSpecs).some(key => multipleSpecs[key] && multipleSpecs[key].trim())
                       }
                       className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
@@ -1261,7 +1243,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                                   SKU: {variant.sku}
                                 </div>
                                 <div className="text-xs text-green-600 mt-1">
-                                  Price: ${variant.price}
+                                  Price: €{variant.price}
                                 </div>
                                 <div className="text-xs text-blue-600 mt-1">
                                   Stock: {variant.stock !== undefined ? variant.stock : 0}
@@ -1317,7 +1299,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
-                            <label className="block text-sm font-medium mb-1">Price ($) *</label>
+                            <label className="block text-sm font-medium mb-1">Price (€) *</label>
                             <input
                               type="number"
                               min="0"

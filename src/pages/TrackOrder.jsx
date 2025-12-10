@@ -98,25 +98,53 @@ export default function TrackOrder() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <h3 className="font-semibold mb-2">Customer Information</h3>
-              <p>{order.guestInfo?.firstName} {order.guestInfo?.lastName}</p>
-              <p>{order.guestInfo?.email}</p>
-              <p>{order.guestInfo?.phone}</p>
-              <p className="capitalize">Gender: {order.guestInfo?.gender}</p>
+              {(order.guestInfo || order.userId) ? (
+                <div className="space-y-1 text-sm">
+                  <p className="font-medium">
+                    {order.guestInfo?.firstName && order.guestInfo?.lastName
+                      ? `${order.guestInfo.firstName} ${order.guestInfo.lastName}`
+                      : order.guestInfo?.firstName || order.guestInfo?.lastName
+                      ? `${order.guestInfo.firstName || ''}${order.guestInfo.lastName || ''}`.trim()
+                      : order.userId?.name || 'N/A'}
+                  </p>
+                  <p><span className="font-medium">Email:</span> {order.guestInfo?.email || order.userId?.email || 'N/A'}</p>
+                  <p><span className="font-medium">Phone:</span> {order.guestInfo?.phone || order.userId?.phone || 'N/A'}</p>
+                  {order.guestInfo?.gender && (
+                    <p className="capitalize"><span className="font-medium">Gender:</span> {order.guestInfo.gender}</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500">No customer information available</p>
+              )}
             </div>
             <div>
               <h3 className="font-semibold mb-2">
                 {order.deliveryMethod === "delivery" ? "Delivery Address" : "Pickup Location"}
               </h3>
               {order.deliveryMethod === "delivery" ? (
-                <p>{order.guestInfo?.address}</p>
-              ) : (
-                order.outletId && (
-                  <div>
-                    <p><strong>{order.outletId.name}</strong></p>
-                    <p>{order.outletId.address}</p>
-                    <p>{order.outletId.location}</p>
-                    {order.outletId.phone && <p>Phone: {order.outletId.phone}</p>}
+                order.guestInfo?.address ? (
+                  <div className="space-y-1 text-sm">
+                    <p>{order.guestInfo.address}</p>
+                    {order.guestInfo.postalCode && (
+                      <p><span className="font-medium">Postal Code:</span> {order.guestInfo.postalCode}</p>
+                    )}
+                    {order.guestInfo.country && (
+                      <p><span className="font-medium">Country:</span> {order.guestInfo.country}</p>
+                    )}
                   </div>
+                ) : (
+                  <p className="text-gray-500">No delivery address available</p>
+                )
+              ) : (
+                order.outletId ? (
+                  <div className="space-y-1 text-sm">
+                    <p><strong>{order.outletId.name}</strong></p>
+                    {order.outletId.address && <p>{order.outletId.address}</p>}
+                    {order.outletId.location && <p>{order.outletId.location}</p>}
+                    {order.outletId.phone && <p><span className="font-medium">Phone:</span> {order.outletId.phone}</p>}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No pickup location available</p>
                 )
               )}
             </div>
@@ -131,6 +159,22 @@ export default function TrackOrder() {
                   <p className="text-sm text-gray-600 mb-1"><strong>Tracking Number:</strong></p>
                   <p className="text-lg font-semibold text-gray-900">{order.trackingNumber}</p>
                 </div>
+                
+                {/* Direct DHL Tracking Button */}
+                <div className="pt-3 border-t border-blue-200">
+                  <a
+                    href={`https://www.dhl.com/en/express/tracking.html?AWB=${order.trackingNumber}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors mb-4"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    Track Package on DHL Website
+                  </a>
+                </div>
+
                 <div className="pt-3 border-t border-blue-200">
                   <p className="text-sm text-gray-600 mb-3">
                     Track your package with DHL (embedded tracking):
@@ -146,7 +190,7 @@ export default function TrackOrder() {
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-2 text-center">
-                    If the tracking widget doesn't load, you can also{" "}
+                    If the tracking widget doesn't load, use the button above to{" "}
                     <a
                       href={`https://www.dhl.com/en/express/tracking.html?AWB=${order.trackingNumber}`}
                       target="_blank"
@@ -179,7 +223,7 @@ export default function TrackOrder() {
                       <p className="text-sm text-gray-500">Seller: {item.sellerId?.name}</p>
                     </div>
                   </div>
-                  <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-semibold">€{(item.price * item.quantity).toFixed(2)}</p>
                 </div>
               ))}
             </div>
@@ -189,7 +233,7 @@ export default function TrackOrder() {
           <div className="border-t pt-4 mt-4">
             <div className="flex justify-between items-center text-lg font-bold">
               <span>Total Amount</span>
-              <span>${order.total.toFixed(2)}</span>
+              <span>€{order.total.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm text-gray-600 mt-2">
               <span>Payment Method</span>

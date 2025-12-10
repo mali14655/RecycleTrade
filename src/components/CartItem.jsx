@@ -28,22 +28,41 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
     return item.images?.[0] || product.images?.[0] || "https://via.placeholder.com/80/80";
   };
 
-  // Get variant specs from item or product
+  // Get variant specs from item or product - filter to only show multiple specs
   const getVariantSpecs = () => {
+    let variantSpecsObj = null;
+    
     if (item.variantSpecs) {
-      return item.variantSpecs instanceof Map 
+      variantSpecsObj = item.variantSpecs instanceof Map 
         ? Object.fromEntries(item.variantSpecs) 
         : item.variantSpecs;
-    }
-    if (item.variantId && product.variants) {
+    } else if (item.variantId && product.variants) {
       const variant = product.variants.find(v => v._id?.toString() === item.variantId?.toString());
       if (variant && variant.specs) {
-        return variant.specs instanceof Map 
+        variantSpecsObj = variant.specs instanceof Map 
           ? Object.fromEntries(variant.specs) 
           : variant.specs;
       }
     }
-    return null;
+    
+    // NEW: Filter out single specs - exclude specs that exist in product.specs
+    // Single specs should be in product.specs, multiple specs should be in variant.specs
+    if (variantSpecsObj && product.specs) {
+      const productSpecsObj = product.specs instanceof Map 
+        ? Object.fromEntries(product.specs) 
+        : product.specs;
+      
+      const productSpecKeys = Object.keys(productSpecsObj);
+      
+      // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+      const filteredSpecs = Object.entries(variantSpecsObj).filter(
+        ([key]) => !productSpecKeys.includes(key)
+      );
+      
+      return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
+    }
+    
+    return variantSpecsObj;
   };
 
   // Get variant price if variant exists
@@ -66,9 +85,9 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
   return (
     <div className="py-4 border-b border-gray-200">
       {/* Desktop Layout */}
-      <div className="hidden sm:grid sm:grid-cols-12 sm:gap-4 sm:items-center">
+      <div className="hidden sm:grid sm:grid-cols-12 sm:gap-4 sm:items-start">
         {/* Remove Button + Image */}
-        <div className="col-span-1 flex items-center justify-center">
+        <div className="col-span-1 flex items-start justify-center pt-1">
           <button 
             onClick={handleRemove}
             className="text-red-500 hover:text-red-700 transition-colors"
@@ -77,7 +96,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
           </button>
         </div>
         {/* Product Image + Name */}
-        <div className="col-span-4 flex items-center gap-3">
+        <div className="col-span-4 flex items-start gap-3">
           <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0">
             <img
               src={image}
@@ -90,9 +109,9 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
               {product.name}
             </h3>
             {variantSpecs && Object.keys(variantSpecs).length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-2">
-                {Object.entries(variantSpecs).slice(0, 3).map(([key, value]) => (
-                  <span key={key} className="text-xs text-gray-600">
+              <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1">
+                {Object.entries(variantSpecs).map(([key, value]) => (
+                  <span key={key} className="text-xs text-gray-600 whitespace-nowrap">
                     <span className="font-medium capitalize">{key}:</span> {value}
                   </span>
                 ))}
@@ -101,13 +120,13 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
           </div>
         </div>
         {/* Price */}
-        <div className="col-span-2 text-center">
+        <div className="col-span-2 text-center pt-1">
           <span className="text-gray-900 font-medium text-base">
-            ${price.toFixed(2)}
+            €{price.toFixed(2)}
           </span>
         </div>
         {/* Quantity Controls */}
-        <div className="col-span-3 flex items-center justify-center gap-3">
+        <div className="col-span-3 flex items-center justify-center gap-3 pt-1">
           <button 
             onClick={handleDecrease}
             className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-50 transition-colors"
@@ -128,9 +147,9 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
           </button>
         </div>
         {/* Subtotal */}
-        <div className="col-span-2 text-right">
+        <div className="col-span-2 text-right pt-1">
           <span className="text-gray-900 font-semibold text-base">
-            ${subtotal.toFixed(2)}
+            €{subtotal.toFixed(2)}
           </span>
         </div>
       </div>
@@ -151,8 +170,8 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
               {product.name}
             </h3>
             {variantSpecs && Object.keys(variantSpecs).length > 0 && (
-              <div className="mb-2 flex flex-wrap gap-1.5">
-                {Object.entries(variantSpecs).slice(0, 2).map(([key, value]) => (
+              <div className="mb-2 flex flex-wrap gap-x-1.5 gap-y-1">
+                {Object.entries(variantSpecs).map(([key, value]) => (
                   <span key={key} className="text-xs text-gray-600">
                     <span className="font-medium capitalize">{key}:</span> {value}
                   </span>
@@ -160,7 +179,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
               </div>
             )}
             <p className="text-base font-semibold text-gray-900">
-              ${price.toFixed(2)}
+              €{price.toFixed(2)}
             </p>
           </div>
           <button 
@@ -195,7 +214,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
           <div>
             <span className="text-xs text-gray-600 mr-2">Subtotal:</span>
             <span className="text-base font-bold text-gray-900">
-              ${subtotal.toFixed(2)}
+              €{subtotal.toFixed(2)}
             </span>
           </div>
         </div>

@@ -11,6 +11,7 @@ export default function ProductDetails() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
+  const [imageOpacity, setImageOpacity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedSpecs, setSelectedSpecs] = useState({});
   const [reviews, setReviews] = useState([]);
@@ -296,24 +297,39 @@ export default function ProductDetails() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
           {/* Left: Image Gallery */}
           <div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Main Image */}
-              <div className="relative bg-white rounded-lg border border-gray-200 p-8 flex items-center justify-center aspect-square">
-                <img
-                  src={displayImages[activeImage] || "https://via.placeholder.com/600"}
-                  alt={product.name}
-                  className="w-full h-full object-contain"
-                />
+              <div className="relative bg-white rounded-lg border border-gray-200 p-3 flex items-center justify-center overflow-hidden" style={{ maxHeight: '450px', minHeight: '350px' }}>
+                <div className="relative w-full h-full" style={{ maxWidth: '100%', maxHeight: '400px' }}>
+                  <img
+                    key={activeImage}
+                    src={displayImages[activeImage] || "https://via.placeholder.com/600"}
+                    alt={product.name}
+                    className="w-full h-full object-contain transition-opacity duration-300 ease-in-out"
+                    style={{ 
+                      maxHeight: '400px', 
+                      maxWidth: '100%',
+                      opacity: imageOpacity
+                    }}
+                    onLoad={() => setImageOpacity(1)}
+                  />
+                </div>
               </div>
 
               {/* Thumbnail Navigation */}
               {displayImages.length > 1 && (
                 <div className="relative flex items-center gap-2">
                   <button 
-                    onClick={() => setActiveImage(prev => prev > 0 ? prev - 1 : displayImages.length - 1)}
-                    className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors shrink-0"
+                    onClick={() => {
+                      setImageOpacity(0);
+                      setTimeout(() => {
+                        setActiveImage(prev => prev > 0 ? prev - 1 : displayImages.length - 1);
+                        setImageOpacity(1);
+                      }, 150);
+                    }}
+                    className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors shrink-0"
                   >
-                    <ChevronLeft size={20} />
+                    <ChevronLeft size={16} />
                   </button>
 
                   <div className="flex-1 overflow-hidden">
@@ -321,10 +337,16 @@ export default function ProductDetails() {
                       {displayImages.map((image, index) => (
                         <div
                           key={index}
-                          onClick={() => setActiveImage(index)}
-                          className={`w-16 h-16 sm:w-20 sm:h-20 border-2 rounded-lg cursor-pointer overflow-hidden shrink-0 ${
+                          onClick={() => {
+                            setImageOpacity(0);
+                            setTimeout(() => {
+                              setActiveImage(index);
+                              setImageOpacity(1);
+                            }, 150);
+                          }}
+                          className={`w-12 h-12 sm:w-14 sm:h-14 border-2 rounded-lg cursor-pointer overflow-hidden shrink-0 transition-all duration-200 ${
                             activeImage === index
-                              ? "border-black"
+                              ? "border-black scale-105"
                               : "border-gray-200 hover:border-gray-400"
                           }`}
                         >
@@ -339,10 +361,16 @@ export default function ProductDetails() {
                   </div>
 
                   <button 
-                    onClick={() => setActiveImage(prev => prev < displayImages.length - 1 ? prev + 1 : 0)}
-                    className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors shrink-0"
+                    onClick={() => {
+                      setImageOpacity(0);
+                      setTimeout(() => {
+                        setActiveImage(prev => prev < displayImages.length - 1 ? prev + 1 : 0);
+                        setImageOpacity(1);
+                      }, 150);
+                    }}
+                    className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors shrink-0"
                   >
-                    <ChevronRight size={20} />
+                    <ChevronRight size={16} />
                   </button>
                 </div>
               )}
@@ -451,68 +479,59 @@ export default function ProductDetails() {
               })()}
             </div>
 
-            {/* Variant Selection - Inline Layout */}
+            {/* Variant Selection - Improved UI */}
             {showVariantSelection && (
-              <div className="p-4 border rounded-lg bg-gray-50">
-                <h4 className="font-semibold mb-3">Select Variant:</h4>
-                <div className="flex flex-wrap gap-3">
-                  {multipleSpecs.map(specName => (
-                    <div key={specName} className="flex-1 min-w-[120px]">
-                      <label className="block text-sm font-medium mb-2 capitalize">
-                        {specName}:
-                      </label>
-                      <select
-                        value={selectedSpecs[specName] || ''}
-                        onChange={(e) => handleSpecChange(specName, e.target.value)}
-                        className="w-full p-2 border rounded text-sm"
-                      >
-                        {/* <option value="">Select {specName}</option> */}
-                        {getAvailableOptions(specName).map(option => {
-                          const stock = getVariantStockForOption(specName, option);
-                          const inStock = stock !== null && (stock === undefined || stock > 0);
-                          return (
-                            <option 
-                              key={option} 
-                              value={option}
-                              disabled={!inStock}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Select Variant</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {multipleSpecs.map(specName => {
+                    const availableOptions = getAvailableOptions(specName);
+                    return (
+                      <div key={specName} className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700 capitalize">
+                          {specName}
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={selectedSpecs[specName] || ''}
+                            onChange={(e) => handleSpecChange(specName, e.target.value)}
+                            className="w-full pl-4 pr-10 py-3 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base appearance-none cursor-pointer"
+                          >
+                            <option value="">Select {specName}</option>
+                            {availableOptions.map(option => {
+                              const stock = getVariantStockForOption(specName, option);
+                              const inStock = stock !== null && (stock === undefined || stock > 0);
+                              return (
+                                <option 
+                                  key={option} 
+                                  value={option}
+                                  disabled={!inStock}
+                                >
+                                  {option} {!inStock && '(Out of Stock)'}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <svg
+                              className="w-5 h-5 text-gray-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
-                              {option} 
-                              {/* {stock !== null && stock !== undefined && `(${stock > 0 ? `${stock} in stock` : 'Out of stock'})`} */}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                  ))}
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                
-                {selectedVariant && (
-                  <div className={`mt-3 p-3 rounded border ${
-                    isVariantInStock(selectedVariant) ? 'bg-white' : 'bg-red-50 border-red-200'
-                  }`}>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-600">
-                        Selected: {Object.entries(selectedVariant.specs).map(([key, value]) => (
-                          <span key={key} className="mr-2">
-                            {key}: <strong>{value}</strong>
-                          </span>
-                        ))}
-                      </p>
-                      {/* NEW: Stock management - Stock info in variant selection */}
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                        isVariantInStock(selectedVariant)
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {isVariantInStock(selectedVariant)
-                          ? selectedVariant.stock !== undefined
-                            ? `Stock: ${selectedVariant.stock}`
-                            : "In Stock"
-                          : "Out of Stock"}
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 

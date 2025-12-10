@@ -167,7 +167,7 @@ export default function Checkout() {
 
       const orderData = {
         items: payloadItems,
-        guestInfo: user ? null : formData,
+        guestInfo: formData, // Always use form data for shipping/delivery details
         deliveryMethod: formData.deliveryMethod,
         outletId: formData.deliveryMethod === "pickup" ? selectedOutlet : null
       };
@@ -263,7 +263,7 @@ export default function Checkout() {
       const orderData = {
         items: payloadItems,
         total: total,
-        guestInfo: user ? null : formData,
+        guestInfo: formData, // Always use form data for shipping/delivery details
         outletId: selectedOutlet
       };
 
@@ -578,22 +578,41 @@ export default function Checkout() {
                   };
 
                   const getVariantSpecs = () => {
+                    let variantSpecsObj = null;
+                    
                     if (item.variantSpecs) {
-                      return item.variantSpecs instanceof Map 
+                      variantSpecsObj = item.variantSpecs instanceof Map 
                         ? Object.fromEntries(item.variantSpecs) 
                         : item.variantSpecs;
-                    }
-                    if (item.variantId && product.variants) {
+                    } else if (item.variantId && product.variants) {
                       const variant = product.variants.find(
                         v => v._id?.toString() === item.variantId?.toString()
                       );
                       if (variant && variant.specs) {
-                        return variant.specs instanceof Map 
+                        variantSpecsObj = variant.specs instanceof Map 
                           ? Object.fromEntries(variant.specs) 
                           : variant.specs;
                       }
                     }
-                    return null;
+                    
+                    // NEW: Filter out single specs - exclude specs that exist in product.specs
+                    // Single specs should be in product.specs, multiple specs should be in variant.specs
+                    if (variantSpecsObj && product.specs) {
+                      const productSpecsObj = product.specs instanceof Map 
+                        ? Object.fromEntries(product.specs) 
+                        : product.specs;
+                      
+                      const productSpecKeys = Object.keys(productSpecsObj);
+                      
+                      // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+                      const filteredSpecs = Object.entries(variantSpecsObj).filter(
+                        ([key]) => !productSpecKeys.includes(key)
+                      );
+                      
+                      return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
+                    }
+                    
+                    return variantSpecsObj;
                   };
 
                   // Get variant price if variant exists
@@ -618,10 +637,10 @@ export default function Checkout() {
                           alt={product.name}
                           className="w-12 h-12 rounded object-cover"
                         />
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <p className="font-medium">{product.name}</p>
                           {variantSpecs && Object.keys(variantSpecs).length > 0 && (
-                            <div className="mt-0.5 flex flex-wrap gap-1">
+                            <div className="mt-0.5 flex flex-wrap gap-x-1.5 gap-y-1">
                               {Object.entries(variantSpecs).map(([key, value]) => (
                                 <span key={key} className="text-xs text-gray-500">
                                   <span className="font-medium capitalize">{key}:</span> {value}
@@ -629,7 +648,7 @@ export default function Checkout() {
                               ))}
                             </div>
                           )}
-                          <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                          <p className="text-sm text-gray-500 mt-1">Qty: {item.quantity}</p>
                         </div>
                       </div>
                       <p className="font-semibold">
@@ -692,3 +711,4 @@ export default function Checkout() {
     </div>
   );
 }
+
