@@ -117,7 +117,7 @@ const Hero = () => {
           <div className="flex flex-col items-center text-center gap-4 sm:gap-6">
             {/* Title - COMPACT */}
             <h1 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight mb-2 sm:mb-4 px-2">
-              Mobitrade products with at least a 12-month warranty
+              F&S Smartphones products with at least a 12-month warranty
             </h1>
 
             {/* Categories Section */}
@@ -191,12 +191,14 @@ const Hero = () => {
               >
                 Explore All Products
               </Link>
+              {/* COMMENTED OUT: Selling feature not available
               <Link
                 to="/register"
                 className="border-2 border-white text-white px-6 py-2 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors text-sm sm:text-base"
               >
                 Start Selling
               </Link>
+              */}
             </div>
           </div>
         </div>

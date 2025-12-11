@@ -70,9 +70,10 @@ export const AuthProvider = ({ children }) => {
     // NEW: Redirect based on role
     if (userData?.role === "admin") {
       window.location.href = "/dashboard"; // Admin goes to dashboard
-    } else if (userData?.role === "seller") {
-      window.location.href = "/sell-to-company";
     } else {
+      // COMMENTED OUT: Seller feature not available
+      // } else if (userData?.role === "seller") {
+      //   window.location.href = "/sell-to-company";
       window.location.href = "/profile"; // Buyers go to profile
     }
   };

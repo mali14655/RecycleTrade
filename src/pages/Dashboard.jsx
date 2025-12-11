@@ -23,9 +23,10 @@ const DashboardSidebar = ({ activeSection, setActiveSection, user }) => {
     { id: "pickup-processed", label: "Pickup Processed", icon: "✅" },
     { id: "cancelled-orders", label: "Cancelled Orders", icon: "❌" },
     { id: "featured-products", label: "Featured Products", icon: "⭐" },
-    { id: "seller-candidates-orders", label: "Seller Candidates Orders", icon: "👥" },
-    { id: "seller-requests", label: "Seller Requests", icon: "👤" },
-    { id: "seller-forms", label: "Seller Forms", icon: "📝" },
+    // COMMENTED OUT: Seller features not available
+    // { id: "seller-candidates-orders", label: "Seller Candidates Orders", icon: "👥" },
+    // { id: "seller-requests", label: "Seller Requests", icon: "👤" },
+    // { id: "seller-forms", label: "Seller Forms", icon: "📝" },
   ];
 
   const sellerCandidateMenuItems = [
@@ -166,17 +167,34 @@ export default function Dashboard() {
 
       // Admin specific data
       if (user.user?.role === "admin") {
+        // COMMENTED OUT: Seller-related API calls not needed
+        // const [
+        //   sellersRes, 
+        //   formsRes, 
+        //   ordersRes,
+        //   cancelledOrdersRes,
+        //   outletsRes
+        // ] = await Promise.all([
+        //   axios.get(`${import.meta.env.VITE_API_URL}/admin/seller-requests`, 
+        //     { headers: { Authorization: `Bearer ${token}` } }),
+        //   axios.get(`${import.meta.env.VITE_API_URL}/seller-company/admin/forms`, 
+        //     { headers: { Authorization: `Bearer ${token}` } }),
+        //   axios.get(`${import.meta.env.VITE_API_URL}/orders/all`, 
+        //     { headers: { Authorization: `Bearer ${token}` } }),
+        //   axios.get(`${import.meta.env.VITE_API_URL}/orders/cancelled`, 
+        //     { headers: { Authorization: `Bearer ${token}` } }),
+        //   axios.get(`${import.meta.env.VITE_API_URL}/outlets/all`, 
+        //     { headers: { Authorization: `Bearer ${token}` } })
+        // ]);
+
+        // setPendingSellers(sellersRes.data);
+        // setSellerForms(formsRes.data);
+        
         const [
-          sellersRes, 
-          formsRes, 
           ordersRes,
           cancelledOrdersRes,
           outletsRes
         ] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_URL}/admin/seller-requests`, 
-            { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${import.meta.env.VITE_API_URL}/seller-company/admin/forms`, 
-            { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`${import.meta.env.VITE_API_URL}/orders/all`, 
             { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`${import.meta.env.VITE_API_URL}/orders/cancelled`, 
@@ -185,25 +203,25 @@ export default function Dashboard() {
             { headers: { Authorization: `Bearer ${token}` } })
         ]);
 
-        setPendingSellers(sellersRes.data);
-        setSellerForms(formsRes.data);
         setCompanyOrders(ordersRes.data);
         setCancelledOrders(cancelledOrdersRes.data);
         setOutlets(outletsRes.data);
 
+        // COMMENTED OUT: Seller candidate orders not needed
         // For seller candidate orders, filter from all orders
-        const candidateOrders = ordersRes.data.filter(order => 
-          order.items.some(item => item.sellerId?.role === "seller_candidate")
-        );
-        setSellerCandidateOrders(candidateOrders);
+        // const candidateOrders = ordersRes.data.filter(order => 
+        //   order.items.some(item => item.sellerId?.role === "seller_candidate")
+        // );
+        // setSellerCandidateOrders(candidateOrders);
       }
 
+      // COMMENTED OUT: Seller candidate feature not available
       // Seller candidate specific data
-      if (user.user?.role === "seller_candidate") {
-        const ordersRes = await axios.get(`${import.meta.env.VITE_API_URL}/orders/seller`, 
-          { headers: { Authorization: `Bearer ${token}` } });
-        setSellerOrders(ordersRes.data);
-      }
+      // if (user.user?.role === "seller_candidate") {
+      //   const ordersRes = await axios.get(`${import.meta.env.VITE_API_URL}/orders/seller`, 
+      //     { headers: { Authorization: `Bearer ${token}` } });
+      //   setSellerOrders(ordersRes.data);
+      // }
 
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -216,9 +234,10 @@ export default function Dashboard() {
   const fetchDashboardOverview = async () => {
     try {
       let endpoint = `${import.meta.env.VITE_API_URL}/admin/overview`;
-      if (user.user?.role === "seller" || user.user?.role === "seller_candidate") {
-        endpoint = `${import.meta.env.VITE_API_URL}/admin/seller-overview`;
-      }
+      // COMMENTED OUT: Seller feature not available
+      // if (user.user?.role === "seller" || user.user?.role === "seller_candidate") {
+      //   endpoint = `${import.meta.env.VITE_API_URL}/admin/seller-overview`;
+      // }
 
       const res = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
@@ -320,26 +339,27 @@ export default function Dashboard() {
           token={token}
         />;
       
-      case "seller-candidates-orders":
-        return <SellerCandidatesOrders 
-          orders={sellerCandidateOrders} 
-          fetchAllData={fetchAllData}
-          token={token}
-        />;
+      // COMMENTED OUT: Seller features not available
+      // case "seller-candidates-orders":
+      //   return <SellerCandidatesOrders 
+      //     orders={sellerCandidateOrders} 
+      //     fetchAllData={fetchAllData}
+      //     token={token}
+      //   />;
       
-      case "seller-requests":
-        return <SellerRequestsManagement 
-          sellers={pendingSellers} 
-          fetchAllData={fetchAllData}
-          token={token}
-        />;
+      // case "seller-requests":
+      //   return <SellerRequestsManagement 
+      //     sellers={pendingSellers} 
+      //     fetchAllData={fetchAllData}
+      //     token={token}
+      //   />;
       
-      case "seller-forms":
-        return <SellerFormsManagement 
-          forms={sellerForms} 
-          fetchAllData={fetchAllData}
-          token={token}
-        />;
+      // case "seller-forms":
+      //   return <SellerFormsManagement 
+      //     forms={sellerForms} 
+      //     fetchAllData={fetchAllData}
+      //     token={token}
+      //   />;
       
       default:
         return <DashboardOverview user={user} dashboardData={dashboardData} data={{ 
@@ -408,9 +428,10 @@ function getSectionTitle(section) {
     "pickup-processed": "Pickup Processed",
     "cancelled-orders": "Cancelled Orders",
     "featured-products": "Featured Products",
-    "seller-candidates-orders": "Seller Candidates Orders",
-    "seller-requests": "Seller Requests",
-    "seller-forms": "Seller Forms",
+    // COMMENTED OUT: Seller features not available
+    // "seller-candidates-orders": "Seller Candidates Orders",
+    // "seller-requests": "Seller Requests",
+    // "seller-forms": "Seller Forms",
   };
   return titles[section] || "Dashboard";
 }

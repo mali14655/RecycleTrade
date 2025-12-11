@@ -13,7 +13,7 @@ const Terms = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                By accessing and using Mobitrade, you accept and agree to be bound by the terms and provision of this agreement. 
+                By accessing and using F&S Smartphones, you accept and agree to be bound by the terms and provision of this agreement. 
                 If you do not agree to abide by the above, please do not use this service.
               </p>
             </section>
@@ -21,13 +21,13 @@ const Terms = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Use License</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Permission is granted to temporarily access the materials on Mobitrade's website for personal, non-commercial 
+                Permission is granted to temporarily access the materials on F&S Smartphones' website for personal, non-commercial 
                 transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
                 <li>Modify or copy the materials</li>
                 <li>Use the materials for any commercial purpose or for any public display</li>
-                <li>Attempt to reverse engineer any software contained on Mobitrade's website</li>
+                <li>Attempt to reverse engineer any software contained on F&S Smartphones' website</li>
                 <li>Remove any copyright or other proprietary notations from the materials</li>
               </ul>
             </section>
@@ -43,7 +43,7 @@ const Terms = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Products and Services</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                All products sold through Mobitrade are refurbished and come with our quality guarantee. We strive to provide 
+                All products sold through F&S Smartphones are refurbished and come with our quality guarantee. We strive to provide 
                 accurate product descriptions, but we do not warrant that product descriptions or other content is accurate, 
                 complete, reliable, current, or error-free.
               </p>
@@ -68,7 +68,7 @@ const Terms = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Limitation of Liability</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                In no event shall Mobitrade, nor its directors, employees, partners, agents, suppliers, or affiliates, 
+                In no event shall F&S Smartphones, nor its directors, employees, partners, agents, suppliers, or affiliates, 
                 be liable for any indirect, incidental, special, consequential, or punitive damages, including without 
                 limitation, loss of profits, data, use, goodwill, or other intangible losses.
               </p>

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import bgImage from "../assets/loginPagesBg.jpg";
+import logo from "../assets/logo.jpeg";
 import { FiUser } from "react-icons/fi";
 import toast from 'react-hot-toast';
 import Breadcrumb from '../components/Breadcrumb';
@@ -104,11 +105,13 @@ export default function Login() {
 
       // NEW: Redirect buyers to profile instead of dashboard
       setTimeout(() => {
-        if (res.data.user.role === "seller") {
-          navigate('/sell-to-company');
-        } else {
-          navigate('/profile'); // NEW: Redirect to profile for buyers
-        }
+        // COMMENTED OUT: Seller feature not available
+        // if (res.data.user.role === "seller") {
+        //   navigate('/sell-to-company');
+        // } else {
+        //   navigate('/profile'); // NEW: Redirect to profile for buyers
+        // }
+        navigate('/profile'); // Redirect all users to profile
       }, 1200);
       
     } catch (err) {
@@ -208,11 +211,13 @@ export default function Login() {
         {/* Logo */}
         <div className="flex flex-col gap-5 text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <div className="w-14 h-14 bg-black rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white text-3xl font-bold">M</span>
-            </div>
+            <img 
+              src={logo} 
+              alt="F&S Smartphones" 
+              className="w-14 h-14 rounded-xl object-cover shadow-lg"
+            />
             <span className="text-white text-5xl font-bold tracking-tight">
-              Mobitrade
+              F&S Smartphones
             </span>
           </div>
 

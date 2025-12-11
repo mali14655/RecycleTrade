@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import bgImage from "../assets/loginPagesBg.jpg";
+import logo from "../assets/logo.jpeg";
 import { FiLock } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { buildApiEndpoint } from "../utils/api";
@@ -180,10 +181,12 @@ export default function ResetPassword() {
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-12">
         <div className="flex flex-col gap-5 text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <div className="w-14 h-14 bg-black rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white text-3xl font-bold">M</span>
-            </div>
-            <span className="text-white text-5xl font-bold tracking-tight">Mobitrade</span>
+            <img 
+              src={logo} 
+              alt="F&S Smartphones" 
+              className="w-14 h-14 rounded-xl object-cover shadow-lg"
+            />
+            <span className="text-white text-5xl font-bold tracking-tight">F&S Smartphones</span>
           </div>
           <div className="text-white text-lg font-medium">
             <span>Set New Password</span>

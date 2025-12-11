@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import bgImage from "../assets/loginPagesBg.jpg";
+import logo from "../assets/logo.jpeg";
 import { FiShield } from "react-icons/fi";
 import toast from 'react-hot-toast';
 import { buildApiEndpoint } from '../utils/api';
@@ -176,11 +177,13 @@ export default function AdminLogin() {
         {/* Logo */}
         <div className="flex flex-col gap-5 text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <div className="w-14 h-14 bg-black rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white text-3xl font-bold">M</span>
-            </div>
+            <img 
+              src={logo} 
+              alt="F&S Smartphones" 
+              className="w-14 h-14 rounded-xl object-cover shadow-lg"
+            />
             <span className="text-white text-5xl font-bold tracking-tight">
-              Mobitrade
+              F&S Smartphones
             </span>
           </div>
 

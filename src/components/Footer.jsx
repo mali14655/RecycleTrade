@@ -1,7 +1,8 @@
-// components/layout/Footer.jsx - UPDATED with new Mobitrade design
+// components/layout/Footer.jsx - UPDATED with new F&S Smartphones design
 import React from "react";
 import { Link } from "react-router-dom";
 import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+import logo from "../assets/logo.jpeg";
 
 const Footer = () => {
   return (
@@ -11,10 +12,12 @@ const Footer = () => {
           {/* Brand Section */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-black rounded flex items-center justify-center">
-                <span className="text-white text-xl font-bold">M</span>
-              </div>
-              <span className="text-xl font-semibold">Mobitrade</span>
+              <img 
+                src={logo} 
+                alt="F&S Smartphones" 
+                className="w-8 h-8 rounded object-cover"
+              />
+              <span className="text-xl font-semibold">F&S Smartphones</span>
             </div>
             <p className="text-gray-400 text-sm mb-6">
               Your trusted marketplace for refurbished phones and accessories.
@@ -118,9 +121,9 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* About Mobitrade Section */}
+          {/* About F&S Smartphones Section */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">About Mobitrade</h3>
+            <h3 className="font-semibold text-lg mb-4">About F&S Smartphones</h3>
             <ul className="space-y-3">
               <li>
                 <Link
@@ -130,6 +133,7 @@ const Footer = () => {
                   About Us
                 </Link>
               </li>
+              {/* COMMENTED OUT: Selling feature not available
               <li>
                 <Link
                   to="/sell-to-company"
@@ -138,6 +142,7 @@ const Footer = () => {
                   Sell Your Device
                 </Link>
               </li>
+              */}
             </ul>
           </div>
         </div>
@@ -145,7 +150,7 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-400 text-sm">
-            © 2024 Mobitrade. All rights reserved.
+            © 2024 F&S Smartphones. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link

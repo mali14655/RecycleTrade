@@ -5,6 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { useSearch } from "../context/SearchContext";
 import axios from "axios";
+import logo from "../assets/logo.jpeg";
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -94,42 +95,45 @@ const Navbar = () => {
       {/* Main Navbar */}
       <nav className="bg-white shadow-sm sticky top-0 z-50 font-sans">
         <div className="max-w-[90%] mx-auto px-2 sm:px-4">
-          <div className="flex items-center justify-between h-14">
-            {/* Logo */}
-            <Link
-              to="/"
-              className="flex items-center gap-2"
-              onClick={clearSearch}
-            >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-black rounded-lg flex items-center justify-center">
-                <span className="text-white text-xl sm:text-2xl font-bold font-serif">
-                  M
+          <div className="flex items-center justify-between h-14 gap-4">
+            {/* Left Section: Logo + Navigation */}
+            <div className="flex items-center gap-4 lg:gap-6 flex-shrink-0">
+              {/* Logo */}
+              <Link
+                to="/"
+                className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+                onClick={clearSearch}
+              >
+                <img 
+                  src={logo} 
+                  alt="F&S Smartphones" 
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg object-cover"
+                />
+                <span className="text-base sm:text-lg font-semibold text-gray-900 whitespace-nowrap">
+                  F<span className="text-gray-500 font-normal">&</span>S Smartphones
                 </span>
-              </div>
-              <span className="text-lg sm:text-xl font-semibold font-serif">
-                Mobitrade
-              </span>
-            </Link>
+              </Link>
 
-            {/* Navigation Links - Desktop */}
-            <div className="hidden lg:flex items-center gap-6 xl:gap-8">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`transition-colors text-sm xl:text-base font-medium ${
-                    item.current
-                      ? "text-gray-900"
-                      : "text-gray-700 hover:text-gray-900"
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {/* Navigation Links - Desktop */}
+              <div className="hidden lg:flex items-center gap-6 xl:gap-8">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`transition-colors text-sm xl:text-base font-medium ${
+                      item.current
+                        ? "text-gray-900"
+                        : "text-gray-700 hover:text-gray-900"
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
             </div>
 
             {/* Search Bar - Desktop */}
-            <div className="hidden lg:flex flex-1 max-w-xs xl:max-w-md mx-4 xl:mx-8">
+            <div className="hidden lg:flex flex-1 max-w-xs xl:max-w-md mx-4">
               <form onSubmit={handleSearch} className="relative w-full">
                 <input
                   type="text"
@@ -148,7 +152,7 @@ const Navbar = () => {
             </div>
 
             {/* Icons */}
-            <div className="flex items-center gap-3 sm:gap-4 lg:gap-6">
+            <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 flex-shrink-0">
               {/* User Menu */}
               {user ? (
                 <div className="relative">
