@@ -7,8 +7,6 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +19,17 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
   const [selectedVariants, setSelectedVariants] = useState([]);
   const [step, setStep] = useState(1);
   
-  // Track variant image files separately (not uploaded immediately)
+  // NEW: Common product images (for product.images - shown on cards)
+  const [commonImageFiles, setCommonImageFiles] = useState([]);
+  const [commonImagePreviews, setCommonImagePreviews] = useState([]);
+  const [commonImageUrls, setCommonImageUrls] = useState([]); // Uploaded URLs
+  
+  // NEW: Color-specific images (mapped by color value, e.g., "Red" => [url1, url2])
+  const [colorImageFiles, setColorImageFiles] = useState({}); // { "Red": [File], "Blue": [File] }
+  const [colorImagePreviews, setColorImagePreviews] = useState({}); // { "Red": [blob:url], "Blue": [blob:url] }
+  const [colorImageUrls, setColorImageUrls] = useState({}); // { "Red": [url], "Blue": [url] } - Uploaded URLs
+  
+  // Track variant image files separately (not uploaded immediately) - for Step 3 manual uploads
   const [variantImageFiles, setVariantImageFiles] = useState({});
 
   // Fetch categories when modal opens
@@ -49,8 +57,15 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
       setName(product.name || "");
       setDescription(product.description || "");
       setPrice(product.price || ""); // Keep for backward compatibility but won't be shown
-      // NEW: Remove common images - images should come from first variant
-      setImagePreviews([]);
+      
+      // NEW: Initialize common images from product.images
+      if (product.images && product.images.length > 0) {
+        setCommonImageUrls(product.images);
+        setCommonImagePreviews(product.images); // Show existing images as previews
+      } else {
+        setCommonImageUrls([]);
+        setCommonImagePreviews([]);
+      }
       
       // NEW: Handle categoryRef - could be ObjectId string or populated object
       const categoryRefId = product.categoryRef?._id || product.categoryRef;
@@ -132,6 +147,48 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
           }
           setMultipleSpecs(initialMultipleSpecs);
           
+          // NEW: Extract color images from existing variants (for editing)
+          const extractedColorImages = {};
+          if (product.variants && product.variants.length > 0) {
+            // Check if Color is a multiple spec
+            const colorSpec = category.specs?.find(spec => 
+              spec.type === 'multiple' && 
+              (spec.name.toLowerCase() === 'color' || spec.name.toLowerCase() === 'colour')
+            );
+            
+            if (colorSpec) {
+              // Group variant images by color value
+              product.variants.forEach(variant => {
+                const specsObj = variant.specs instanceof Map 
+                  ? Object.fromEntries(variant.specs)
+                  : (variant.specs || {});
+                
+                const colorKey = Object.keys(specsObj).find(key => 
+                  key.toLowerCase() === 'color' || key.toLowerCase() === 'colour'
+                );
+                
+                if (colorKey && specsObj[colorKey] && variant.images && variant.images.length > 0) {
+                  const colorValue = specsObj[colorKey];
+                  // Collect unique images for this color (avoid duplicates)
+                  if (!extractedColorImages[colorValue]) {
+                    extractedColorImages[colorValue] = [];
+                  }
+                  variant.images.forEach(img => {
+                    if (!extractedColorImages[colorValue].includes(img)) {
+                      extractedColorImages[colorValue].push(img);
+                    }
+                  });
+                }
+              });
+              
+              // Set color image URLs and previews
+              if (Object.keys(extractedColorImages).length > 0) {
+                setColorImageUrls(extractedColorImages);
+                setColorImagePreviews(extractedColorImages); // Show as previews
+              }
+            }
+          }
+          
           // Initialize variants with stock field
           const variantsWithStock = (product.variants || []).map(v => {
             // Handle Map format for specs
@@ -161,8 +218,12 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     setName("");
     setDescription("");
     setPrice("");
-    setSelectedFiles([]);
-    setImagePreviews([]);
+    setCommonImageFiles([]);
+    setCommonImagePreviews([]);
+    setCommonImageUrls([]);
+    setColorImageFiles({});
+    setColorImagePreviews({});
+    setColorImageUrls({});
     setSelectedCategory(null);
     setSingleSpecs({});
     setMultipleSpecs({});
@@ -172,21 +233,78 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     setStep(1);
   };
 
-  const handleFileSelect = (e) => {
+  // NEW: Handle common image selection
+  const handleCommonImageSelect = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    console.log("Files selected:", files.length);
+    console.log("Common images selected:", files.length);
     const previewUrls = files.map(file => URL.createObjectURL(file));
-    setSelectedFiles(prev => [...prev, ...files]);
-    setImagePreviews(prev => [...prev, ...previewUrls]);
+    setCommonImageFiles(prev => [...prev, ...files]);
+    setCommonImagePreviews(prev => [...prev, ...previewUrls]);
   };
 
-  const removeImage = (index) => {
-    console.log("Removing image at index:", index);
-    URL.revokeObjectURL(imagePreviews[index]);
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  // NEW: Remove common image
+  const removeCommonImage = (index) => {
+    console.log("Removing common image at index:", index);
+    const preview = commonImagePreviews[index];
+    if (preview && preview.startsWith('blob:')) {
+      URL.revokeObjectURL(preview);
+    }
+    setCommonImageFiles(prev => prev.filter((_, i) => i !== index));
+    setCommonImagePreviews(prev => prev.filter((_, i) => i !== index));
+    // If it's an uploaded URL (not a blob), also remove from URLs
+    if (commonImageUrls[index] && !commonImageUrls[index].startsWith('blob:')) {
+      setCommonImageUrls(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  // NEW: Handle color image selection
+  const handleColorImageSelect = (colorValue, e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    console.log(`Color images selected for ${colorValue}:`, files.length);
+    const previewUrls = files.map(file => URL.createObjectURL(file));
+    
+    setColorImageFiles(prev => ({
+      ...prev,
+      [colorValue]: [...(prev[colorValue] || []), ...files]
+    }));
+    
+    setColorImagePreviews(prev => ({
+      ...prev,
+      [colorValue]: [...(prev[colorValue] || []), ...previewUrls]
+    }));
+  };
+
+  // NEW: Remove color image
+  const removeColorImage = (colorValue, index) => {
+    console.log(`Removing color image for ${colorValue} at index:`, index);
+    const previews = colorImagePreviews[colorValue] || [];
+    const preview = previews[index];
+    if (preview && preview.startsWith('blob:')) {
+      URL.revokeObjectURL(preview);
+    }
+    
+    setColorImageFiles(prev => ({
+      ...prev,
+      [colorValue]: (prev[colorValue] || []).filter((_, i) => i !== index)
+    }));
+    
+    setColorImagePreviews(prev => ({
+      ...prev,
+      [colorValue]: (prev[colorValue] || []).filter((_, i) => i !== index)
+    }));
+    
+    // If it's an uploaded URL, also remove from URLs
+    const urls = colorImageUrls[colorValue] || [];
+    if (urls[index] && !urls[index].startsWith('blob:')) {
+      setColorImageUrls(prev => ({
+        ...prev,
+        [colorValue]: (prev[colorValue] || []).filter((_, i) => i !== index)
+      }));
+    }
   };
 
   // Upload images only when saving product
@@ -441,19 +559,56 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     console.log("Generated combinations (multiple specs only):", combinations);
     
     // NEW: Variants only contain multiple specs, not single specs
-    const variants = combinations.map((combo, index) => ({
-      specs: combo, // Only multiple specs here
-      price: parseFloat(price) || 0,
-      sku: `${name.replace(/\s+/g, '').toUpperCase().slice(0, 10)}-${index + 1}`,
-      enabled: true,
-      images: [],
-      stock: 0 // NEW: Stock management - Initialize stock to 0
-    }));
+    // NEW: Auto-assign color images to variants based on their color spec value
+    const variants = combinations.map((combo, index) => {
+      // Check if this variant has a "Color" spec and if we have images for that color
+      let variantImages = [];
+      
+      // Check for "Color" spec (case-insensitive, also check "Colour")
+      const colorKey = Object.keys(combo).find(key => 
+        key.toLowerCase() === 'color' || key.toLowerCase() === 'colour'
+      );
+      
+      if (colorKey && combo[colorKey]) {
+        const colorValue = combo[colorKey];
+        // Use uploaded URLs if available, otherwise use previews (will be uploaded later)
+        const colorUrls = colorImageUrls[colorValue] || [];
+        const colorPreviews = colorImagePreviews[colorValue] || [];
+        
+        if (colorUrls.length > 0) {
+          variantImages = [...colorUrls];
+        } else if (colorPreviews.length > 0) {
+          // Use previews temporarily (will be uploaded in submitProduct)
+          variantImages = [...colorPreviews];
+        }
+      }
+      
+      // If no color images, use common images as fallback
+      if (variantImages.length === 0) {
+        const commonUrls = commonImageUrls || [];
+        const commonPreviews = commonImagePreviews || [];
+        if (commonUrls.length > 0) {
+          variantImages = [...commonUrls];
+        } else if (commonPreviews.length > 0) {
+          variantImages = [...commonPreviews];
+        }
+      }
+      
+      return {
+        specs: combo, // Only multiple specs here
+        price: parseFloat(price) || 0,
+        sku: `${name.replace(/\s+/g, '').toUpperCase().slice(0, 10)}-${index + 1}`,
+        enabled: true,
+        images: variantImages, // Auto-assigned color images or common images
+        stock: 0 // NEW: Stock management - Initialize stock to 0
+      };
+    });
 
     setGeneratedVariants(variants);
     setSelectedVariants(variants);
     setStep(3);
     console.log("Variants generated:", variants.length);
+    console.log("Variants with auto-assigned images:", variants);
   };
 
   const generateCombinations = (specs) => {
@@ -609,8 +764,26 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     setLoading(true);
 
     try {
-      // NEW: No common images - only variant images
-      // Upload variant images
+      // NEW: Step 1 - Upload common images (for product.images - shown on cards)
+      let finalCommonImageUrls = [...commonImageUrls]; // Keep existing uploaded URLs
+      if (commonImageFiles.length > 0) {
+        const uploadedCommonUrls = await uploadImages(commonImageFiles);
+        finalCommonImageUrls = [...finalCommonImageUrls, ...uploadedCommonUrls];
+      }
+
+      // NEW: Step 2 - Upload color images and store them
+      const uploadedColorImageUrls = { ...colorImageUrls }; // Keep existing uploaded URLs
+      for (const [colorValue, files] of Object.entries(colorImageFiles)) {
+        if (files && files.length > 0) {
+          const uploadedUrls = await uploadImages(files);
+          uploadedColorImageUrls[colorValue] = [
+            ...(uploadedColorImageUrls[colorValue] || []),
+            ...uploadedUrls
+          ];
+        }
+      }
+
+      // NEW: Step 3 - Upload variant-specific images (from Step 3 manual uploads)
       const uploadedVariantImages = {};
       for (const [variantIndex, files] of Object.entries(variantImageFiles)) {
         if (files && files.length > 0) {
@@ -620,31 +793,46 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         }
       }
 
-      // NEW: No common images - images come from variants only
-      // Prepare final variants
+      // NEW: Prepare final variants with proper image assignment
       let finalVariants = [];
       
       if (selectedVariants.length > 0) {
         // Use selected variants with their images
         finalVariants = selectedVariants.map((variant, index) => {
+          // Priority 1: Manual variant-specific images from Step 3
           const uploadedVariantImgs = uploadedVariantImages[index] || [];
           
-          // NEW: If variant has new images uploaded, use only new ones (old ones will be deleted)
-          // Otherwise, keep existing images
-          let variantImages;
+          // Priority 2: Color-specific images (if variant has Color spec)
+          let colorBasedImages = [];
+          const colorKey = Object.keys(variant.specs || {}).find(key => 
+            key.toLowerCase() === 'color' || key.toLowerCase() === 'colour'
+          );
+          if (colorKey && variant.specs[colorKey]) {
+            const colorValue = variant.specs[colorKey];
+            colorBasedImages = uploadedColorImageUrls[colorValue] || [];
+          }
+          
+          // Priority 3: Common images as fallback
+          const fallbackImages = finalCommonImageUrls || [];
+          
+          // Determine final images for this variant
+          let variantImages = [];
           if (uploadedVariantImgs.length > 0) {
-            // New images uploaded - replace old ones
+            // Manual uploads take priority
             variantImages = uploadedVariantImgs;
+          } else if (colorBasedImages.length > 0) {
+            // Use color-specific images
+            variantImages = colorBasedImages;
           } else {
-            // No new images - keep existing ones (filter out blob URLs which are just previews)
+            // Use existing images (filter out blob URLs) or fallback to common
             const existingVariantImgs = variant.images?.filter(img => !img.startsWith('blob:')) || [];
-            variantImages = existingVariantImgs.length > 0 ? existingVariantImgs : [];
+            variantImages = existingVariantImgs.length > 0 ? existingVariantImgs : fallbackImages;
           }
           
           return {
             ...variant,
-            images: variantImages.length > 0 ? variantImages : (variant.images?.filter(img => !img.startsWith('blob:')) || []),
-            stock: variant.stock !== undefined ? variant.stock : 0 // NEW: Stock management - Ensure stock is included
+            images: variantImages,
+            stock: variant.stock !== undefined ? variant.stock : 0
           };
         });
       } else {
@@ -655,22 +843,22 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
           price: firstVariant?.price || parseFloat(price) || 0,
           sku: `${name.replace(/\s+/g, '').toUpperCase().slice(0, 10)}-1`,
           enabled: true,
-          images: firstVariant?.images || [],
+          images: firstVariant?.images || finalCommonImageUrls,
           stock: firstVariant?.stock || 0
         }];
       }
 
-      // NEW: Get images from first variant for product display
-      const productImages = finalVariants.length > 0 && finalVariants[0].images.length > 0
-        ? finalVariants[0].images
-        : (product?.variants?.[0]?.images || []);
+      // NEW: Use common images for product.images (shown on cards)
+      const productImages = finalCommonImageUrls.length > 0 
+        ? finalCommonImageUrls 
+        : (product?.images || []);
 
       const payload = {
         name,
         description,
         price: parseFloat(price) || 0,
         category: selectedCategory ? selectedCategory.name : name,
-        images: productImages // NEW: Use first variant's images instead of common images
+        images: productImages // NEW: Use common images, not first variant images
       };
 
       if (selectedCategory) {
@@ -890,10 +1078,21 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
   useEffect(() => {
     return () => {
       console.log("Cleaning up image previews");
-      imagePreviews.forEach(preview => {
-        if (preview.startsWith('blob:')) {
+      
+      // Clean up common image previews
+      commonImagePreviews.forEach(preview => {
+        if (preview && preview.startsWith('blob:')) {
           URL.revokeObjectURL(preview);
         }
+      });
+      
+      // Clean up color image previews
+      Object.values(colorImagePreviews).forEach(previews => {
+        previews.forEach(preview => {
+          if (preview && preview.startsWith('blob:')) {
+            URL.revokeObjectURL(preview);
+          }
+        });
       });
       
       // Clean up variant image previews
@@ -905,7 +1104,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         });
       });
     };
-  }, [imagePreviews, variantImageFiles]);
+  }, [commonImagePreviews, colorImagePreviews, variantImageFiles]);
 
   if (!isOpen) return null;
 
@@ -1053,6 +1252,133 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                       </p>
                     )}
                   </div>
+
+                  {/* NEW: Common Product Images Section */}
+                  <div className="mb-6 p-4 border rounded bg-white">
+                    <label className="block text-sm font-medium mb-2">
+                      Common Product Images *
+                      <span className="ml-2 text-xs font-normal text-gray-500">
+                        (Shown on product cards)
+                      </span>
+                    </label>
+                    <p className="text-xs text-gray-600 mb-3">
+                      Upload images that represent this product. These will be shown on product cards and used as fallback for variants without color-specific images.
+                    </p>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleCommonImageSelect}
+                      className="w-full p-2 border rounded mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={uploading || loading}
+                    />
+                    {commonImagePreviews.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-sm text-gray-600 mb-2">
+                          {commonImagePreviews.length} image(s) selected
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {commonImagePreviews.map((image, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={image}
+                                alt={`Common ${index + 1}`}
+                                className="w-full h-20 object-cover rounded border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeCommonImage(index)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hover:bg-red-600"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* NEW: Color-Specific Images Section (if Color is a multiple spec) */}
+                  {(() => {
+                    const colorSpec = selectedCategory.specs?.find(spec => 
+                      spec.type === 'multiple' && 
+                      (spec.name.toLowerCase() === 'color' || spec.name.toLowerCase() === 'colour')
+                    );
+                    
+                    if (!colorSpec) return null;
+                    
+                    // Get color values from multipleSpecs
+                    const colorValues = multipleSpecs[colorSpec.name] 
+                      ? multipleSpecs[colorSpec.name].split(',').map(v => v.trim()).filter(v => v)
+                      : [];
+                    
+                    if (colorValues.length === 0) {
+                      return (
+                        <div className="mb-6 p-4 border rounded bg-yellow-50">
+                          <p className="text-sm text-yellow-800">
+                            💡 Enter color values above to upload color-specific images. Each color will get its own images that will be automatically assigned to all variants of that color.
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div className="mb-6 p-4 border rounded bg-white">
+                        <label className="block text-sm font-medium mb-2">
+                          Color-Specific Images
+                          <span className="ml-2 text-xs font-normal text-gray-500">
+                            (Auto-assigned to variants by color)
+                          </span>
+                        </label>
+                        <p className="text-xs text-gray-600 mb-3">
+                          Upload images for each color. These images will be automatically assigned to all variants with that color (e.g., all "Red 64GB", "Red 128GB" variants will use Red images).
+                        </p>
+                        <div className="space-y-4">
+                          {colorValues.map(colorValue => (
+                            <div key={colorValue} className="border rounded p-3 bg-gray-50">
+                              <label className="block text-sm font-medium mb-2 text-gray-700">
+                                {colorValue} Images
+                              </label>
+                              <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={(e) => handleColorImageSelect(colorValue, e)}
+                                className="w-full p-2 border rounded mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                disabled={uploading || loading}
+                              />
+                              {colorImagePreviews[colorValue] && colorImagePreviews[colorValue].length > 0 && (
+                                <div className="mt-2">
+                                  <p className="text-xs text-gray-600 mb-2">
+                                    {colorImagePreviews[colorValue].length} image(s) for {colorValue}
+                                  </p>
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    {colorImagePreviews[colorValue].map((image, index) => (
+                                      <div key={index} className="relative">
+                                        <img
+                                          src={image}
+                                          alt={`${colorValue} ${index + 1}`}
+                                          className="w-full h-20 object-cover rounded border"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => removeColorImage(colorValue, index)}
+                                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hover:bg-red-600"
+                                        >
+                                          ×
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {selectedCategory.specs?.length > 0 ? (
                     selectedCategory.specs.map(spec => (

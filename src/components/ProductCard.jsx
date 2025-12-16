@@ -60,18 +60,18 @@ export default function ProductCard({ product }) {
     ));
   };
 
-  // NEW: Get first variant's images and price for display
+  // NEW: Use common product images (product.images) for display on cards
   const getDisplayImage = () => {
-    // If product has variants, use first variant's images
+    // Use product.images (common images) - shown on product cards
+    if (product.images && product.images.length > 0) {
+      return product.images[0];
+    }
+    // Fallback to first variant images if no common images
     if (product.variants && product.variants.length > 0) {
       const firstVariant = product.variants.find(v => v.enabled) || product.variants[0];
       if (firstVariant.images && firstVariant.images.length > 0) {
         return firstVariant.images[0];
       }
-    }
-    // Fallback to product images
-    if (product.images && product.images.length > 0) {
-      return product.images[0];
     }
     return null;
   };
