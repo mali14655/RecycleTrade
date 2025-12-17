@@ -596,7 +596,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
       
       return {
         specs: combo, // Only multiple specs here
-        price: parseFloat(price) || 0,
+        // NEW: Base price is optional; variants start at 0 and must be set in Step 3
+        price: Number.isFinite(parseFloat(price)) ? parseFloat(price) : 0,
         sku: `${name.replace(/\s+/g, '').toUpperCase().slice(0, 10)}-${index + 1}`,
         enabled: true,
         images: variantImages, // Auto-assigned color images or common images
@@ -853,10 +854,12 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         ? finalCommonImageUrls 
         : (product?.images || []);
 
+      const parsedBasePrice = price === "" ? undefined : parseFloat(price);
       const payload = {
         name,
         description,
-        price: parseFloat(price) || 0,
+        // NEW: Make base price optional while adding product (variant prices can drive product price)
+        ...(Number.isFinite(parsedBasePrice) ? { price: parsedBasePrice } : {}),
         category: selectedCategory ? selectedCategory.name : name,
         images: productImages // NEW: Use common images, not first variant images
       };
