@@ -5,6 +5,14 @@ import { Star } from "lucide-react";
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
 
+  // NEW: Stock management - Format stock message based on quantity
+  const formatStockMessage = (stock) => {
+    if (stock === 0) return "Out of Stock";
+    if (stock === 1) return "Only 1 left";
+    if (stock === 2) return "Only 2 left";
+    return "In Stock";
+  };
+
   // NEW: Stock management - Check if product is in stock
   const checkStockAvailability = () => {
     // Products without variants - assume unlimited stock (backward compatibility)
@@ -29,7 +37,7 @@ export default function ProductCard({ product }) {
     return { 
       available: true, 
       stock: totalStock, 
-      message: totalStock > 0 ? `${totalStock} in stock` : "Limited Stock" 
+      message: formatStockMessage(totalStock)
     };
   };
 
@@ -136,7 +144,9 @@ export default function ProductCard({ product }) {
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
               stockStatus.available 
                 ? stockStatus.stock !== null && stockStatus.stock > 0
-                  ? 'bg-green-100 text-green-700'
+                  ? stockStatus.stock <= 2
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : 'bg-green-100 text-green-700'
                   : 'bg-blue-100 text-blue-700'
                 : 'bg-red-100 text-red-700'
             }`}>

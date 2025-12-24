@@ -19,6 +19,11 @@ const ProductHeader = ({
     { value: "rating", label: "Highest Rated" },
   ];
 
+  // Sync local search state with initialSearch prop when it changes (e.g., from URL)
+  useEffect(() => {
+    setSearchQuery(initialSearch);
+  }, [initialSearch]);
+
   // Debounced search
   useEffect(() => {
     const timeoutId = setTimeout(() => {

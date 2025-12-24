@@ -80,6 +80,30 @@ const Products = () => {
     }
   }, [heroCategory]);
 
+  // Sync filters with URL params when URL changes (e.g., from Navbar search)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    const urlCategory = searchParams.get('category') || '';
+    const urlMinPrice = searchParams.get('minPrice') || '';
+    const urlMaxPrice = searchParams.get('maxPrice') || '';
+
+    // Only update if URL params actually changed (avoid infinite loops)
+    if (
+      urlSearch !== filters.search ||
+      urlCategory !== filters.category ||
+      urlMinPrice !== filters.minPrice ||
+      urlMaxPrice !== filters.maxPrice
+    ) {
+      setFilters(prev => ({
+        ...prev,
+        search: urlSearch,
+        category: urlCategory || prev.category, // Preserve hero category if URL doesn't have one
+        minPrice: urlMinPrice,
+        maxPrice: urlMaxPrice
+      }));
+    }
+  }, [searchParams]);
+
   // Track if this is the initial mount
   const isInitialMount = useRef(true);
 

@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { ShoppingCart, User, Search, Menu, LogOut } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
@@ -13,12 +13,24 @@ const Navbar = () => {
   const { searchQuery, updateSearch, clearSearch } = useSearch();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [categories, setCategories] = useState([]);
 
   const cartItemCount =
     cart?.items?.reduce((total, item) => total + (item.quantity || 1), 0) || 0;
+
+  // Sync search query with URL params (especially when on products page)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    // Only update if URL search differs from current search query
+    // This prevents infinite loops and unnecessary updates
+    if (urlSearch !== searchQuery) {
+      updateSearch(urlSearch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]); // Track location.search to detect URL param changes
 
   // Fetch categories
   useEffect(() => {
@@ -52,15 +64,39 @@ const Navbar = () => {
     setIsUserMenuOpen(false);
   };
 
+  // Debounced search - updates URL as you type
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      // If on products page, update URL with search query
+      if (location.pathname === "/products") {
+        const currentParams = new URLSearchParams(searchParams);
+        if (searchQuery.trim()) {
+          currentParams.set("search", searchQuery.trim());
+        } else {
+          currentParams.delete("search");
+        }
+        navigate(`/products?${currentParams.toString()}`, { replace: true });
+      }
+      // If not on products page and there's a search query, navigate to products page
+      else if (searchQuery.trim()) {
+        navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, location.pathname, searchParams, navigate]);
+
   const handleSearch = (e) => {
     e.preventDefault();
+    // Navigation is handled by the debounced effect, but we can trigger it immediately on Enter
     if (searchQuery.trim()) {
+      const currentParams = new URLSearchParams(searchParams);
+      currentParams.set("search", searchQuery.trim());
+      
       if (location.pathname !== "/products") {
-        navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+        navigate(`/products?${currentParams.toString()}`);
       } else {
-        const newSearchParams = new URLSearchParams();
-        newSearchParams.set("search", searchQuery);
-        navigate(`/products?${newSearchParams.toString()}`);
+        navigate(`/products?${currentParams.toString()}`, { replace: true });
       }
     }
   };

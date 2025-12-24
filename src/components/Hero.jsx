@@ -165,12 +165,13 @@ const Hero = () => {
                       className="flex-shrink-0 w-40 sm:w-48 lg:w-56 transform hover:scale-105 transition-transform duration-300"
                     >
                       <div className="bg-[#212121]/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 hover:bg-[#212121]/90 transition-all duration-300 cursor-pointer border border-gray-700 hover:border-gray-600 h-48 flex flex-col justify-between">
-                        {/* Category Image - COMPACT */}
-                        <div className="flex justify-center items-center h-28 mb-3">
+                        {/* Category Image - COMPACT with rounded corners and white background */}
+                        <div className="flex justify-center items-center h-28 mb-3 bg-white rounded-xl p-2">
                           <img
                             src={category.image || heroMobileImage}
                             alt={category.name}
-                            className="h-full w-auto object-contain max-h-full"
+                            className="h-full w-auto object-contain max-h-full rounded-lg"
+                            style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
                           />
                         </div>
                         <p className="text-white text-center font-medium text-sm sm:text-base">

@@ -432,21 +432,32 @@ export default function ProductDetails() {
               </div>
               {/* Stock management - Stock status display */}
               {(() => {
+                // Helper function to format stock message
+                const formatStockMessage = (stock) => {
+                  if (stock === 0) return "Out of Stock";
+                  if (stock === 1) return "Only 1 left";
+                  if (stock === 2) return "Only 2 left";
+                  return "In Stock";
+                };
+
                 // If variant is selected, show its stock status
                 if (selectedVariant) {
                   const inStock = isVariantInStock(selectedVariant);
+                  const stock = selectedVariant.stock !== undefined ? selectedVariant.stock : null;
+                  
+                  // If stock is undefined (unlimited), show "In Stock"
+                  const displayMessage = stock !== null ? formatStockMessage(stock) : "In Stock";
+                  
                   return (
                     <div className="flex items-center gap-2">
                       <span className={`text-sm px-3 py-1 rounded-full font-medium ${
                         inStock
-                          ? 'bg-green-100 text-green-700'
+                          ? stock !== null && stock <= 2
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-green-100 text-green-700'
                           : 'bg-red-100 text-red-700'
                       }`}>
-                        {inStock
-                          ? selectedVariant.stock !== undefined
-                            ? `${selectedVariant.stock} in stock`
-                            : "In Stock"
-                          : "Out of Stock"}
+                        {displayMessage}
                       </span>
                     </div>
                   );
