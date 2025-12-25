@@ -5,6 +5,8 @@ import { CartContext } from "../context/CartContext";
 import { ChevronLeft, ChevronRight, Star, ShoppingCart, User, Mail, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 import Breadcrumb from "../components/Breadcrumb";
+import InfoTooltip from "../components/InfoTooltip";
+import { getAppearanceInfoText, getBatteryInfoText } from "../utils/productInfo";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -497,10 +499,19 @@ export default function ProductDetails() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {multipleSpecs.map(specName => {
                     const availableOptions = getAvailableOptions(specName);
+                    // Check if this spec needs an info tooltip
+                    const isAppearance = specName === 'Appearance (Phone Condition)' || specName === 'Appearance' || specName === 'appearance';
+                    const isBattery = specName === 'Battery Condition' || specName === 'Battery' || specName === 'battery';
+                    
+                    // Display label without "(Phone Condition)" for appearance
+                    const displayLabel = isAppearance ? 'Appearance' : specName;
+                    
                     return (
                       <div key={specName} className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700 capitalize">
-                          {specName}
+                        <label className="block text-sm font-medium text-gray-700 capitalize flex items-center gap-1">
+                          {displayLabel}
+                          {isAppearance && <InfoTooltip content={getAppearanceInfoText()} />}
+                          {isBattery && <InfoTooltip content={getBatteryInfoText()} />}
                         </label>
                         <div className="relative">
                           <select
@@ -543,33 +554,64 @@ export default function ProductDetails() {
                     );
                   })}
                 </div>
+                
               </div>
             )}
 
             {/* Product Details/Specs Display - When no variant selection */}
-            {!showVariantSelection && selectedVariant && (
-              <div className="p-4 border rounded-lg bg-gray-50">
-                <h4 className="font-semibold mb-3">Product Details:</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {Object.entries(selectedVariant.specs || {}).slice(0, 6).map(([key, value]) => (
-                    <div key={key} className="flex items-start gap-2">
-                      <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px]">
-                        {key}:
-                      </span>
-                      <span className="text-sm text-gray-900 flex-1">
-                        {value}
-                      </span>
-                    </div>
-                  ))}
-                  {/* Show product specs if variant specs are less than 6 */}
-                  {Object.keys(selectedVariant.specs || {}).length < 6 && product.specs && (() => {
-                    const productSpecs = product.specs instanceof Map 
-                      ? Object.fromEntries(product.specs) 
-                      : product.specs;
-                    const variantSpecKeys = Object.keys(selectedVariant.specs || {});
-                    return Object.entries(productSpecs || {})
-                      .filter(([key]) => !variantSpecKeys.includes(key))
-                      .slice(0, 6 - variantSpecKeys.length)
+            {!showVariantSelection && selectedVariant && (() => {
+              // Get appearance and battery from direct properties or from specs map
+              const variantSpecs = selectedVariant.specs instanceof Map 
+                ? Object.fromEntries(selectedVariant.specs) 
+                : (selectedVariant.specs || {});
+              
+              const appearance = selectedVariant.appearance || 
+                variantSpecs['Appearance (Phone Condition)'] || 
+                variantSpecs['Appearance'] || 
+                variantSpecs['appearance'];
+              
+              const battery = selectedVariant.battery || 
+                variantSpecs['Battery Condition'] || 
+                variantSpecs['Battery'] || 
+                variantSpecs['battery'];
+              
+              return (
+                <div className="p-4 border rounded-lg bg-gray-50">
+                  <h4 className="font-semibold mb-3">Product Details:</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Appearance Condition */}
+                    {appearance && (
+                      <div className="flex items-start gap-2">
+                        <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px] flex items-center gap-1">
+                          Appearance:
+                          <InfoTooltip content={getAppearanceInfoText()} />
+                        </span>
+                        <span className="text-sm text-gray-900 flex-1">
+                          {appearance}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Battery Condition */}
+                    {battery && (
+                      <div className="flex items-start gap-2">
+                        <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px] flex items-center gap-1">
+                          Battery Condition:
+                          <InfoTooltip content={getBatteryInfoText()} />
+                        </span>
+                        <span className="text-sm text-gray-900 flex-1">
+                          {battery}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Other specs - exclude appearance and battery from specs display */}
+                    {Object.entries(variantSpecs)
+                      .filter(([key]) => {
+                        const keyLower = key.toLowerCase();
+                        return !['Appearance (Phone Condition)', 'Appearance', 'appearance', 'Battery Condition', 'Battery', 'battery'].includes(key);
+                      })
+                      .slice(0, appearance || battery ? 4 : 6)
                       .map(([key, value]) => (
                         <div key={key} className="flex items-start gap-2">
                           <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px]">
@@ -579,9 +621,36 @@ export default function ProductDetails() {
                             {value}
                           </span>
                         </div>
-                      ));
-                  })()}
-                </div>
+                      ))}
+                    {/* Show product specs if variant specs are less than limit */}
+                    {Object.keys(variantSpecs).filter(key => {
+                      const keyLower = key.toLowerCase();
+                      return !['Appearance (Phone Condition)', 'Appearance', 'appearance', 'Battery Condition', 'Battery', 'battery'].includes(key);
+                    }).length < (appearance || battery ? 4 : 6) && product.specs && (() => {
+                      const productSpecs = product.specs instanceof Map 
+                        ? Object.fromEntries(product.specs) 
+                        : product.specs;
+                      const variantSpecKeys = Object.keys(variantSpecs);
+                      const filteredVariantKeys = variantSpecKeys.filter(key => {
+                        const keyLower = key.toLowerCase();
+                        return !['Appearance (Phone Condition)', 'Appearance', 'appearance', 'Battery Condition', 'Battery', 'battery'].includes(key);
+                      });
+                      const maxSpecs = (appearance || battery ? 4 : 6) - filteredVariantKeys.length;
+                      return Object.entries(productSpecs || {})
+                        .filter(([key]) => !variantSpecKeys.includes(key))
+                        .slice(0, maxSpecs)
+                        .map(([key, value]) => (
+                          <div key={key} className="flex items-start gap-2">
+                            <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px]">
+                              {key}:
+                            </span>
+                            <span className="text-sm text-gray-900 flex-1">
+                              {value}
+                            </span>
+                          </div>
+                        ));
+                    })()}
+                  </div>
                 {selectedVariant && (
                   <div className={`mt-3 p-3 rounded border ${
                     isVariantInStock(selectedVariant) ? 'bg-white' : 'bg-red-50 border-red-200'
@@ -604,8 +673,9 @@ export default function ProductDetails() {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
+                </div>
+              );
+            })()}
 
             {/* Product Specs Display - When no variants at all */}
             {!showVariantSelection && !selectedVariant && (() => {
