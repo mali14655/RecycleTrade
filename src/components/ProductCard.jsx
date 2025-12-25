@@ -68,36 +68,32 @@ export default function ProductCard({ product }) {
     ));
   };
 
-  // NEW: Use common product images (product.images) for display on cards
+  // NEW: Always use common product images (product.images) for display on cards
   const getDisplayImage = () => {
-    // Use product.images (common images) - shown on product cards
+    // Always use product.images (common images) - shown on product cards
     if (product.images && product.images.length > 0) {
       return product.images[0];
-    }
-    // Fallback to first variant images if no common images
-    if (product.variants && product.variants.length > 0) {
-      const firstVariant = product.variants.find(v => v.enabled) || product.variants[0];
-      if (firstVariant.images && firstVariant.images.length > 0) {
-        return firstVariant.images[0];
-      }
     }
     return null;
   };
 
+  // NEW: Get minimum price from all enabled variants and show "Starts from" label
   const getDisplayPrice = () => {
-    // If product has variants, use first variant's price
+    // If product has variants, find minimum price from all enabled variants
     if (product.variants && product.variants.length > 0) {
-      const firstVariant = product.variants.find(v => v.enabled) || product.variants[0];
-      if (firstVariant.price !== undefined && firstVariant.price !== null) {
-        return firstVariant.price;
+      const enabledVariants = product.variants.filter(v => v.enabled && v.price !== undefined && v.price !== null);
+      if (enabledVariants.length > 0) {
+        const prices = enabledVariants.map(v => parseFloat(v.price) || 0);
+        const minPrice = Math.min(...prices);
+        return { price: minPrice, hasVariants: true };
       }
     }
-    // Fallback to product price
-    return product.price || 0;
+    // Fallback to product price (no variants or no enabled variants with prices)
+    return { price: product.price || 0, hasVariants: false };
   };
 
   const displayImage = getDisplayImage();
-  const displayPrice = getDisplayPrice();
+  const priceInfo = getDisplayPrice();
 
   return (
     <div 
@@ -137,9 +133,14 @@ export default function ProductCard({ product }) {
         {/* Price and Stock Status */}
         <div className="mt-auto">
           <div className="flex items-center justify-between">
-            <p className="text-gray-900 font-semibold text-lg">
-              €{displayPrice}
-            </p>
+            <div>
+              {priceInfo.hasVariants && (
+                <p className="text-xs text-gray-500 font-normal mb-0.5">Starts from</p>
+              )}
+              <p className="text-gray-900 font-semibold text-lg">
+                €{priceInfo.price.toFixed(2)}
+              </p>
+            </div>
             {/* Stock management - Stock status badge */}
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
               stockStatus.available 
