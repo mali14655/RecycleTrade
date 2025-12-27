@@ -201,16 +201,17 @@ export default function ForgotPassword() {
       <div className="absolute top-0 left-0 right-0 bottom-0 bg-black/30"></div>
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-12">
-        <div className="flex flex-col gap-5 text-center mb-6">
-          <div className="flex items-center justify-center gap-3 mb-2">
+        <div className="flex flex-col gap-3 sm:gap-5 text-center mb-6 w-full max-w-md px-4">
+          {/* Logo and Name - Stack on mobile, side-by-side on desktop */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-2">
             <img 
               src={logo} 
               alt="F&S Smartphones" 
-              className="w-14 h-14 rounded-xl object-cover shadow-lg"
+              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl object-cover shadow-lg shrink-0"
             />
-            <span className="text-white text-5xl font-bold tracking-tight">F&S Smartphones</span>
+            <span className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight">F&S Smartphones</span>
           </div>
-          <div className="text-white text-lg font-medium">
+          <div className="text-white text-base sm:text-lg font-medium">
             <span>Reset Your Password</span>
           </div>
         </div>
