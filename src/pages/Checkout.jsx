@@ -632,11 +632,13 @@ export default function Checkout() {
                   return (
                     <div key={index} className="flex justify-between items-center border-b pb-4">
                       <div className="flex items-center space-x-3">
-                        <img
-                          src={variantImage}
-                          alt={product.name}
-                          className="w-12 h-12 rounded object-cover"
-                        />
+                        <div className="w-12 h-12 bg-gray-100 rounded overflow-hidden flex items-center justify-center shrink-0">
+                          <img
+                            src={variantImage}
+                            alt={product.name}
+                            className="w-full h-full object-contain p-0.5"
+                          />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium">{product.name}</p>
                           {variantSpecs && Object.keys(variantSpecs).length > 0 && (

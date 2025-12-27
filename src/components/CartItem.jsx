@@ -97,11 +97,11 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
         </div>
         {/* Product Image + Name */}
         <div className="col-span-4 flex items-start gap-3">
-          <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+          <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
             <img
               src={image}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain p-1"
             />
           </div>
           <div className="flex-1 min-w-0">
@@ -158,11 +158,11 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
       <div className="sm:hidden space-y-3">
         {/* Top Row: Image + Info + Remove */}
         <div className="flex gap-3">
-          <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+          <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
             <img
               src={image}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain p-1"
             />
           </div>
           <div className="flex-1 min-w-0">
