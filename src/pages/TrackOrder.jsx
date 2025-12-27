@@ -49,55 +49,55 @@ export default function TrackOrder() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
       <Breadcrumb />
-      <h1 className="text-3xl font-bold mb-8 text-center">Track Your Order</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 mt-4 sm:mt-6 text-center">Track Your Order</h1>
       
       {/* Search Form */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <form onSubmit={handleTrackOrder} className="flex gap-4">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6 sm:mb-8">
+        <form onSubmit={handleTrackOrder} className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <input
             type="text"
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
             placeholder="Enter Order ID or Tracking Number"
-            className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
           />
           <button
             type="submit"
             disabled={loading}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap text-sm sm:text-base"
           >
             {loading ? "Tracking..." : "Track Order"}
           </button>
         </form>
-        {error && <p className="text-red-500 mt-2">{error}</p>}
+        {error && <p className="text-red-500 mt-2 text-sm sm:text-base">{error}</p>}
       </div>
 
       {/* Order Details */}
       {order && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h2 className="text-xl font-semibold">Order #{order._id.slice(-8)}</h2>
-              <p className="text-gray-600">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0 mb-6">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl font-semibold break-words">Order #{order._id.slice(-8)}</h2>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">
                 Placed on {new Date(order.createdAt).toLocaleDateString()}
               </p>
             </div>
-            <div className="flex gap-2">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.orderStatus)}`}>
+            <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:ml-4">
+              <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${getStatusColor(order.orderStatus)}`}>
                 {order.orderStatus}
               </span>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(order.paymentStatus)}`}>
+              <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${getPaymentStatusColor(order.paymentStatus)}`}>
                 {order.paymentStatus}
               </span>
             </div>
           </div>
 
           {/* Customer Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
             <div>
-              <h3 className="font-semibold mb-2">Customer Information</h3>
+              <h3 className="font-semibold mb-2 text-sm sm:text-base">Customer Information</h3>
               {(order.guestInfo || order.userId) ? (
                 <div className="space-y-1 text-sm">
                   <p className="font-medium">
@@ -118,7 +118,7 @@ export default function TrackOrder() {
               )}
             </div>
             <div>
-              <h3 className="font-semibold mb-2">
+              <h3 className="font-semibold mb-2 text-sm sm:text-base">
                 {order.deliveryMethod === "delivery" ? "Delivery Address" : "Pickup Location"}
               </h3>
               {order.deliveryMethod === "delivery" ? (
@@ -152,8 +152,8 @@ export default function TrackOrder() {
 
           {/* Tracking Information - Only shows if tracking number exists */}
           {order.trackingNumber && (
-            <div className="bg-blue-50 p-4 rounded-lg mb-6">
-              <h3 className="font-semibold mb-3">DHL Tracking Information</h3>
+            <div className="bg-blue-50 p-4 sm:p-6 rounded-lg mb-6">
+              <h3 className="font-semibold mb-3 text-sm sm:text-base">DHL Tracking Information</h3>
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-600 mb-1"><strong>Tracking Number:</strong></p>
@@ -166,12 +166,12 @@ export default function TrackOrder() {
                     href={`https://www.dhl.com/en/express/tracking.html?AWB=${order.trackingNumber}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors mb-4"
+                    className="inline-flex items-center justify-center w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 sm:px-6 rounded-lg transition-colors mb-4 text-sm sm:text-base"
                   >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
-                    Track Package on DHL Website
+                    <span className="text-center">Track Package on DHL Website</span>
                   </a>
                 </div>
 
@@ -207,23 +207,25 @@ export default function TrackOrder() {
 
           {/* Order Items */}
           <div>
-            <h3 className="font-semibold mb-4">Order Items</h3>
+            <h3 className="font-semibold mb-4 text-sm sm:text-base">Order Items</h3>
             <div className="space-y-4">
               {order.items.map((item, index) => (
-                <div key={index} className="flex justify-between items-center border-b pb-4">
-                  <div className="flex items-center space-x-3">
-                    <img
-                      src={item.productId?.images?.[0] || "https://via.placeholder.com/60"}
-                      alt={item.productId?.name}
-                      className="w-12 h-12 rounded object-cover"
-                    />
-                    <div>
-                      <p className="font-medium">{item.productId?.name}</p>
-                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                      <p className="text-sm text-gray-500">Seller: {item.sellerId?.name}</p>
+                <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b pb-4">
+                  <div className="flex items-start sm:items-center space-x-3 flex-1 min-w-0">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-100 rounded overflow-hidden flex items-center justify-center shrink-0">
+                      <img
+                        src={item.productId?.images?.[0] || "https://via.placeholder.com/60"}
+                        alt={item.productId?.name}
+                        className="w-full h-full object-contain p-0.5"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm sm:text-base break-words">{item.productId?.name || 'N/A'}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1">Qty: {item.quantity}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Seller: {item.sellerId?.name || 'N/A'}</p>
                     </div>
                   </div>
-                  <p className="font-semibold">€{(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-semibold text-base sm:text-lg shrink-0 sm:ml-4">€{(item.price * item.quantity).toFixed(2)}</p>
                 </div>
               ))}
             </div>
@@ -231,17 +233,17 @@ export default function TrackOrder() {
 
           {/* Order Summary */}
           <div className="border-t pt-4 mt-4">
-            <div className="flex justify-between items-center text-lg font-bold">
-              <span>Total Amount</span>
-              <span>€{order.total.toFixed(2)}</span>
+            <div className="flex justify-between items-center text-base sm:text-lg font-bold gap-2">
+              <span className="text-sm sm:text-base">Total Amount</span>
+              <span className="text-base sm:text-lg">€{order.total.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm text-gray-600 mt-2">
+            <div className="flex justify-between text-xs sm:text-sm text-gray-600 mt-2 gap-2">
               <span>Payment Method</span>
-              <span className="capitalize">{order.paymentMethod}</span>
+              <span className="capitalize text-right break-words">{order.paymentMethod}</span>
             </div>
-            <div className="flex justify-between text-sm text-gray-600">
+            <div className="flex justify-between text-xs sm:text-sm text-gray-600 gap-2">
               <span>Delivery Method</span>
-              <span className="capitalize">{order.deliveryMethod}</span>
+              <span className="capitalize text-right break-words">{order.deliveryMethod}</span>
             </div>
           </div>
         </div>
