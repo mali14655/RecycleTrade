@@ -6,12 +6,14 @@ import { ArrowLeft } from "lucide-react";
 import Breadcrumb from "../components/Breadcrumb";
 import CartItem from "../components/CartItem";
 import CartSummary from "../components/CartSummary";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function Cart() {
   const { user } = useContext(AuthContext);
   const { cart, removeFromCart, updateQuantity, clearCart, fetchUserCart } =
     useContext(CartContext);
   const [total, setTotal] = useState(0);
+  const [showClearCartModal, setShowClearCartModal] = useState(false);
   const navigate = useNavigate();
 
   // Fetch only for logged-in user
@@ -80,11 +82,7 @@ export default function Cart() {
                   Shopping Cart
                 </h1>
                 <button
-                  onClick={() => {
-                    if (window.confirm("Are you sure you want to clear your cart?")) {
-                      clearCart();
-                    }
-                  }}
+                  onClick={() => setShowClearCartModal(true)}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
                 >
                   Clear Cart
@@ -134,6 +132,21 @@ export default function Cart() {
           </div>
         </div>
       </div>
+
+      {/* Clear Cart Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showClearCartModal}
+        onClose={() => setShowClearCartModal(false)}
+        onConfirm={() => {
+          clearCart();
+          setShowClearCartModal(false);
+        }}
+        title="Clear Cart"
+        message="Are you sure you want to clear your cart? This action cannot be undone and all items will be removed."
+        confirmText="Clear Cart"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   );
 }
