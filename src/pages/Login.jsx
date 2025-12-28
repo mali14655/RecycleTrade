@@ -210,15 +210,15 @@ export default function Login() {
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-12 -mt-16">
         {/* Logo */}
         <div className="flex flex-col gap-3 sm:gap-5 text-center mb-6 w-full max-w-md px-4">
-          {/* Logo and Name - Stack on mobile, side-by-side on desktop */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-2">
+          {/* Logo and Name - Always stacked */}
+          <div className="flex flex-col items-center justify-center gap-3 mb-2">
             <img 
               src={logo} 
               alt="F&S Smartphones" 
-              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl object-cover shadow-lg shrink-0"
+              className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-lg shrink-0"
             />
-            <span className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight">
-              F&S Smartphones
+            <span className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-center">
+              F<span className="text-white/80 font-normal">&</span>S Smartphones
             </span>
           </div>
 

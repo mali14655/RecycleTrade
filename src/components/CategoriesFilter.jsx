@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import axios from "axios";
 
 const CategoriesFilter = ({ onCategoryChange, selectedCategory = "" }) => {
   const [categories, setCategories] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  
+  // NEW: Clear category filter
+  const handleClearCategory = () => {
+    onCategoryChange?.("");
+  };
 
   // Fetch categories from backend
   useEffect(() => {
@@ -39,7 +44,19 @@ const CategoriesFilter = ({ onCategoryChange, selectedCategory = "" }) => {
 
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200">
-      <h3 className="font-semibold text-gray-900 mb-4">CATEGORIES</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-gray-900">CATEGORIES</h3>
+        {/* NEW: Clear button when category is selected */}
+        {selectedCategory && (
+          <button
+            onClick={handleClearCategory}
+            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            title="Clear category filter"
+          >
+            <X size={16} className="text-gray-600" />
+          </button>
+        )}
+      </div>
 
       {/* Dropdown Select */}
       <div className="relative">
@@ -81,9 +98,18 @@ const CategoriesFilter = ({ onCategoryChange, selectedCategory = "" }) => {
 
       {/* Selected category display */}
       {selectedCategory && (
-        <div className="mt-3 p-2 bg-gray-50 rounded">
-          <p className="text-xs text-gray-600">Selected Category:</p>
-          <p className="text-sm font-semibold capitalize">{selectedCategory}</p>
+        <div className="mt-3 p-2 bg-gray-50 rounded flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-600">Selected Category:</p>
+            <p className="text-sm font-semibold capitalize">{selectedCategory}</p>
+          </div>
+          <button
+            onClick={handleClearCategory}
+            className="p-1 hover:bg-gray-200 rounded transition-colors ml-2"
+            title="Clear"
+          >
+            <X size={14} className="text-gray-600" />
+          </button>
         </div>
       )}
     </div>

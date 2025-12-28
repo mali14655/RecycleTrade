@@ -1,37 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import React, { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 const ProductHeader = ({ 
   totalProducts = 0, 
   onSortChange,
-  onSearchChange,
-  sortBy = "featured",
-  initialSearch = ""
+  sortBy = "featured"
 }) => {
   const [showSortOptions, setShowSortOptions] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
 
   const sortOptions = [
-    { value: "featured", label: "Featured" },
+    { value: "no-filter", label: "No Filter" },
     { value: "newest", label: "Newest First" },
     { value: "price-low", label: "Price: Low to High" },
     { value: "price-high", label: "Price: High to Low" },
     { value: "rating", label: "Highest Rated" },
   ];
-
-  // Sync local search state with initialSearch prop when it changes (e.g., from URL)
-  useEffect(() => {
-    setSearchQuery(initialSearch);
-  }, [initialSearch]);
-
-  // Debounced search
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      onSearchChange?.(searchQuery);
-    }, 500);
-    
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, onSearchChange]);
 
   const handleSortChange = (value) => {
     onSortChange?.(value);
@@ -47,20 +30,35 @@ const ProductHeader = ({
         </p>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex-1 max-w-md">
+      {/* Sort Options */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-600">Sort by:</span>
         <div className="relative">
-          <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search products..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-black focus:border-transparent"
-          />
+          <button
+            onClick={() => setShowSortOptions(!showSortOptions)}
+            className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:border-gray-400 transition-colors"
+          >
+            {sortOptions.find(opt => opt.value === sortBy)?.label || "No Filter"}
+            <ChevronDown size={16} className={`transition-transform ${showSortOptions ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showSortOptions && (
+            <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[180px]">
+              {sortOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handleSortChange(option.value)}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                    sortBy === option.value ? 'bg-gray-50 font-medium' : ''
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-
     </div>
   );
 };
