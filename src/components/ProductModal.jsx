@@ -157,7 +157,13 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             );
             
             if (colorSpec) {
-              // Group variant images by color value
+              // NEW: Helper function to normalize color values (case-insensitive, whitespace-insensitive)
+              const normalizeColorValue = (value) => {
+                if (typeof value !== 'string') return value;
+                return value.trim().toLowerCase();
+              };
+
+              // Group variant images by color value (normalized for consistent matching)
               product.variants.forEach(variant => {
                 const specsObj = variant.specs instanceof Map 
                   ? Object.fromEntries(variant.specs)
@@ -169,13 +175,17 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                 
                 if (colorKey && specsObj[colorKey] && variant.images && variant.images.length > 0) {
                   const colorValue = specsObj[colorKey];
+                  // NEW: Normalize color value for consistent key matching
+                  const normalizedColorValue = normalizeColorValue(colorValue);
+                  
                   // Collect unique images for this color (avoid duplicates)
-                  if (!extractedColorImages[colorValue]) {
-                    extractedColorImages[colorValue] = [];
+                  // Use normalized value as key, but store original value for display
+                  if (!extractedColorImages[normalizedColorValue]) {
+                    extractedColorImages[normalizedColorValue] = [];
                   }
                   variant.images.forEach(img => {
-                    if (!extractedColorImages[colorValue].includes(img)) {
-                      extractedColorImages[colorValue].push(img);
+                    if (!extractedColorImages[normalizedColorValue].includes(img)) {
+                      extractedColorImages[normalizedColorValue].push(img);
                     }
                   });
                 }
@@ -264,45 +274,62 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    console.log(`Color images selected for ${colorValue}:`, files.length);
+    // NEW: Normalize color value for consistent storage (case-insensitive, whitespace-insensitive)
+    const normalizeColorValue = (value) => {
+      if (typeof value !== 'string') return value;
+      return value.trim().toLowerCase();
+    };
+    const normalizedColorValue = normalizeColorValue(colorValue);
+
+    console.log(`Color images selected for ${colorValue} (normalized: ${normalizedColorValue}):`, files.length);
     const previewUrls = files.map(file => URL.createObjectURL(file));
     
+    // NEW: Store using normalized key, but also check original for backward compatibility
     setColorImageFiles(prev => ({
       ...prev,
-      [colorValue]: [...(prev[colorValue] || []), ...files]
+      [normalizedColorValue]: [...(prev[normalizedColorValue] || prev[colorValue] || []), ...files]
     }));
     
     setColorImagePreviews(prev => ({
       ...prev,
-      [colorValue]: [...(prev[colorValue] || []), ...previewUrls]
+      [normalizedColorValue]: [...(prev[normalizedColorValue] || prev[colorValue] || []), ...previewUrls]
     }));
   };
 
   // NEW: Remove color image
   const removeColorImage = (colorValue, index) => {
-    console.log(`Removing color image for ${colorValue} at index:`, index);
-    const previews = colorImagePreviews[colorValue] || [];
+    // NEW: Normalize color value for consistent lookup
+    const normalizeColorValue = (value) => {
+      if (typeof value !== 'string') return value;
+      return value.trim().toLowerCase();
+    };
+    const normalizedColorValue = normalizeColorValue(colorValue);
+    
+    console.log(`Removing color image for ${colorValue} (normalized: ${normalizedColorValue}) at index:`, index);
+    // Try both normalized and original value for backward compatibility
+    const previews = colorImagePreviews[normalizedColorValue] || colorImagePreviews[colorValue] || [];
     const preview = previews[index];
     if (preview && preview.startsWith('blob:')) {
       URL.revokeObjectURL(preview);
     }
     
+    // Use normalized value for storage, but check both for backward compatibility
     setColorImageFiles(prev => ({
       ...prev,
-      [colorValue]: (prev[colorValue] || []).filter((_, i) => i !== index)
+      [normalizedColorValue]: (prev[normalizedColorValue] || prev[colorValue] || []).filter((_, i) => i !== index)
     }));
     
     setColorImagePreviews(prev => ({
       ...prev,
-      [colorValue]: (prev[colorValue] || []).filter((_, i) => i !== index)
+      [normalizedColorValue]: (prev[normalizedColorValue] || prev[colorValue] || []).filter((_, i) => i !== index)
     }));
     
-    // If it's an uploaded URL, also remove from URLs
-    const urls = colorImageUrls[colorValue] || [];
+    // If it's an uploaded URL, also remove from URLs (try both normalized and original)
+    const urls = colorImageUrls[normalizedColorValue] || colorImageUrls[colorValue] || [];
     if (urls[index] && !urls[index].startsWith('blob:')) {
       setColorImageUrls(prev => ({
         ...prev,
-        [colorValue]: (prev[colorValue] || []).filter((_, i) => i !== index)
+        [normalizedColorValue]: (prev[normalizedColorValue] || prev[colorValue] || []).filter((_, i) => i !== index)
       }));
     }
   };
@@ -560,6 +587,12 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
     
     // NEW: Variants only contain multiple specs, not single specs
     // NEW: Auto-assign color images to variants based on their color spec value
+    // NEW: Helper function to normalize color values (case-insensitive, whitespace-insensitive)
+    const normalizeColorValue = (value) => {
+      if (typeof value !== 'string') return value;
+      return value.trim().toLowerCase();
+    };
+
     const variants = combinations.map((combo, index) => {
       // Check if this variant has a "Color" spec and if we have images for that color
       let variantImages = [];
@@ -571,9 +604,13 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
       
       if (colorKey && combo[colorKey]) {
         const colorValue = combo[colorKey];
+        // NEW: Normalize color value for consistent lookup
+        const normalizedColorValue = normalizeColorValue(colorValue);
+        
         // Use uploaded URLs if available, otherwise use previews (will be uploaded later)
-        const colorUrls = colorImageUrls[colorValue] || [];
-        const colorPreviews = colorImagePreviews[colorValue] || [];
+        // Try both normalized and original value for backward compatibility
+        const colorUrls = colorImageUrls[normalizedColorValue] || colorImageUrls[colorValue] || [];
+        const colorPreviews = colorImagePreviews[normalizedColorValue] || colorImagePreviews[colorValue] || [];
         
         if (colorUrls.length > 0) {
           variantImages = [...colorUrls];
@@ -810,7 +847,14 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
           );
           if (colorKey && variant.specs[colorKey]) {
             const colorValue = variant.specs[colorKey];
-            colorBasedImages = uploadedColorImageUrls[colorValue] || [];
+            // NEW: Normalize color value for consistent lookup (case-insensitive, whitespace-insensitive)
+            const normalizeColorValue = (value) => {
+              if (typeof value !== 'string') return value;
+              return value.trim().toLowerCase();
+            };
+            const normalizedColorValue = normalizeColorValue(colorValue);
+            // Try both normalized and original value for backward compatibility
+            colorBasedImages = uploadedColorImageUrls[normalizedColorValue] || uploadedColorImageUrls[colorValue] || [];
           }
           
           // Priority 3: Common images as fallback
@@ -1338,7 +1382,17 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                           Upload images for each color. These images will be automatically assigned to all variants with that color (e.g., all "Red 64GB", "Red 128GB" variants will use Red images).
                         </p>
                         <div className="space-y-4">
-                          {colorValues.map(colorValue => (
+                          {colorValues.map(colorValue => {
+                            // NEW: Normalize color value for lookup while keeping original for display
+                            const normalizeColorValue = (value) => {
+                              if (typeof value !== 'string') return value;
+                              return value.trim().toLowerCase();
+                            };
+                            const normalizedColorValue = normalizeColorValue(colorValue);
+                            // Try both normalized and original value for backward compatibility
+                            const previews = colorImagePreviews[normalizedColorValue] || colorImagePreviews[colorValue] || [];
+                            
+                            return (
                             <div key={colorValue} className="border rounded p-3 bg-gray-50">
                               <label className="block text-sm font-medium mb-2 text-gray-700">
                                 {colorValue} Images
@@ -1351,13 +1405,13 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                                 className="w-full p-2 border rounded mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 disabled={uploading || loading}
                               />
-                              {colorImagePreviews[colorValue] && colorImagePreviews[colorValue].length > 0 && (
+                              {previews.length > 0 && (
                                 <div className="mt-2">
                                   <p className="text-xs text-gray-600 mb-2">
-                                    {colorImagePreviews[colorValue].length} image(s) for {colorValue}
+                                    {previews.length} image(s) for {colorValue}
                                   </p>
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                    {colorImagePreviews[colorValue].map((image, index) => (
+                                    {previews.map((image, index) => (
                                       <div key={index} className="relative">
                                         <img
                                           src={image}
@@ -1377,7 +1431,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                                 </div>
                               )}
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     );

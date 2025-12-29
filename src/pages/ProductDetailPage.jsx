@@ -99,13 +99,36 @@ export default function ProductDetails() {
       [specName]: optionValue
     };
     
+    // NEW: Helper function to normalize values for comparison (case-insensitive, whitespace-insensitive)
+    const normalizeValue = (value) => {
+      if (typeof value !== 'string') return value;
+      return value.trim().toLowerCase();
+    };
+
+    // NEW: Helper function to check if a spec is a color spec
+    const isColorSpec = (specName) => {
+      const normalized = normalizeValue(specName);
+      return normalized === 'color' || normalized === 'colour';
+    };
+
+    // NEW: Helper function to compare spec values (case-insensitive for color specs)
+    const compareSpecValues = (specName, value1, value2) => {
+      if (isColorSpec(specName)) {
+        // For color specs, use case-insensitive and whitespace-insensitive comparison
+        return normalizeValue(value1) === normalizeValue(value2);
+      }
+      // For other specs, use exact match
+      return value1 === value2;
+    };
+
     // Find variant matching the test specs (other selected + this option)
     // Match means all testSpecs keys must match, but variant can have additional specs
     const matchingVariant = product.variants.find(variant => 
       variant.enabled &&
-      Object.keys(testSpecs).every(key => 
-        variant.specs && variant.specs[key] === testSpecs[key]
-      )
+      Object.keys(testSpecs).every(key => {
+        if (!variant.specs || !variant.specs[key]) return false;
+        return compareSpecValues(key, variant.specs[key], testSpecs[key]);
+      })
     );
     
     // If we found a matching variant, return its stock
@@ -117,14 +140,15 @@ export default function ProductDetails() {
     // This is important when user is selecting the first spec or when some specs aren't fully selected
     const variantsWithOption = product.variants.filter(variant => 
       variant.enabled && 
-      variant.specs[specName] === optionValue
+      variant.specs[specName] &&
+      compareSpecValues(specName, variant.specs[specName], optionValue)
     );
     
     // If we have other specs selected, check if any variant with this option matches those other specs
     if (Object.keys(selectedOtherSpecs).length > 0) {
       const variantsMatchingOtherSpecs = variantsWithOption.filter(variant =>
         Object.keys(selectedOtherSpecs).every(key =>
-          variant.specs[key] === selectedOtherSpecs[key]
+          variant.specs[key] && compareSpecValues(key, variant.specs[key], selectedOtherSpecs[key])
         )
       );
       
@@ -154,6 +178,28 @@ export default function ProductDetails() {
     return variant.stock > 0;
   };
 
+  // NEW: Helper function to normalize values for comparison (case-insensitive, whitespace-insensitive)
+  const normalizeValue = (value) => {
+    if (typeof value !== 'string') return value;
+    return value.trim().toLowerCase();
+  };
+
+  // NEW: Helper function to check if a spec is a color spec
+  const isColorSpec = (specName) => {
+    const normalized = normalizeValue(specName);
+    return normalized === 'color' || normalized === 'colour';
+  };
+
+  // NEW: Helper function to compare spec values (case-insensitive for color specs)
+  const compareSpecValues = (specName, value1, value2) => {
+    if (isColorSpec(specName)) {
+      // For color specs, use case-insensitive and whitespace-insensitive comparison
+      return normalizeValue(value1) === normalizeValue(value2);
+    }
+    // For other specs, use exact match
+    return value1 === value2;
+  };
+
   const handleSpecChange = (specName, value) => {
     // Create new selected specs with the updated value
     const newSelectedSpecs = {
@@ -168,10 +214,11 @@ export default function ProductDetails() {
     let matchingVariant = product.variants.find(variant => {
       if (!variant.enabled) return false;
       
-      // Check if all selected specs match
-      const allSelectedSpecsMatch = Object.keys(newSelectedSpecs).every(key => 
-        variant.specs && variant.specs[key] === newSelectedSpecs[key]
-      );
+      // Check if all selected specs match (using normalized comparison for color specs)
+      const allSelectedSpecsMatch = Object.keys(newSelectedSpecs).every(key => {
+        if (!variant.specs || !variant.specs[key]) return false;
+        return compareSpecValues(key, variant.specs[key], newSelectedSpecs[key]);
+      });
       
       // Also check that variant has all the selected spec keys
       const variantHasAllSelectedKeys = Object.keys(newSelectedSpecs).every(key =>
@@ -189,9 +236,10 @@ export default function ProductDetails() {
       matchingVariant = product.variants.find(variant => {
         if (!variant.enabled) return false;
         
-        const allSelectedSpecsMatch = Object.keys(newSelectedSpecs).every(key => 
-          variant.specs && variant.specs[key] === newSelectedSpecs[key]
-        );
+        const allSelectedSpecsMatch = Object.keys(newSelectedSpecs).every(key => {
+          if (!variant.specs || !variant.specs[key]) return false;
+          return compareSpecValues(key, variant.specs[key], newSelectedSpecs[key]);
+        });
         
         const variantHasAllSelectedKeys = Object.keys(newSelectedSpecs).every(key =>
           variant.specs && variant.specs.hasOwnProperty(key)
