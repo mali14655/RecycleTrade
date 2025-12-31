@@ -7,18 +7,21 @@ const About = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-gray-900 to-black text-white py-20">
+      <div className="bg-gradient-to-br from-gray-900 to-black text-white py-12 sm:py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-6">
+            {/* Logo and Name - Responsive like Login/Register pages */}
+            <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 mb-6">
               <img 
                 src={logo} 
                 alt="F&S Smartphones" 
-                className="w-16 h-16 rounded-xl object-cover"
+                className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-lg shrink-0"
               />
-              <h1 className="text-5xl font-bold">F&S Smartphones</h1>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-center">
+                F<span className="text-white/80 font-normal">&</span>S Smartphones
+              </h1>
             </div>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto mt-6">
+            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mt-4 sm:mt-6 px-4">
               Your trusted marketplace for refurbished phones and electronics. 
               We're committed to making quality technology accessible while reducing electronic waste.
             </p>
@@ -29,9 +32,9 @@ const About = () => {
       {/* Mission Section */}
       <div className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Mission</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">Our Mission</h2>
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
               To provide high-quality refurbished electronics at affordable prices while 
               promoting sustainability and reducing electronic waste in our environment.
             </p>
@@ -76,7 +79,7 @@ const About = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-6">Our Story</h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">Our Story</h2>
               <div className="space-y-4 text-gray-700 leading-relaxed">
                 <p>
                   F&S Smartphones was founded with a simple yet powerful vision: to make quality technology 
@@ -137,9 +140,9 @@ const About = () => {
       {/* Values Section */}
       <div className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Values</h2>
-            <p className="text-xl text-gray-600">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">Our Values</h2>
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 px-4">
               The principles that guide everything we do
             </p>
           </div>
@@ -183,8 +186,8 @@ const About = () => {
       {/* CTA Section */}
       <div className="py-16 bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-4">Join the F&S Smartphones Community</h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 px-4">Join the F&S Smartphones Community</h2>
+          <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
             Whether you're looking to buy quality refurbished devices, 
             we're here to help you every step of the way.
           </p>
