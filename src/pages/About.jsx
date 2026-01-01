@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Shield, Recycle, Users, Award, Heart, TrendingUp } from "lucide-react";
+import { Shield, Recycle, Users, Award, Heart, TrendingUp, Mail, Phone, MapPin } from "lucide-react";
 import logo from "../assets/logo.jpeg";
 
 const About = () => {
@@ -178,6 +178,78 @@ const About = () => {
               <p className="text-gray-600 text-sm">
                 We strive for excellence in everything we do
               </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact Section */}
+      <div className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">Contact Us</h2>
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+              Have questions or need assistance? We're here to help. Get in touch with us through any of the following methods.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 md:p-10 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              <div className="text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-black rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Email</h3>
+                <a 
+                  href="mailto:support@fssmartphones.com" 
+                  className="text-sm sm:text-base text-gray-600 hover:text-black transition-colors break-all"
+                >
+                  support@fssmartphones.com
+                </a>
+              </div>
+
+              <div className="text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-black rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Phone</h3>
+                <a 
+                  href="tel:+1234567890" 
+                  className="text-sm sm:text-base text-gray-600 hover:text-black transition-colors"
+                >
+                  +1 (234) 567-890
+                </a>
+              </div>
+
+              <div className="text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-black rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Address</h3>
+                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                  123 Commerce Street<br />
+                  Business District<br />
+                  City, State 12345
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-gray-200">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 text-center">Business Hours</h3>
+              <div className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
+                <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
+                <p>Saturday: 10:00 AM - 4:00 PM</p>
+                <p>Sunday: Closed</p>
+              </div>
+            </div>
+
+            <div className="mt-8 text-center">
+              <Link
+                to="/contact"
+                className="inline-block bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+              >
+                Visit Contact Page
+              </Link>
             </div>
           </div>
         </div>

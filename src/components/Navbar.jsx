@@ -282,6 +282,11 @@ const Navbar = () => {
       current: location.pathname === "/products",
     },
     {
+      name: "About Us",
+      href: "/about",
+      current: location.pathname === "/about",
+    },
+    {
       name: "Track Order",
       href: "/track-order",
       current: location.pathname === "/track-order",
