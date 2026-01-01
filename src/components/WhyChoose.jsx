@@ -1,7 +1,7 @@
 // components/WhyChoose.jsx - NEW FILE
 import React from "react";
 import { CheckCircle } from "lucide-react";
-import whyChooseImg from "../assets/whychooseImg.jpg";
+import whyChooseImg from "../assets/whychooseImg.jpeg";
 
 
 const WhyChoose = () => {
@@ -65,11 +65,11 @@ const WhyChoose = () => {
             </div>
 
             {/* Right Content - Image */}
-            <div className="flex justify-center items-center">
+            <div className="flex justify-center items-center rounded">
               <img
                 src={whyChooseImg}
                 alt="Colorful iPhones"
-                className="w-full max-w-md object-contain"
+                className="w-full max-w-md object-contain rounded"
               />
             </div>
           </div>
