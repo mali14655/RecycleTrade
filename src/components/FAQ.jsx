@@ -29,7 +29,7 @@ const FAQ = () => {
     {
       id: 3,
       question: "Do you offer shipping internationally?",
-      answer: "Currently, we ship within the United States. We're working on expanding our shipping options to other countries in the near future.",
+      answer: "Currently, we only ship within Germany. We're working on expanding our shipping options to other countries in the near future.",
     },
     {
       id: 4,

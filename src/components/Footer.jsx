@@ -1,7 +1,7 @@
 // components/layout/Footer.jsx - UPDATED with new F&S Smartphones design
 import React from "react";
 import { Link } from "react-router-dom";
-import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+import { Facebook } from "lucide-react";
 import logo from "../assets/logo.jpeg";
 
 const Footer = () => {
@@ -25,28 +25,14 @@ const Footer = () => {
             </p>
             <div className="flex gap-4">
               <a
-                href="#"
-                className="text-gray-400 hover:text-white transition-colors"
+                href="https://www.facebook.com/share/1C1KruCLJi/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                aria-label="Visit our Facebook page"
               >
                 <Facebook size={20} />
-              </a>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <Instagram size={20} />
-              </a>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <Twitter size={20} />
-              </a>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <Youtube size={20} />
+                <span className="text-sm font-medium">Facebook</span>
               </a>
             </div>
           </div>

@@ -1,6 +1,9 @@
 // components/Testimonials.jsx - NEW FILE
 import React from "react";
 import { Star } from "lucide-react";
+import janeSmithImg from '../assets/janeSmith.png';
+import tomWilliamsImg from '../assets/tomWilliams.png';
+import michealBrownImg from '../assets/michealBrown.png';
 
 const Testimonials = () => {
   const testimonials = [
@@ -9,18 +12,21 @@ const Testimonials = () => {
       text: "I've been using F&S Smartphones for over a year and I'm really impressed with the quality and support. The refurbished phones work perfectly and the customer service is always quick to help with any issues I have. Highly recommend!",
       rating: 5,
       name: "Jane Smith",
+      image: janeSmithImg,
     },
     {
       id: 2,
       text: "I've purchased multiple devices from F&S Smartphones and overall it's been great. The quality is good and I haven't had any major issues. The pricing is also very reasonable compared to new devices.",
       rating: 4,
       name: "Tom Williams",
+      image: tomWilliamsImg,
     },
     {
       id: 3,
       text: "Excellent service and product quality! My refurbished iPhone looks and works like new. The warranty gives me peace of mind and the environmental aspect makes me feel good about my purchase.",
       rating: 5,
       name: "Michael Brown",
+      image: michealBrownImg,
     },
   ];
 
@@ -70,11 +76,19 @@ const Testimonials = () => {
 
                 {/* User Info */}
                 <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-gray-300 rounded-full mb-3 flex items-center justify-center">
-                    <span className="text-gray-600 font-semibold">
-                      {testimonial.name.charAt(0)}
-                    </span>
-                  </div>
+                  {testimonial.image ? (
+                    <img 
+                      src={testimonial.image} 
+                      alt={testimonial.name}
+                      className="w-16 h-16 rounded-full mb-3 object-cover"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-300 rounded-full mb-3 flex items-center justify-center">
+                      <span className="text-gray-600 font-semibold">
+                        {testimonial.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
                   <p className="font-semibold text-gray-900">
                     {testimonial.name}
                   </p>

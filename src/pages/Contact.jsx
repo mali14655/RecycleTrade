@@ -27,10 +27,10 @@ const Contact = () => {
               <div>
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Email</h3>
                 <a 
-                  href="mailto:support@fssmartphones.com" 
+                  href="mailto:F-und-ssmartphones@web.de" 
                   className="text-sm sm:text-base text-gray-600 hover:text-black transition-colors break-all"
                 >
-                  support@fssmartphones.com
+                  F-und-ssmartphones@web.de
                 </a>
               </div>
             </div>
@@ -42,10 +42,10 @@ const Contact = () => {
               <div>
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Phone</h3>
                 <a 
-                  href="tel:+1234567890" 
+                  href="tel:+4917680312302" 
                   className="text-sm sm:text-base text-gray-600 hover:text-black transition-colors"
                 >
-                  +1 (234) 567-890
+                  +49 176 80312302
                 </a>
               </div>
             </div>
@@ -57,9 +57,9 @@ const Contact = () => {
               <div>
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Address</h3>
                 <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  123 Commerce Street<br />
-                  Business District<br />
-                  City, State 12345
+                  Q1 5-6<br />
+                  68161 Mannheim<br />
+                  Germany
                 </p>
               </div>
             </div>
