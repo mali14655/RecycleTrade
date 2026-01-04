@@ -263,7 +263,7 @@ export default function ProductDetails() {
     } else {
       images = product?.images || [];
     }
-    // Use original URLs directly - Cloudinary handles format automatically
+    // Use original URLs - error handling will fallback to JPEG if WebP fails
     return images;
   };
 

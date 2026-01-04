@@ -69,11 +69,18 @@ export default function ProductCard({ product }) {
   };
 
   // NEW: Always use common product images (product.images) for display on cards
+  // Fallback to variant image if common image fails
   const getDisplayImage = () => {
-    // Always use product.images (common images) - shown on product cards
+    // Priority 1: Use product.images (common images) - shown on product cards
     if (product.images && product.images.length > 0) {
-      // Use original URL directly - Cloudinary handles format automatically
       return product.images[0];
+    }
+    // Priority 2: Fallback to first variant's image if common image is not available
+    if (product.variants && product.variants.length > 0) {
+      const firstEnabledVariant = product.variants.find(v => v.enabled !== false) || product.variants[0];
+      if (firstEnabledVariant?.images && firstEnabledVariant.images.length > 0) {
+        return firstEnabledVariant.images[0];
+      }
     }
     return null;
   };
@@ -109,7 +116,7 @@ export default function ProductCard({ product }) {
             alt={product.name}
             className="w-full h-full object-contain p-4 hover:scale-105 transition-transform duration-200"
             onError={(e) => {
-              // Try JPEG format as fallback
+              // Priority 1: Try JPEG format as fallback
               if (displayImage && displayImage.includes('res.cloudinary.com')) {
                 const uploadIndex = displayImage.indexOf('/upload/');
                 if (uploadIndex !== -1 && !e.target.dataset.fallbackAttempted) {
@@ -121,6 +128,21 @@ export default function ProductCard({ product }) {
                   return;
                 }
               }
+              
+              // Priority 2: If common image fails, try variant image as fallback
+              if (!e.target.dataset.variantFallbackAttempted && product.variants && product.variants.length > 0) {
+                const firstEnabledVariant = product.variants.find(v => v.enabled !== false) || product.variants[0];
+                if (firstEnabledVariant?.images && firstEnabledVariant.images.length > 0) {
+                  const variantImage = firstEnabledVariant.images[0];
+                  // Only try variant if it's different from the current image
+                  if (variantImage !== displayImage) {
+                    e.target.dataset.variantFallbackAttempted = 'true';
+                    e.target.src = variantImage;
+                    return;
+                  }
+                }
+              }
+              
               // Final fallback to placeholder
               e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e5e7eb' width='400' height='300'/%3E%3Ctext fill='%239ca3af' font-family='sans-serif' font-size='18' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
               e.target.onerror = null;
