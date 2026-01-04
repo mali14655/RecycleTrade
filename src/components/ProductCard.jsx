@@ -72,6 +72,7 @@ export default function ProductCard({ product }) {
   const getDisplayImage = () => {
     // Always use product.images (common images) - shown on product cards
     if (product.images && product.images.length > 0) {
+      // Use original URL directly - Cloudinary handles format automatically
       return product.images[0];
     }
     return null;
@@ -107,6 +108,23 @@ export default function ProductCard({ product }) {
             src={displayImage}
             alt={product.name}
             className="w-full h-full object-contain p-4 hover:scale-105 transition-transform duration-200"
+            onError={(e) => {
+              // Try JPEG format as fallback
+              if (displayImage && displayImage.includes('res.cloudinary.com')) {
+                const uploadIndex = displayImage.indexOf('/upload/');
+                if (uploadIndex !== -1 && !e.target.dataset.fallbackAttempted) {
+                  let cleanUrl = displayImage.replace(/\/f_(auto|webp)\//g, '/').replace(/\/f_(auto|webp),/g, '/');
+                  const beforeUpload = cleanUrl.substring(0, cleanUrl.indexOf('/upload/') + 8);
+                  const afterUpload = cleanUrl.substring(cleanUrl.indexOf('/upload/') + 8);
+                  e.target.dataset.fallbackAttempted = 'true';
+                  e.target.src = beforeUpload + 'f_jpg,q_auto/' + afterUpload;
+                  return;
+                }
+              }
+              // Final fallback to placeholder
+              e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e5e7eb' width='400' height='300'/%3E%3Ctext fill='%239ca3af' font-family='sans-serif' font-size='18' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
+              e.target.onerror = null;
+            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg">

@@ -102,6 +102,23 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
               src={image}
               alt={product.name}
               className="w-full h-full object-contain p-1"
+              onError={(e) => {
+                // Try JPEG format as fallback
+                if (image && image.includes('res.cloudinary.com')) {
+                  const uploadIndex = image.indexOf('/upload/');
+                  if (uploadIndex !== -1 && !e.target.dataset.fallbackAttempted) {
+                    let cleanUrl = image.replace(/\/f_(auto|webp)\//g, '/').replace(/\/f_(auto|webp),/g, '/');
+                    const beforeUpload = cleanUrl.substring(0, cleanUrl.indexOf('/upload/') + 8);
+                    const afterUpload = cleanUrl.substring(cleanUrl.indexOf('/upload/') + 8);
+                    e.target.dataset.fallbackAttempted = 'true';
+                    e.target.src = beforeUpload + 'f_jpg,q_auto/' + afterUpload;
+                    return;
+                  }
+                }
+                // Final fallback to placeholder
+                e.target.src = "https://via.placeholder.com/80/80";
+                e.target.onerror = null;
+              }}
             />
           </div>
           <div className="flex-1 min-w-0">
@@ -163,6 +180,23 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
               src={image}
               alt={product.name}
               className="w-full h-full object-contain p-1"
+              onError={(e) => {
+                // Try JPEG format as fallback
+                if (image && image.includes('res.cloudinary.com')) {
+                  const uploadIndex = image.indexOf('/upload/');
+                  if (uploadIndex !== -1 && !e.target.dataset.fallbackAttempted) {
+                    let cleanUrl = image.replace(/\/f_(auto|webp)\//g, '/').replace(/\/f_(auto|webp),/g, '/');
+                    const beforeUpload = cleanUrl.substring(0, cleanUrl.indexOf('/upload/') + 8);
+                    const afterUpload = cleanUrl.substring(cleanUrl.indexOf('/upload/') + 8);
+                    e.target.dataset.fallbackAttempted = 'true';
+                    e.target.src = beforeUpload + 'f_jpg,q_auto/' + afterUpload;
+                    return;
+                  }
+                }
+                // Final fallback to placeholder
+                e.target.src = "https://via.placeholder.com/80/80";
+                e.target.onerror = null;
+              }}
             />
           </div>
           <div className="flex-1 min-w-0">

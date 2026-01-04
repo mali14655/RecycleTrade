@@ -257,10 +257,14 @@ export default function ProductDetails() {
   };
 
   const getDisplayImages = () => {
+    let images = [];
     if (selectedVariant?.images && selectedVariant.images.length > 0) {
-      return selectedVariant.images;
+      images = selectedVariant.images;
+    } else {
+      images = product?.images || [];
     }
-    return product?.images || [];
+    // Use original URLs directly - Cloudinary handles format automatically
+    return images;
   };
 
   const handleAddToCart = async () => {
@@ -362,6 +366,24 @@ export default function ProductDetails() {
                       opacity: imageOpacity
                     }}
                     onLoad={() => setImageOpacity(1)}
+                    onError={(e) => {
+                      const currentSrc = displayImages[activeImage];
+                      // Try JPEG format as fallback
+                      if (currentSrc && currentSrc.includes('res.cloudinary.com')) {
+                        const uploadIndex = currentSrc.indexOf('/upload/');
+                        if (uploadIndex !== -1 && !e.target.dataset.fallbackAttempted) {
+                          let cleanUrl = currentSrc.replace(/\/f_(auto|webp)\//g, '/').replace(/\/f_(auto|webp),/g, '/');
+                          const beforeUpload = cleanUrl.substring(0, cleanUrl.indexOf('/upload/') + 8);
+                          const afterUpload = cleanUrl.substring(cleanUrl.indexOf('/upload/') + 8);
+                          e.target.dataset.fallbackAttempted = 'true';
+                          e.target.src = beforeUpload + 'f_jpg,q_auto/' + afterUpload;
+                          return;
+                        }
+                      }
+                      // Final fallback to placeholder
+                      e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Crect fill='%23e5e7eb' width='600' height='400'/%3E%3Ctext fill='%239ca3af' font-family='sans-serif' font-size='20' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3EImage not available%3C/text%3E%3C/svg%3E";
+                      e.target.onerror = null;
+                    }}
                   />
                 </div>
               </div>
@@ -404,6 +426,23 @@ export default function ProductDetails() {
                             src={image}
                             alt={`${product.name} ${index + 1}`}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Try JPEG format as fallback
+                              if (image && image.includes('res.cloudinary.com')) {
+                                const uploadIndex = image.indexOf('/upload/');
+                                if (uploadIndex !== -1 && !e.target.dataset.fallbackAttempted) {
+                                  let cleanUrl = image.replace(/\/f_(auto|webp)\//g, '/').replace(/\/f_(auto|webp),/g, '/');
+                                  const beforeUpload = cleanUrl.substring(0, cleanUrl.indexOf('/upload/') + 8);
+                                  const afterUpload = cleanUrl.substring(cleanUrl.indexOf('/upload/') + 8);
+                                  e.target.dataset.fallbackAttempted = 'true';
+                                  e.target.src = beforeUpload + 'f_jpg,q_auto/' + afterUpload;
+                                  return;
+                                }
+                              }
+                              // Final fallback to placeholder
+                              e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23e5e7eb' width='100' height='100'/%3E%3C/svg%3E";
+                              e.target.onerror = null;
+                            }}
                           />
                         </div>
                       ))}
