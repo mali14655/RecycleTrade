@@ -27,7 +27,7 @@ import About from "./pages/About.jsx";
 import Terms from "./pages/Terms.jsx";
 import Privacy from "./pages/Privacy.jsx";
 import Contact from "./pages/Contact.jsx";
-import Cookies from "./pages/Cookies.jsx";
+import Accessibility from "./pages/Accessibility.jsx";
 import { Toaster } from "react-hot-toast";
 
 function App() {
@@ -91,7 +91,7 @@ function App() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/cookies" element={<Cookies />} />
+        <Route path="/accessibility" element={<Accessibility />} />
 
         {/* 404 - Must be last */}
         <Route path="*" element={<NotFound />} />
