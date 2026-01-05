@@ -17,6 +17,7 @@ const DashboardSidebar = ({ activeSection, setActiveSection, user }) => {
     { id: "categories", label: "Category Management", icon: "🗂️" },
     { id: "outlets", label: "Outlet Management", icon: "🏪" },
     { id: "products", label: "Product Management", icon: "📦" },
+    { id: "reviews-management", label: "Reviews Management", icon: "💬" },
     { id: "online-orders", label: "Online Paid Orders", icon: "🚚" },
     { id: "pickup-orders", label: "Pickup Orders", icon: "🏪" },
     { id: "online-processed", label: "Online Paid Processed", icon: "✅" },
@@ -339,6 +340,13 @@ export default function Dashboard() {
           token={token}
         />;
       
+      case "reviews-management":
+        return <ReviewsManagement 
+          products={allProducts} 
+          fetchAllData={fetchAllData}
+          token={token}
+        />;
+      
       // COMMENTED OUT: Seller features not available
       // case "seller-candidates-orders":
       //   return <SellerCandidatesOrders 
@@ -422,6 +430,7 @@ function getSectionTitle(section) {
     "categories": "Category Management",
     "outlets": "Outlet Management",
     "products": "Product Management",
+    "reviews-management": "Reviews Management",
     "online-orders": "Online Paid Orders",
     "pickup-orders": "Pickup Orders",
     "online-processed": "Online Paid Processed",
@@ -3989,6 +3998,411 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
         cancelText="Cancel"
         type="danger"
       />
+    </div>
+  );
+};
+
+// Reviews Management Component
+const ReviewsManagement = ({ products, fetchAllData, token }) => {
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [editRating, setEditRating] = useState("");
+  const [editComment, setEditComment] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+
+  // Fetch reviews for selected product
+  const fetchReviews = async (productId) => {
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/products/${productId}/reviews`
+      );
+      setReviews(res.data);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      toast.error("Failed to fetch reviews");
+      setReviews([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle product selection
+  const handleProductClick = (product) => {
+    setSelectedProduct(product);
+    setEditingReview(null);
+    setEditRating("");
+    setEditComment("");
+    fetchReviews(product._id);
+  };
+
+  // Handle edit review
+  const handleEditReview = (review) => {
+    setEditingReview(review);
+    setEditRating(review.rating);
+    setEditComment(review.comment || "");
+  };
+
+  // Save edited review
+  const handleSaveEdit = async () => {
+    if (!selectedProduct || !editingReview) return;
+
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/products/${selectedProduct._id}/reviews/${editingReview._id}`,
+        {
+          rating: parseInt(editRating),
+          comment: editComment,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      toast.success("Review updated successfully");
+      setEditingReview(null);
+      setEditRating("");
+      setEditComment("");
+      fetchReviews(selectedProduct._id);
+    } catch (error) {
+      console.error("Error updating review:", error);
+      toast.error("Failed to update review");
+    }
+  };
+
+  // Handle delete review
+  const handleDeleteReview = async (reviewId) => {
+    if (!selectedProduct) return;
+
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/products/${selectedProduct._id}/reviews/${reviewId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      toast.success("Review deleted successfully");
+      setShowDeleteConfirm(null);
+      fetchReviews(selectedProduct._id);
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      toast.error("Failed to delete review");
+    }
+  };
+
+  // Calculate average rating
+  const averageRating = reviews.length > 0
+    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
+    : 0;
+
+  return (
+    <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Reviews Management</h1>
+          <p className="text-gray-600">Manage product reviews - view, edit, and delete reviews</p>
+        </div>
+        {selectedProduct && (
+          <button
+            onClick={() => {
+              setSelectedProduct(null);
+              setReviews([]);
+              setEditingReview(null);
+            }}
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            ← Back to Products
+          </button>
+        )}
+      </div>
+
+      {!selectedProduct ? (
+        // Products List View
+        <div>
+          <div className="mb-4 text-sm text-gray-600">
+            Click on a product to view and manage its reviews
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="p-3 text-left text-sm font-semibold text-gray-600">Product</th>
+                  <th className="p-3 text-left text-sm font-semibold text-gray-600">Category</th>
+                  <th className="p-3 text-left text-sm font-semibold text-gray-600">Reviews Count</th>
+                  <th className="p-3 text-left text-sm font-semibold text-gray-600">Average Rating</th>
+                  <th className="p-3 text-left text-sm font-semibold text-gray-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="p-6 text-center text-gray-500">
+                      No products found
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((product) => {
+                    const reviewCount = product.reviews?.length || 0;
+                    const avgRating = reviewCount > 0
+                      ? (product.reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewCount).toFixed(1)
+                      : "0.0";
+
+                    return (
+                      <tr key={product._id} className="border-b border-gray-200 hover:bg-gray-50">
+                        <td className="p-3">
+                          <div className="flex items-center space-x-3">
+                            {(() => {
+                              let displayImage = null;
+                              if (product.variants && product.variants.length > 0) {
+                                const firstVariant = product.variants.find(v => v.enabled) || product.variants[0];
+                                displayImage = firstVariant.images?.[0] || null;
+                              }
+                              if (!displayImage && product.images && product.images.length > 0) {
+                                displayImage = product.images[0];
+                              }
+
+                              return displayImage ? (
+                                <img
+                                  src={displayImage}
+                                  alt={product.name}
+                                  className="w-10 h-10 object-cover rounded-lg"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                                  <span className="text-gray-400 text-xs">No Image</span>
+                                </div>
+                              );
+                            })()}
+                            <div>
+                              <div className="font-medium text-gray-900">{product.name}</div>
+                              <div className="text-sm text-gray-500 line-clamp-1">{product.description}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium capitalize">
+                            {product.category}
+                          </span>
+                        </td>
+                        <td className="p-3 text-sm text-gray-600">
+                          {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center space-x-1">
+                            <span className="text-sm font-semibold text-gray-900">{avgRating}</span>
+                            <span className="text-yellow-500">★</span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <button
+                            onClick={() => handleProductClick(product)}
+                            className="px-3 py-1 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 transition-colors"
+                          >
+                            View Reviews
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        // Reviews List View for Selected Product
+        <div>
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-3 mb-2">
+              {(() => {
+                let displayImage = null;
+                if (selectedProduct.variants && selectedProduct.variants.length > 0) {
+                  const firstVariant = selectedProduct.variants.find(v => v.enabled) || selectedProduct.variants[0];
+                  displayImage = firstVariant.images?.[0] || null;
+                }
+                if (!displayImage && selectedProduct.images && selectedProduct.images.length > 0) {
+                  displayImage = selectedProduct.images[0];
+                }
+
+                return displayImage ? (
+                  <img
+                    src={displayImage}
+                    alt={selectedProduct.name}
+                    className="w-12 h-12 object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <span className="text-gray-400 text-xs">No Image</span>
+                  </div>
+                );
+              })()}
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{selectedProduct.name}</h2>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4 text-sm">
+              <span className="text-gray-600">
+                <strong>{reviews.length}</strong> {reviews.length === 1 ? "review" : "reviews"}
+              </span>
+              {reviews.length > 0 && (
+                <span className="text-gray-600">
+                  Average Rating: <strong>{averageRating}</strong> <span className="text-yellow-500">★</span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            </div>
+          ) : reviews.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">No reviews yet for this product</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <div
+                  key={review._id}
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  {editingReview && editingReview._id === review._id ? (
+                    // Edit Mode
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Rating (1-5)
+                        </label>
+                        <select
+                          value={editRating}
+                          onChange={(e) => setEditRating(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        >
+                          <option value="1">1 Star</option>
+                          <option value="2">2 Stars</option>
+                          <option value="3">3 Stars</option>
+                          <option value="4">4 Stars</option>
+                          <option value="5">5 Stars</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Comment
+                        </label>
+                        <textarea
+                          value={editComment}
+                          onChange={(e) => setEditComment(e.target.value)}
+                          rows="3"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          placeholder="Enter review comment..."
+                        />
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleSaveEdit}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingReview(null);
+                            setEditRating("");
+                            setEditComment("");
+                          }}
+                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // View Mode
+                    <div>
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="flex items-center space-x-2 mb-1">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <span
+                                  key={i}
+                                  className={`text-lg ${
+                                    i < review.rating ? "text-yellow-500" : "text-gray-300"
+                                  }`}
+                                >
+                                  ★
+                                </span>
+                              ))}
+                            </div>
+                            <span className="text-sm font-semibold text-gray-700">
+                              {review.rating}/5
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            <strong>
+                              {review.userId
+                                ? review.userId.name || "User"
+                                : review.name || "Anonymous"}
+                            </strong>
+                            {review.email && !review.userId && (
+                              <span className="ml-2 text-gray-500">({review.email})</span>
+                            )}
+                            {review.userId && review.userId.email && (
+                              <span className="ml-2 text-gray-500">({review.userId.email})</span>
+                            )}
+                          </div>
+                          {review.createdAt && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditReview(review)}
+                            className="px-3 py-1 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setShowDeleteConfirm(review._id)}
+                            className="px-3 py-1 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                      {review.comment && (
+                        <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                          <p className="text-sm text-gray-700">{review.comment}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {showDeleteConfirm && (
+            <ConfirmModal
+              isOpen={!!showDeleteConfirm}
+              onClose={() => setShowDeleteConfirm(null)}
+              onConfirm={() => handleDeleteReview(showDeleteConfirm)}
+              title="Delete Review"
+              message="Are you sure you want to delete this review? This action cannot be undone."
+              confirmText="Delete"
+              cancelText="Cancel"
+              confirmClass="bg-red-600 hover:bg-red-700"
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 };
