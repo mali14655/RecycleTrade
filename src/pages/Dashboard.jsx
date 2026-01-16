@@ -652,7 +652,8 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
             <p className="font-medium text-gray-900">Tracking Number Required</p>
             <p className="text-sm text-gray-600">Please enter tracking number</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       return;
     }
@@ -677,7 +678,8 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
             <p className="font-medium text-gray-900">Order Processed</p>
             <p className="text-sm text-gray-600">Tracking information sent to customer</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       setTrackingNumbers(prev => ({ ...prev, [orderId]: "" }));
       setProcessingOrders(prev => ({ ...prev, [orderId]: false }));
@@ -695,7 +697,8 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
             <p className="font-medium text-gray-900">Processing Failed</p>
             <p className="text-sm text-gray-600">{error.response?.data?.message || "Error processing order"}</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       setProcessingOrders(prev => ({ ...prev, [orderId]: false }));
     }
@@ -1141,7 +1144,8 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
             <p className="font-medium text-gray-900">Order Processed</p>
             <p className="text-sm text-gray-600">Customer notified for pickup</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       setProcessingOrders(prev => ({ ...prev, [orderId]: false }));
       fetchAllData();
@@ -1158,7 +1162,8 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
             <p className="font-medium text-gray-900">Processing Failed</p>
             <p className="text-sm text-gray-600">{error.response?.data?.message || "Error processing order"}</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       setProcessingOrders(prev => ({ ...prev, [orderId]: false }));
     }
@@ -1592,7 +1597,8 @@ const SellerFormsManagement = ({ forms, fetchAllData, token }) => {
             <p className="font-medium text-gray-900">Form Processed</p>
             <p className="text-sm text-gray-600">Form marked as processed</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
     } catch (err) {
       console.error("Error processing form:", err);
@@ -1750,7 +1756,8 @@ const SellerRequestsManagement = ({ sellers, fetchAllData, token }) => {
             <p className="font-medium text-gray-900">Seller Approved</p>
             <p className="text-sm text-gray-600">Seller approved successfully</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
     } catch (err) {
       console.log(err);
@@ -1791,7 +1798,8 @@ const SellerRequestsManagement = ({ sellers, fetchAllData, token }) => {
             <p className="font-medium text-gray-900">Seller Rejected</p>
             <p className="text-sm text-gray-600">Seller rejected successfully</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
     } catch (err) {
       console.log(err);
@@ -3384,7 +3392,8 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
             <p className="font-medium text-gray-900">Outlet Created</p>
             <p className="text-sm text-gray-600">Outlet created successfully</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       resetForm();
       fetchAllData();
@@ -3423,7 +3432,8 @@ const OutletManagement = ({ outlets, fetchAllData, token }) => {
             <p className="font-medium text-gray-900">Outlet Updated</p>
             <p className="text-sm text-gray-600">Outlet updated successfully</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       resetForm();
       fetchAllData();
@@ -3741,7 +3751,8 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
             <p className="font-medium text-gray-900">Updated Successfully</p>
             <p className="text-sm text-gray-600">Quantities and prices updated successfully</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
     } catch (err) {
       console.error("Error updating quantities and prices:", err);
@@ -3756,7 +3767,8 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
             <p className="font-medium text-gray-900">Update Failed</p>
             <p className="text-sm text-gray-600">Failed to update quantities and prices. Please try again</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
     } finally {
       setSavingQuantities(false);
@@ -4431,7 +4443,8 @@ const FeaturedProductsManagement = ({ products, fetchAllData, token }) => {
             <p className="font-medium text-gray-900">Featured Status Updated</p>
             <p className="text-sm text-gray-600">{res.data.message}</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
     } catch (error) {
       console.error("Error toggling featured:", error);

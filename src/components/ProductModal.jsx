@@ -386,7 +386,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                 <p className="font-medium text-gray-900">Partial Upload</p>
                 <p className="text-sm text-gray-600">{uploaded} uploaded, {failed} failed. {failed > 0 ? 'Please try uploading failed images again.' : ''}</p>
               </div>
-            </div>
+            </div>,
+            { icon: null }
           );
         } else if (uploaded === 0 && failed > 0) {
           // All failed - this should be caught by error handler, but handle it here too
@@ -423,7 +424,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                 <p className="font-medium text-gray-900">Partial Upload</p>
                 <p className="text-sm text-gray-600">{error.response.data.message || 'Some images failed to upload'}</p>
               </div>
-            </div>
+            </div>,
+            { icon: null }
           );
           return imageUrls;
         }
@@ -461,7 +463,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             <p className="font-medium text-gray-900">Upload Failed</p>
             <p className="text-sm text-gray-600">{errorMessage}</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       
       throw new Error(errorMessage);
@@ -574,7 +577,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             <p className="font-medium text-gray-900">Missing Multiple Specifications</p>
             <p className="text-sm text-gray-600">Please enter values for at least one multiple specification to generate variants</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       return;
     }
@@ -957,7 +961,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
               <p className="text-sm text-gray-600">{name} updated successfully</p>
             </div>
           </div>,
-          { id: toastId }
+          { id: toastId, icon: null }
         );
       } else {
         await axios.post(
@@ -982,7 +986,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
               <p className="text-sm text-gray-600">{name} created successfully</p>
             </div>
           </div>,
-          { id: toastId }
+          { id: toastId, icon: null }
         );
       }
 
@@ -1003,7 +1007,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             <p className="font-medium text-gray-900">Failed to Save</p>
             <p className="text-sm text-gray-600">Please try again</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
     } finally {
       setLoading(false);

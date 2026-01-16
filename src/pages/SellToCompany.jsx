@@ -88,7 +88,8 @@ export default function SellToCompany() {
             <p className="font-medium text-gray-900">Form Submitted</p>
             <p className="text-sm text-gray-600">Form submitted successfully</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       setProductName("");
       setQuantity("");
@@ -109,7 +110,8 @@ export default function SellToCompany() {
             <p className="font-medium text-gray-900">Submission Failed</p>
             <p className="text-sm text-gray-600">{errorMsg}</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
     } finally {
       setLoading(false);

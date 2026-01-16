@@ -45,7 +45,8 @@ const [confirmModal, setConfirmModal] = useState({
             <p className="font-medium text-gray-900">Failed to Load</p>
             <p className="text-sm text-gray-600">Please try again</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
     }
   };
@@ -132,7 +133,8 @@ const [confirmModal, setConfirmModal] = useState({
             <p className="font-medium text-gray-900">Upload Failed</p>
             <p className="text-sm text-gray-600">Please try again</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       throw error;
     }
@@ -151,7 +153,8 @@ const [confirmModal, setConfirmModal] = useState({
             <p className="font-medium text-gray-900">Missing Information</p>
             <p className="text-sm text-gray-600">Please enter a spec name</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       return;
     }
@@ -218,7 +221,8 @@ const submitCategory = async (e) => {
             <p className="font-medium text-gray-900">Uploading Image</p>
             <p className="text-sm text-gray-600">Please wait...</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       
       console.log('Uploading image to Cloudinary...');
@@ -266,7 +270,7 @@ const submitCategory = async (e) => {
             <p className="text-sm text-gray-600">{formData.name} updated successfully</p>
           </div>
         </div>,
-        { id: toastId }
+        { id: toastId, icon: null }
       );
     } else {
       console.log('Creating new category');
@@ -289,7 +293,7 @@ const submitCategory = async (e) => {
             <p className="text-sm text-gray-600">{formData.name} created successfully</p>
           </div>
         </div>,
-        { id: toastId }
+        { id: toastId, icon: null }
       );
     }
     

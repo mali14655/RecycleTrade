@@ -88,6 +88,7 @@ export default function Register() {
             </div>, 
             {
               id: toastId,
+              icon: null,
               duration: 6000,
               position: "top-center",
               style: {
@@ -119,6 +120,7 @@ export default function Register() {
             </div>, 
             {
               id: toastId,
+              icon: null,
               duration: 5000,
               position: "top-center",
               style: {
@@ -175,6 +177,7 @@ export default function Register() {
           </div>, 
           {
             id: toastId,
+            icon: null,
             duration: 5000,
             position: "top-center",
             style: {

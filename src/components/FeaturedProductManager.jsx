@@ -52,7 +52,8 @@ export default function FeaturedProductManager() {
               {products.find(p => p._id === productId)?.name}
             </p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       
     } catch (error) {
@@ -70,7 +71,8 @@ export default function FeaturedProductManager() {
             <p className="font-medium text-gray-900">Failed to Update</p>
             <p className="text-sm text-gray-600">Please try again</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
     }
   };

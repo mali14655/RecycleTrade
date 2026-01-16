@@ -134,7 +134,8 @@ export default function Checkout() {
             <p className="font-medium text-gray-900">Validation Error</p>
             <p className="text-sm text-gray-600">Please fill all required fields correctly</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       return;
     }
@@ -196,7 +197,8 @@ export default function Checkout() {
             <p className="font-medium text-gray-900">Checkout Failed</p>
             <p className="text-sm text-gray-600">{error.response?.data?.message || "Checkout failed"}</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
     } finally {
       setLoading(false);
@@ -216,7 +218,8 @@ export default function Checkout() {
             <p className="font-medium text-gray-900">Validation Error</p>
             <p className="text-sm text-gray-600">Please fill all required fields correctly</p>
           </div>
-        </div>
+        </div>,
+        { icon: null }
       );
       return;
     }

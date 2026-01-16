@@ -86,6 +86,7 @@ export default function Login() {
           </div>, 
           {
             id: toastId,
+            icon: null,
             duration: 3000,
             position: "top-center",
             style: {
@@ -134,6 +135,7 @@ export default function Login() {
             </div>, 
             {
               id: toastId,
+              icon: null,
               duration: 5000,
               position: "top-center",
               style: {
@@ -169,6 +171,7 @@ export default function Login() {
           </div>, 
           {
             id: toastId,
+            icon: null,
             duration: 4000,
             position: "top-center",
             style: {

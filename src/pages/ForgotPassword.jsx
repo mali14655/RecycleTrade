@@ -71,6 +71,7 @@ export default function ForgotPassword() {
             </div>,
             {
               id: toastId,
+              icon: null,
               duration: 6000,
               position: "top-center",
               style: {
@@ -105,6 +106,7 @@ export default function ForgotPassword() {
           </div>,
           {
             id: toastId,
+            icon: null,
             duration: 5000,
             position: "top-center",
             style: {
@@ -167,6 +169,7 @@ export default function ForgotPassword() {
           </div>,
           {
             id: toastId,
+            icon: null,
             duration: 5000,
             position: "top-center",
             style: {

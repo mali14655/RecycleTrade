@@ -98,6 +98,7 @@ export default function AdminLogin() {
           </div>, 
           {
             id: toastId,
+            icon: null,
             duration: 3000,
             position: "top-center",
             style: {
@@ -139,6 +140,7 @@ export default function AdminLogin() {
           </div>, 
           {
             id: toastId,
+            icon: null,
             duration: 4000,
             position: "top-center",
             style: {
