@@ -3928,14 +3928,39 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
                   ? Object.entries(variantSpecsObj).filter(([key]) => multipleSpecNames.includes(key))
                   : Object.entries(variantSpecsObj); // Fallback: show all (should be only multiple specs anyway)
                 
+                // Get appearance and battery from direct properties or from specs map (same as ProductDetailPage)
+                const appearance = variant.appearance || 
+                  variantSpecsObj['Appearance (Phone Condition)'] || 
+                  variantSpecsObj['Appearance'] || 
+                  variantSpecsObj['appearance'];
+                
+                const battery = variant.battery || 
+                  variantSpecsObj['Battery Condition'] || 
+                  variantSpecsObj['Battery'] || 
+                  variantSpecsObj['battery'];
+                
+                // Filter out appearance and battery from displaySpecs since we'll show them separately
+                const filteredDisplaySpecs = displaySpecs.filter(([key]) => {
+                  const keyLower = key.toLowerCase();
+                  return !['Appearance (Phone Condition)', 'Appearance', 'appearance', 'Battery Condition', 'Battery', 'battery'].includes(key);
+                });
+                
+                // Build display text for variant info
+                const variantInfoParts = [];
+                if (appearance) variantInfoParts.push(`Appearance: ${appearance}`);
+                if (battery) variantInfoParts.push(`Battery Condition: ${battery}`);
+                filteredDisplaySpecs.forEach(([key, value]) => {
+                  variantInfoParts.push(`${key}: ${value}`);
+                });
+                
                 return (
                 <div key={index} className="border rounded p-4 bg-gray-50">
                   <div className="mb-3">
                     <h3 className="font-semibold text-sm">
                       Variant {index + 1}
-                      {displaySpecs.length > 0 && (
+                      {variantInfoParts.length > 0 && (
                         <span className="ml-2 text-xs text-gray-600">
-                          ({displaySpecs.map(([key, value]) => `${key}: ${value}`).join(', ')})
+                          ({variantInfoParts.join(', ')})
                         </span>
                       )}
                     </h3>

@@ -1701,13 +1701,43 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                         ? Object.entries(variantSpecsObj).filter(([key]) => multipleSpecNames.includes(key))
                         : Object.entries(variantSpecsObj); // Fallback: show all (should be only multiple specs anyway)
                       
+                      // Get appearance and battery from direct properties or from specs map (same as ProductDetailPage)
+                      const appearance = variant.appearance || 
+                        variantSpecsObj['Appearance (Phone Condition)'] || 
+                        variantSpecsObj['Appearance'] || 
+                        variantSpecsObj['appearance'];
+                      
+                      const battery = variant.battery || 
+                        variantSpecsObj['Battery Condition'] || 
+                        variantSpecsObj['Battery'] || 
+                        variantSpecsObj['battery'];
+                      
+                      // Filter out appearance and battery from displaySpecs since we'll show them separately
+                      const filteredDisplaySpecs = displaySpecs.filter(([key]) => {
+                        const keyLower = key.toLowerCase();
+                        return !['Appearance (Phone Condition)', 'Appearance', 'appearance', 'Battery Condition', 'Battery', 'battery'].includes(key);
+                      });
+                      
                       return (
                       <div key={index} className="border rounded p-4 bg-gray-50">
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <h5 className="font-semibold text-lg">Variant {index + 1}</h5>
                             <div className="text-sm text-gray-600">
-                              {displaySpecs.map(([key, value]) => (
+                              {/* Show Appearance if available */}
+                              {appearance && (
+                                <span className="mr-3">
+                                  Appearance: <strong>{appearance}</strong>
+                                </span>
+                              )}
+                              {/* Show Battery Condition if available */}
+                              {battery && (
+                                <span className="mr-3">
+                                  Battery Condition: <strong>{battery}</strong>
+                                </span>
+                              )}
+                              {/* Show other multiple specs */}
+                              {filteredDisplaySpecs.map(([key, value]) => (
                                 <span key={key} className="mr-3">
                                   {key}: <strong>{value}</strong>
                                 </span>
