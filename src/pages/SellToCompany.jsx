@@ -185,7 +185,7 @@ export default function SellToCompany() {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price ($) *
+                  Price (€) *
                 </label>
                 <input
                   type="number"
@@ -242,7 +242,7 @@ export default function SellToCompany() {
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p><span className="font-medium">Quantity:</span> {form.quantity}</p>
-                      <p><span className="font-medium">Price:</span> ${form.price}</p>
+                      <p><span className="font-medium">Price:</span> €{form.price}</p>
                       <p className="text-xs text-gray-500 mt-2">
                         Submitted: {new Date(form.createdAt).toLocaleDateString()}
                       </p>

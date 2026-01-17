@@ -369,27 +369,32 @@ const Products = () => {
       <Breadcrumb />
 
       <div className="max-w-[90%] mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar Filters */}
-          <div className="lg:col-span-1 space-y-4">
-            <CategoriesFilter 
-              onCategoryChange={handleCategoryChange} 
-              selectedCategory={filters.category}
-            />
-            {/* NEW: Reset PriceFilter when search is set */}
-            <PriceFilter 
-              onPriceChange={handlePriceChange}
-              resetTrigger={priceFilterResetKey}
-            />
+        {/* Filters Section - Top Horizontal Layout */}
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
+            <div className="flex-1 min-w-[200px] sm:min-w-[250px]">
+              <CategoriesFilter 
+                onCategoryChange={handleCategoryChange} 
+                selectedCategory={filters.category}
+              />
+            </div>
+            <div className="flex-1 min-w-[200px] sm:min-w-[250px]">
+              {/* NEW: Reset PriceFilter when search is set */}
+              <PriceFilter 
+                onPriceChange={handlePriceChange}
+                resetTrigger={priceFilterResetKey}
+              />
+            </div>
           </div>
+        </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <ProductHeader 
-              totalProducts={products.length}
-              onSortChange={handleSortChange}
-              sortBy={filters.sortBy}
-            />
+        {/* Main Content */}
+        <div>
+          <ProductHeader 
+            totalProducts={products.length}
+            onSortChange={handleSortChange}
+            sortBy={filters.sortBy}
+          />
 
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -433,7 +438,6 @@ const Products = () => {
                 )}
               </>
             )}
-          </div>
         </div>
       </div>
     </div>

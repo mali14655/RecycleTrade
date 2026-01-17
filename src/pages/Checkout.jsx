@@ -5,6 +5,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Breadcrumb from "../components/Breadcrumb";
 import toast from "react-hot-toast";
+import visaLogo from "../assets/cards/visa_white.svg";
+import mastercardLogo from "../assets/cards/mastercard.svg";
+import applePayLogo from "../assets/cards/pay_apple_pay.svg";
+import googlePayLogo from "../assets/cards/pay_google_pay.svg";
+import klarnaLogo from "../assets/cards/klarna.svg";
 
 // Country list
 const COUNTRIES = [
@@ -657,7 +662,7 @@ export default function Checkout() {
                         </div>
                       </div>
                       <p className="font-semibold">
-                        ${(itemPrice * item.quantity).toFixed(2)}
+                        €{(itemPrice * item.quantity).toFixed(2)}
                       </p>
                     </div>
                   );
@@ -667,7 +672,7 @@ export default function Checkout() {
               <div className="space-y-2 border-t pt-4">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>€{total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
@@ -675,7 +680,7 @@ export default function Checkout() {
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>€{total.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -701,6 +706,35 @@ export default function Checkout() {
                   </button>
                 )}
               </div>
+
+              {/* Payment Methods Display - Only show for delivery */}
+              {formData.deliveryMethod === "delivery" && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 mb-3 text-center">We accept:</p>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {/* Visa */}
+                    <div className="flex items-center justify-center h-8 px-3 bg-white rounded shadow-sm border border-gray-100">
+                      <img src={visaLogo} alt="Visa" className="h-5 object-contain" />
+                    </div>
+                    {/* Mastercard */}
+                    <div className="flex items-center justify-center h-8 px-3 bg-white rounded shadow-sm border border-gray-100">
+                      <img src={mastercardLogo} alt="Mastercard" className="h-5 object-contain" />
+                    </div>
+                    {/* Apple Pay */}
+                    <div className="flex items-center justify-center h-8 px-3 bg-white rounded shadow-sm border border-gray-100">
+                      <img src={applePayLogo} alt="Apple Pay" className="h-5 object-contain" />
+                    </div>
+                    {/* Google Pay */}
+                    <div className="flex items-center justify-center h-8 px-3 bg-white rounded shadow-sm border border-gray-100">
+                      <img src={googlePayLogo} alt="Google Pay" className="h-5 object-contain" />
+                    </div>
+                    {/* Klarna */}
+                    <div className="flex items-center justify-center h-8 px-3 bg-white rounded shadow-sm border border-gray-100">
+                      <img src={klarnaLogo} alt="Klarna" className="h-5 object-contain" />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="mt-4 text-center">
                 <p className="text-sm text-gray-600">

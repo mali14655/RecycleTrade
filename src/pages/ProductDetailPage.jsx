@@ -2,7 +2,8 @@ import React, { useEffect, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { CartContext } from "../context/CartContext";
-import { ChevronLeft, ChevronRight, Star, ShoppingCart, User, Mail, MessageSquare } from "lucide-react";
+import { AuthContext } from "../context/AuthContext";
+import { ChevronLeft, ChevronRight, Star, ShoppingCart, User, Mail, MessageSquare, X, Edit2, Trash2, Image as ImageIcon, Maximize2 } from "lucide-react";
 import toast from "react-hot-toast";
 import Breadcrumb from "../components/Breadcrumb";
 import InfoTooltip from "../components/InfoTooltip";
@@ -517,7 +518,7 @@ export default function ProductDetails() {
             {/* Price and Stock Status */}
             <div className="space-y-2">
               <div className="text-4xl font-bold text-gray-900">
-                ${selectedVariant ? selectedVariant.price : product.price}
+                €{selectedVariant ? selectedVariant.price : product.price}
               </div>
               {/* Stock management - Stock status display */}
               {(() => {
@@ -959,27 +960,258 @@ export default function ProductDetails() {
 
 // Review Section Component
 function ReviewSection({ productId, reviews, setReviews }) {
+  const { user } = useContext(AuthContext);
+  const token = localStorage.getItem("accessToken");
+  const isAdmin = user?.user?.role === "admin";
+  
   const [rating, setRating] = useState("");
   const [comment, setComment] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [imageUrls, setImageUrls] = useState([]);
+  
+  // NEW: Edit review state
+  const [editingReview, setEditingReview] = useState(null);
+  const [editRating, setEditRating] = useState("");
+  const [editComment, setEditComment] = useState("");
+  const [editImageUrls, setEditImageUrls] = useState([]);
+  const [editImageFiles, setEditImageFiles] = useState([]);
+  const [editImagePreviews, setEditImagePreviews] = useState([]);
+  const [editLoading, setEditLoading] = useState(false);
+  
+  // NEW: Lightbox state - track images array and current index
+  const [lightboxImages, setLightboxImages] = useState([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // NEW: Keyboard navigation for lightbox
+  useEffect(() => {
+    if (lightboxImages.length === 0) return;
+
+    const handleKeyDown = (e) => {
+      if (lightboxImages.length <= 1) return;
+      
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setLightboxIndex((prev) => (prev > 0 ? prev - 1 : lightboxImages.length - 1));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setLightboxIndex((prev) => (prev < lightboxImages.length - 1 ? prev + 1 : 0));
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setLightboxImages([]);
+        setLightboxIndex(0);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxImages.length]);
+  
+  // NEW: Show more reviews state
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  
+  // NEW: Handle image file selection
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + imageFiles.length > 5) {
+      toast.error("Maximum 5 images allowed");
+      return;
+    }
+    
+    const newFiles = [...imageFiles, ...files];
+    setImageFiles(newFiles);
+    
+    // Create previews
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(newPreviews);
+  };
+  
+  // NEW: Remove image before upload
+  const removeImage = (index) => {
+    const newFiles = imageFiles.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
+    // Revoke object URL
+    URL.revokeObjectURL(imagePreviews[index]);
+  };
+  
+  // NEW: Upload images to Cloudinary (no auth required for review images)
+  const uploadImages = async (files) => {
+    if (!files || files.length === 0) return [];
+    
+    const formData = new FormData();
+    files.forEach(file => formData.append("images", file));
+    
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/upload/upload-guest`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 240000
+        }
+      );
+      
+      return response.data.images || [];
+    } catch (err) {
+      console.error("Error uploading images:", err);
+      toast.error("Failed to upload images");
+      return [];
+    }
+  };
+  
+  // NEW: Handle edit image change
+  const handleEditImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + editImageUrls.length + editImageFiles.length > 5) {
+      toast.error("Maximum 5 images allowed");
+      return;
+    }
+    
+    const newFiles = [...editImageFiles, ...files];
+    setEditImageFiles(newFiles);
+    
+    // Create previews
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    setEditImagePreviews(newPreviews);
+  };
+  
+  // NEW: Remove edit image
+  const removeEditImage = (index, isExisting = false) => {
+    if (isExisting) {
+      const newUrls = editImageUrls.filter((_, i) => i !== index);
+      setEditImageUrls(newUrls);
+    } else {
+      const newFiles = editImageFiles.filter((_, i) => i !== index);
+      const newPreviews = editImagePreviews.filter((_, i) => i !== index);
+      setEditImageFiles(newFiles);
+      setEditImagePreviews(newPreviews);
+      URL.revokeObjectURL(editImagePreviews[index]);
+    }
+  };
+  
+  // NEW: Start editing review
+  const startEditReview = (review) => {
+    setEditingReview(review._id || review.id);
+    setEditRating(review.rating.toString());
+    setEditComment(review.comment || "");
+    setEditImageUrls(review.images || []);
+    setEditImageFiles([]);
+    setEditImagePreviews([]);
+  };
+  
+  // NEW: Cancel edit
+  const cancelEdit = () => {
+    setEditingReview(null);
+    setEditRating("");
+    setEditComment("");
+    setEditImageUrls([]);
+    setEditImageFiles([]);
+    editImagePreviews.forEach(url => URL.revokeObjectURL(url));
+    setEditImagePreviews([]);
+  };
+  
+  // NEW: Save edited review
+  const handleSaveEdit = async () => {
+    if (!editingReview) return;
+    
+    setEditLoading(true);
+    try {
+      // Upload new images
+      const newImageUrls = editImageFiles.length > 0 
+        ? await uploadImages(editImageFiles)
+        : [];
+      
+      // Combine existing and new images
+      const allImageUrls = [...editImageUrls, ...newImageUrls];
+      
+      // Update review
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/products/${productId}/reviews/${editingReview}`,
+        {
+          rating: parseInt(editRating),
+          comment: editComment,
+          images: allImageUrls,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      
+      // Refresh reviews
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/products/${productId}/reviews`);
+      setReviews(res.data);
+      
+      // Cleanup
+      editImagePreviews.forEach(url => URL.revokeObjectURL(url));
+      cancelEdit();
+      
+      toast.success("Review updated successfully!");
+    } catch (err) {
+      console.error("Error updating review:", err);
+      toast.error("Failed to update review");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+  
+  // NEW: Delete review
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm("Are you sure you want to delete this review?")) return;
+    
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/products/${productId}/reviews/${reviewId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      
+      // Refresh reviews
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/products/${productId}/reviews`);
+      setReviews(res.data);
+      
+      toast.success("Review deleted successfully!");
+    } catch (err) {
+      console.error("Error deleting review:", err);
+      toast.error("Failed to delete review");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     
     try {
+      // Upload images if any (no login required)
+      let uploadedImageUrls = [];
+      if (imageFiles.length > 0) {
+        uploadedImageUrls = await uploadImages(imageFiles);
+      }
+      
       await axios.post(`${import.meta.env.VITE_API_URL}/products/${productId}/reviews`, {
         rating,
         comment,
         name,
         email,
+        images: uploadedImageUrls,
       });
+      
+      // Cleanup
       setRating("");
       setComment("");
       setName("");
       setEmail("");
+      setImageFiles([]);
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+      setImagePreviews([]);
+      setImageUrls([]);
       
       // Refresh reviews
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/products/${productId}/reviews`);
@@ -993,6 +1225,12 @@ function ReviewSection({ productId, reviews, setReviews }) {
       setLoading(false);
     }
   };
+
+  // NEW: Sort reviews by rating (highest first)
+  const sortedReviews = [...reviews].sort((a, b) => b.rating - a.rating);
+  
+  // NEW: Show only 3 reviews initially
+  const displayedReviews = showAllReviews ? sortedReviews : sortedReviews.slice(0, 3);
 
   const averageRating = reviews.length > 0 
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
@@ -1110,6 +1348,53 @@ function ReviewSection({ productId, reviews, setReviews }) {
             />
           </div>
 
+          {/* NEW: Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Add Images (Optional, Max 5)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageChange}
+              className="hidden"
+              id="review-images"
+              disabled={imageFiles.length >= 5}
+            />
+            <label
+              htmlFor="review-images"
+              className={`inline-flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors ${
+                imageFiles.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              <ImageIcon size={20} className="text-gray-600" />
+              <span className="text-sm text-gray-700">Choose Images</span>
+            </label>
+            
+            {/* Image Previews */}
+            {(imagePreviews.length > 0 || imageUrls.length > 0) && (
+              <div className="mt-3 flex flex-wrap gap-3">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-24 h-24 object-cover rounded-lg border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Submit Button */}
           <button
             type="submit"
@@ -1125,46 +1410,256 @@ function ReviewSection({ productId, reviews, setReviews }) {
       <div>
         <h3 className="text-xl font-semibold text-gray-900 mb-6">Customer Reviews ({reviews.length})</h3>
         
-        {reviews.length > 0 ? (
-          <div className={`space-y-6 ${reviews.length > 5 ? 'max-h-[600px] overflow-y-auto pr-4' : ''}`}>
-            {reviews.map((review, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-6 hover:shadow-sm transition-shadow">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3">
-                  <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                      <User size={20} className="text-gray-400" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {review.name || "Anonymous"}
-                      </p>
-                      <p className="text-gray-500 text-sm">
-                        {new Date(review.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-                    </div>
+        {displayedReviews.length > 0 ? (
+          <>
+            <div className="space-y-6">
+              {displayedReviews.map((review, index) => {
+                const reviewId = review._id || review.id;
+                const isEditing = editingReview === reviewId;
+                const reviewImages = (review.images || []).filter(url => url && typeof url === 'string' && url.trim() !== '');
+                
+                // Debug: Log review data to see what we're getting
+                if (reviewImages.length > 0) {
+                  console.log('Review images:', reviewImages);
+                }
+                
+                return (
+                  <div key={reviewId || index} className="border border-gray-200 rounded-lg p-6 hover:shadow-sm transition-shadow">
+                    {isEditing ? (
+                      // Edit Mode
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold text-gray-900">Edit Review</h4>
+                          <button
+                            onClick={cancelEdit}
+                            className="text-gray-500 hover:text-gray-700"
+                          >
+                            <X size={20} />
+                          </button>
+                        </div>
+                        
+                        {/* Edit Rating */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                          <select
+                            value={editRating}
+                            onChange={(e) => setEditRating(e.target.value)}
+                            className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200"
+                          >
+                            {[1, 2, 3, 4, 5].map((r) => (
+                              <option key={r} value={r}>{r} Star{r > 1 ? "s" : ""}</option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        {/* Edit Comment */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Comment</label>
+                          <textarea
+                            value={editComment}
+                            onChange={(e) => setEditComment(e.target.value)}
+                            rows={4}
+                            className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 resize-none"
+                          />
+                        </div>
+                        
+                        {/* Edit Images */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Images (Max 5)
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleEditImageChange}
+                            className="hidden"
+                            id={`edit-images-${reviewId}`}
+                            disabled={editImageUrls.length + editImageFiles.length >= 5}
+                          />
+                          <label
+                            htmlFor={`edit-images-${reviewId}`}
+                            className={`inline-flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors ${
+                              editImageUrls.length + editImageFiles.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                          >
+                            <ImageIcon size={16} className="text-gray-600" />
+                            <span className="text-sm text-gray-700">Add Images</span>
+                          </label>
+                          
+                          {/* Existing Images */}
+                          {editImageUrls.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-3">
+                              {editImageUrls.map((url, idx) => (
+                                <div key={idx} className="relative group">
+                                  <img
+                                    src={url}
+                                    alt={`Review ${idx + 1}`}
+                                    className="w-24 h-24 object-cover rounded-lg border border-gray-300 cursor-pointer"
+                                    onClick={() => {
+                                      setLightboxImages(editImageUrls);
+                                      setLightboxIndex(idx);
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeEditImage(idx, true)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* New Image Previews */}
+                          {editImagePreviews.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-3">
+                              {editImagePreviews.map((preview, idx) => (
+                                <div key={idx} className="relative group">
+                                  <img
+                                    src={preview}
+                                    alt={`Preview ${idx + 1}`}
+                                    className="w-24 h-24 object-cover rounded-lg border border-gray-300"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeEditImage(idx, false)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-3">
+                          <button
+                            onClick={handleSaveEdit}
+                            disabled={editLoading}
+                            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          >
+                            {editLoading ? "Saving..." : "Save Changes"}
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // Display Mode
+                      <>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3">
+                          <div className="flex items-center gap-3 mb-2 sm:mb-0">
+                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                              <User size={20} className="text-gray-400" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">
+                                {review.name || "Anonymous"}
+                              </p>
+                              <p className="text-gray-500 text-sm">
+                                {new Date(review.createdAt).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={16}
+                                  className={`${
+                                    i < review.rating 
+                                      ? "fill-orange-400 text-orange-400" 
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-gray-700 leading-relaxed mb-3">{review.comment}</p>
+                        
+                        {/* NEW: Display Review Images - Styled exactly like form preview */}
+                        {reviewImages && reviewImages.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-3">
+                            {reviewImages.map((imageUrl, imgIndex) => {
+                              // Skip invalid URLs
+                              if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
+                                return null;
+                              }
+                              
+                              const validImages = reviewImages.filter(url => url && typeof url === 'string' && url.trim() !== '');
+                              
+                              return (
+                                <div
+                                  key={imgIndex}
+                                  className="relative group cursor-pointer"
+                                  onClick={() => {
+                                    setLightboxImages(validImages);
+                                    setLightboxIndex(validImages.indexOf(imageUrl));
+                                  }}
+                                >
+                                  <img
+                                    src={imageUrl}
+                                    alt={`Review image ${imgIndex + 1}`}
+                                    className="w-24 h-24 object-cover rounded-lg border border-gray-300"
+                                    onError={(e) => {
+                                      console.error('Image failed to load:', imageUrl);
+                                      e.target.style.display = 'none';
+                                    }}
+                                    onLoad={() => {
+                                      console.log('Image loaded successfully:', imageUrl);
+                                    }}
+                                    loading="lazy"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        size={16}
-                        className={`${
-                          i < review.rating 
-                            ? "fill-orange-400 text-orange-400" 
-                            : "text-gray-300"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                );
+              })}
+            </div>
+            
+            {/* NEW: Show More Button */}
+            {!showAllReviews && sortedReviews.length > 3 && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => setShowAllReviews(true)}
+                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                  Show More ({sortedReviews.length - 3} more reviews)
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+            
+            {/* NEW: Show Less Button */}
+            {showAllReviews && sortedReviews.length > 3 && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => setShowAllReviews(false)}
+                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                  Show Less
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-12">
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1175,6 +1670,69 @@ function ReviewSection({ productId, reviews, setReviews }) {
           </div>
         )}
       </div>
+      
+      {/* NEW: Lightbox Modal with Navigation */}
+      {lightboxImages.length > 0 && lightboxIndex >= 0 && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={() => {
+            setLightboxImages([]);
+            setLightboxIndex(0);
+          }}
+        >
+          {/* Close Button */}
+          <button
+            onClick={() => {
+              setLightboxImages([]);
+              setLightboxIndex(0);
+            }}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+          >
+            <X size={32} />
+          </button>
+
+          {/* Previous Button */}
+          {lightboxImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) => (prev > 0 ? prev - 1 : lightboxImages.length - 1));
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-10 bg-black bg-opacity-50 rounded-full p-2"
+            >
+              <ChevronLeft size={32} />
+            </button>
+          )}
+
+          {/* Next Button */}
+          {lightboxImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) => (prev < lightboxImages.length - 1 ? prev + 1 : 0));
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-10 bg-black bg-opacity-50 rounded-full p-2"
+            >
+              <ChevronRight size={32} />
+            </button>
+          )}
+
+          {/* Image */}
+          <img
+            src={lightboxImages[lightboxIndex]}
+            alt={`Review image ${lightboxIndex + 1}`}
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {/* Image Counter */}
+          {lightboxImages.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black bg-opacity-50 rounded-full px-4 py-2 text-sm z-10">
+              {lightboxIndex + 1} / {lightboxImages.length}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -102,13 +102,19 @@ const Terms = () => {
 
                 <div className="mb-4">
                   <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
-                    5.1 Credit card via Stripe
+                    5.1 Online Payment Methods
                   </h3>
                   <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
-                    In cooperation with the payment service provider <strong>Stripe</strong>, we offer credit card as a payment method. When placing your order, you provide your credit card details. After your verification as the legitimate cardholder, the payment transaction is processed automatically and your card is charged.
+                    In cooperation with the payment service provider <strong>Stripe</strong>, we offer the following payment methods:
                   </p>
+                  <ul className="list-disc pl-5 sm:pl-6 text-sm sm:text-base text-gray-700 space-y-2 mb-2">
+                    <li><strong>Credit/Debit Cards:</strong> Visa and Mastercard cards are accepted through Stripe's secure payment gateway.</li>
+                    <li><strong>Apple Pay:</strong> Available for customers using Apple devices (iPhone, iPad, Mac).</li>
+                    <li><strong>Google Pay:</strong> Available for customers using Android devices.</li>
+                    <li><strong>Klarna:</strong> Buy now, pay later options available through Klarna's payment solutions.</li>
+                  </ul>
                   <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
-                    <strong>Note:</strong> This payment method is available for home delivery orders. Your payment is securely processed via Stripe's payment gateway. We do not store or have access to your full card details - these are handled directly by Stripe through their secure checkout system.
+                    <strong>Note:</strong> These payment methods are available for home delivery orders. Your payment is securely processed via Stripe's payment gateway. We do not store or have access to your full card details - these are handled directly by Stripe through their secure checkout system.
                   </p>
                 </div>
 
@@ -149,7 +155,7 @@ const Terms = () => {
                     6.2 Returns for Used Devices
                   </h3>
                   <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
-                    Returns are possible within 14 days, but only if the used mobile phone is returned in the same condition as when delivered. Alterations or damage will void the right of return.
+                    Returns are possible within 30 days, but only if the used mobile phone is returned in the same condition as when delivered. Alterations or damage will void the right of return.
                   </p>
                 </div>
               </section>

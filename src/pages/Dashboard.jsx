@@ -2498,7 +2498,7 @@ const CancelledOrdersManagement = ({ orders, fetchAllData, token }) => {
                                         <span className="font-medium">Quantity:</span> {item.quantity}
                                       </span>
                                       <span className="text-gray-600">
-                                        <span className="font-medium">Price:</span> <span className="font-semibold text-gray-600">${item.price?.toFixed(2) || '0.00'}</span>
+                                        <span className="font-medium">Price:</span> <span className="font-semibold text-gray-600">€{item.price?.toFixed(2) || '0.00'}</span>
                                       </span>
                                       <span className="text-gray-700 font-semibold">
                                         Subtotal: €{((item.quantity || 1) * (item.price || 0)).toFixed(2)}
@@ -3167,7 +3167,7 @@ const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
                       {order.items.filter(item => item.sellerId?.role === "seller_candidate").length} item(s)
                     </td>
                     <td className="p-3 text-sm font-semibold text-green-600">
-                      ${order.total.toFixed(2)}
+                      €{order.total.toFixed(2)}
                     </td>
                     <td className="p-3 text-sm text-gray-500">
                       {new Date(order.createdAt).toLocaleDateString()}
@@ -3292,7 +3292,7 @@ const SellerCandidatesOrders = ({ orders, fetchAllData, token }) => {
                       {order.userId?.name || `${order.guestInfo?.firstName} ${order.guestInfo?.lastName}`}
                     </td>
                     <td className="p-3 text-sm font-semibold text-green-600">
-                      ${order.total.toFixed(2)}
+                      €{order.total.toFixed(2)}
                     </td>
                     <td className="p-3 text-sm text-gray-500">
                       {new Date(order.updatedAt).toLocaleDateString()}
@@ -3829,7 +3829,7 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
               <tr key={product._id} className="border-b border-gray-200 hover:bg-gray-50">
                 <td className="p-3 text-gray-700">{product.name}</td>
                 <td className="p-3 text-gray-700">
-                  ${(() => {
+                  €{(() => {
                     // NEW: Use first variant's price if available
                     if (product.variants && product.variants.length > 0) {
                       const firstVariant = product.variants.find(v => v.enabled) || product.variants[0];
@@ -4022,6 +4022,10 @@ const ReviewsManagement = ({ products, fetchAllData, token }) => {
   const [editingReview, setEditingReview] = useState(null);
   const [editRating, setEditRating] = useState("");
   const [editComment, setEditComment] = useState("");
+  const [editImageUrls, setEditImageUrls] = useState([]);
+  const [editImageFiles, setEditImageFiles] = useState([]);
+  const [editImagePreviews, setEditImagePreviews] = useState([]);
+  const [editLoading, setEditLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   // Fetch reviews for selected product
@@ -4047,7 +4051,68 @@ const ReviewsManagement = ({ products, fetchAllData, token }) => {
     setEditingReview(null);
     setEditRating("");
     setEditComment("");
+    setEditImageUrls([]);
+    setEditImageFiles([]);
+    editImagePreviews.forEach(url => URL.revokeObjectURL(url));
+    setEditImagePreviews([]);
     fetchReviews(product._id);
+  };
+
+  // Upload images to Cloudinary
+  const uploadImages = async (files) => {
+    if (!files || files.length === 0) return [];
+    
+    const formData = new FormData();
+    files.forEach(file => formData.append("images", file));
+    
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/upload/upload`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 240000
+        }
+      );
+      
+      return response.data.images || [];
+    } catch (err) {
+      console.error("Error uploading images:", err);
+      toast.error("Failed to upload images");
+      return [];
+    }
+  };
+
+  // Handle edit image change
+  const handleEditImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + editImageUrls.length + editImageFiles.length > 5) {
+      toast.error("Maximum 5 images allowed");
+      return;
+    }
+    
+    const newFiles = [...editImageFiles, ...files];
+    setEditImageFiles(newFiles);
+    
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    setEditImagePreviews(newPreviews);
+  };
+
+  // Remove edit image
+  const removeEditImage = (index, isExisting = false) => {
+    if (isExisting) {
+      const newUrls = editImageUrls.filter((_, i) => i !== index);
+      setEditImageUrls(newUrls);
+    } else {
+      const newFiles = editImageFiles.filter((_, i) => i !== index);
+      const newPreviews = editImagePreviews.filter((_, i) => i !== index);
+      setEditImageFiles(newFiles);
+      setEditImagePreviews(newPreviews);
+      URL.revokeObjectURL(editImagePreviews[index]);
+    }
   };
 
   // Handle edit review
@@ -4055,18 +4120,32 @@ const ReviewsManagement = ({ products, fetchAllData, token }) => {
     setEditingReview(review);
     setEditRating(review.rating);
     setEditComment(review.comment || "");
+    setEditImageUrls(review.images || []);
+    setEditImageFiles([]);
+    editImagePreviews.forEach(url => URL.revokeObjectURL(url));
+    setEditImagePreviews([]);
   };
 
   // Save edited review
   const handleSaveEdit = async () => {
     if (!selectedProduct || !editingReview) return;
 
+    setEditLoading(true);
     try {
+      // Upload new images
+      const newImageUrls = editImageFiles.length > 0 
+        ? await uploadImages(editImageFiles)
+        : [];
+      
+      // Combine existing and new images
+      const allImageUrls = [...editImageUrls, ...newImageUrls];
+
       await axios.put(
         `${import.meta.env.VITE_API_URL}/products/${selectedProduct._id}/reviews/${editingReview._id}`,
         {
           rating: parseInt(editRating),
           comment: editComment,
+          images: allImageUrls,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -4077,10 +4156,16 @@ const ReviewsManagement = ({ products, fetchAllData, token }) => {
       setEditingReview(null);
       setEditRating("");
       setEditComment("");
+      setEditImageUrls([]);
+      setEditImageFiles([]);
+      editImagePreviews.forEach(url => URL.revokeObjectURL(url));
+      setEditImagePreviews([]);
       fetchReviews(selectedProduct._id);
     } catch (error) {
       console.error("Error updating review:", error);
       toast.error("Failed to update review");
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -4313,18 +4398,91 @@ const ReviewsManagement = ({ products, fetchAllData, token }) => {
                           placeholder="Enter review comment..."
                         />
                       </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Images (Max 5)
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleEditImageChange}
+                          className="hidden"
+                          id={`edit-review-images-${editingReview._id}`}
+                          disabled={editImageUrls.length + editImageFiles.length >= 5}
+                        />
+                        <label
+                          htmlFor={`edit-review-images-${editingReview._id}`}
+                          className={`inline-flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors text-sm ${
+                            editImageUrls.length + editImageFiles.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          <span>Add Images</span>
+                        </label>
+                        
+                        {/* Existing Images */}
+                        {editImageUrls.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-3">
+                            {editImageUrls.map((url, idx) => (
+                              <div key={idx} className="relative group">
+                                <img
+                                  src={url}
+                                  alt={`Review ${idx + 1}`}
+                                  className="w-24 h-24 object-cover rounded-lg border border-gray-300"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeEditImage(idx, true)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  style={{ fontSize: '12px', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* New Image Previews */}
+                        {editImagePreviews.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-3">
+                            {editImagePreviews.map((preview, idx) => (
+                              <div key={idx} className="relative group">
+                                <img
+                                  src={preview}
+                                  alt={`Preview ${idx + 1}`}
+                                  className="w-24 h-24 object-cover rounded-lg border border-gray-300"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeEditImage(idx, false)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  style={{ fontSize: '12px', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <div className="flex space-x-2">
                         <button
                           onClick={handleSaveEdit}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                          disabled={editLoading}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
-                          Save
+                          {editLoading ? "Saving..." : "Save"}
                         </button>
                         <button
                           onClick={() => {
                             setEditingReview(null);
                             setEditRating("");
                             setEditComment("");
+                            setEditImageUrls([]);
+                            setEditImageFiles([]);
+                            editImagePreviews.forEach(url => URL.revokeObjectURL(url));
+                            setEditImagePreviews([]);
                           }}
                           className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                         >
@@ -4391,6 +4549,20 @@ const ReviewsManagement = ({ products, fetchAllData, token }) => {
                       {review.comment && (
                         <div className="mt-2 p-3 bg-gray-50 rounded-lg">
                           <p className="text-sm text-gray-700">{review.comment}</p>
+                        </div>
+                      )}
+                      {/* Display Review Images */}
+                      {review.images && review.images.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-3">
+                          {review.images.map((imageUrl, imgIndex) => (
+                            <div key={imgIndex} className="relative">
+                              <img
+                                src={imageUrl}
+                                alt={`Review image ${imgIndex + 1}`}
+                                className="w-24 h-24 object-cover rounded-lg border border-gray-300"
+                              />
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -4529,7 +4701,7 @@ const FeaturedProductsManagement = ({ products, fetchAllData, token }) => {
                   </div>
                 </td>
                 <td className="p-3 font-semibold text-green-600">
-                  ${(() => {
+                  €{(() => {
                     // NEW: Use first variant's price if available
                     if (product.variants && product.variants.length > 0) {
                       const firstVariant = product.variants.find(v => v.enabled) || product.variants[0];

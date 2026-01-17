@@ -3,6 +3,11 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Facebook } from "lucide-react";
 import logo from "../assets/logo.jpeg";
+import visaLogo from "../assets/cards/visa_white.svg";
+import mastercardLogo from "../assets/cards/mastercard.svg";
+import applePayLogo from "../assets/cards/pay_apple_pay.svg";
+import googlePayLogo from "../assets/cards/pay_google_pay.svg";
+import klarnaLogo from "../assets/cards/klarna.svg";
 
 const Footer = () => {
   return (
@@ -133,8 +138,35 @@ const Footer = () => {
           </div>
         </div>
 
+        {/* Payment Methods Section */}
+        <div className="pt-8 border-t border-gray-800 mb-6">
+          <h4 className="text-sm font-semibold text-white mb-4">Payment Methods</h4>
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Visa */}
+            <div className="flex items-center justify-center h-10 px-3 bg-white rounded shadow-sm hover:shadow-md transition-shadow">
+              <img src={visaLogo} alt="Visa" className="h-6 object-contain" />
+            </div>
+            {/* Mastercard */}
+            <div className="flex items-center justify-center h-10 px-3 bg-white rounded shadow-sm hover:shadow-md transition-shadow">
+              <img src={mastercardLogo} alt="Mastercard" className="h-6 object-contain" />
+            </div>
+            {/* Apple Pay */}
+            <div className="flex items-center justify-center h-10 px-3 bg-white rounded shadow-sm hover:shadow-md transition-shadow">
+              <img src={applePayLogo} alt="Apple Pay" className="h-6 object-contain" />
+            </div>
+            {/* Google Pay */}
+            <div className="flex items-center justify-center h-10 px-3 bg-white rounded shadow-sm hover:shadow-md transition-shadow">
+              <img src={googlePayLogo} alt="Google Pay" className="h-6 object-contain" />
+            </div>
+            {/* Klarna */}
+            <div className="flex items-center justify-center h-10 px-3 bg-white rounded shadow-sm hover:shadow-md transition-shadow">
+              <img src={klarnaLogo} alt="Klarna" className="h-6 object-contain" />
+            </div>
+          </div>
+        </div>
+
         {/* Bottom Section */}
-        <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="pt-4 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-400 text-sm">
             © {new Date().getFullYear()} F&S Smartphones. All rights reserved.
           </p>
