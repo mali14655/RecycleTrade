@@ -62,7 +62,15 @@ export default function ProductDetails() {
     fetchData();
   }, [id]);
 
+  // NEW: Helper – detect battery spec names
+  const isBatterySpecName = (specName) => {
+    const normalized = String(specName || '').toLowerCase();
+    return normalized === 'battery condition' || normalized === 'battery';
+  };
+
   const getAvailableOptions = (specName) => {
+    // NEW: Never expose battery as a selectable spec
+    if (isBatterySpecName(specName)) return [];
     if (!product?.variants) return [];
     
     const options = new Set();
@@ -332,13 +340,18 @@ export default function ProductDetails() {
   
   // Check if any spec has multiple unique values (using getAvailableOptions logic)
   const hasVariantSpecs = hasMultipleVariants && allSpecNames.some(specName => {
+    // NEW: Skip battery when deciding if we have variant specs
+    if (isBatterySpecName(specName)) return false;
     const options = getAvailableOptions(specName);
     return options.length > 1; // Multiple options = variant spec
   });
   
-  // Only include specs that have multiple options
+  // Only include specs that have multiple options, excluding battery
   const multipleSpecs = hasVariantSpecs ? 
-    allSpecNames.filter(specName => getAvailableOptions(specName).length > 1) : [];
+    allSpecNames
+      .filter(specName => !isBatterySpecName(specName))
+      .filter(specName => getAvailableOptions(specName).length > 1)
+    : [];
   
   const showVariantSelection = hasVariantSpecs && multipleSpecs.length > 0;
 

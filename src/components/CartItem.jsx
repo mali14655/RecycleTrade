@@ -54,9 +54,16 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
       
       const productSpecKeys = Object.keys(productSpecsObj);
       
+      // Helper: detect battery spec name
+      const isBatteryKey = (key) => {
+        const normalized = String(key || "").toLowerCase();
+        return normalized === "battery condition" || normalized === "battery";
+      };
+
       // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+      // Also hide any battery-related specs from cart display (for all products)
       const filteredSpecs = Object.entries(variantSpecsObj).filter(
-        ([key]) => !productSpecKeys.includes(key)
+        ([key]) => !productSpecKeys.includes(key) && !isBatteryKey(key)
       );
       
       return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;

@@ -1684,7 +1684,11 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                     </p>
                   )}
                   <div className="space-y-6">
-                    {selectedVariants.map((variant, index) => {
+                    {(() => {
+                      // NEW: Hide redundant variants that only differ by battery condition (for all products)
+                      const seenSpecCombos = new Set();
+
+                      return selectedVariants.map((variant, index) => {
                       // NEW: Filter variant specs to only show multiple specs
                       // Get multiple spec names from category
                       const multipleSpecNames = selectedCategory?.specs
@@ -1695,6 +1699,20 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                       const variantSpecsObj = variant.specs instanceof Map 
                         ? Object.fromEntries(variant.specs) 
                         : (variant.specs || {});
+
+                      // Build a key that ignores battery-related specs to detect duplicates
+                      const specsWithoutBattery = {};
+                      Object.entries(variantSpecsObj || {}).forEach(([key, value]) => {
+                        const normalized = String(key || '').toLowerCase();
+                        if (normalized === 'battery condition' || normalized === 'battery') return;
+                        specsWithoutBattery[key] = value;
+                      });
+                      const comboKey = JSON.stringify(specsWithoutBattery);
+                      if (seenSpecCombos.has(comboKey)) {
+                        // Skip rendering this variant row as it's redundant
+                        return null;
+                      }
+                      seenSpecCombos.add(comboKey);
                       
                       // Only show specs that are marked as 'multiple' in category
                       const displaySpecs = selectedCategory && multipleSpecNames.length > 0
@@ -1730,12 +1748,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                                   Appearance: <strong>{appearance}</strong>
                                 </span>
                               )}
-                              {/* Show Battery Condition if available */}
-                              {battery && (
-                                <span className="mr-3">
-                                  Battery Condition: <strong>{battery}</strong>
-                                </span>
-                              )}
+                              {/* Battery Condition is intentionally not shown in admin variant summary */}
                               {/* Show other multiple specs */}
                               {filteredDisplaySpecs.map(([key, value]) => (
                                 <span key={key} className="mr-3">
@@ -1828,7 +1841,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                         </div>
                       </div>
                       );
-                    })}
+                    });
+                    })()}
                   </div>
                 </div>
               )}

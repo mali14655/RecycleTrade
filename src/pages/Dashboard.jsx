@@ -1015,9 +1015,16 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                                 
                                 const productSpecKeys = Object.keys(productSpecsObj);
                                 
+                                // Helper: detect battery spec name
+                                const isBatteryKey = (key) => {
+                                  const normalized = String(key || "").toLowerCase();
+                                  return normalized === "battery condition" || normalized === "battery";
+                                };
+                                
                                 // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+                                // Also hide any battery-related specs from order item display (for all products)
                                 const filteredSpecs = Object.entries(variantSpecsObj).filter(
-                                  ([key]) => !productSpecKeys.includes(key)
+                                  ([key]) => !productSpecKeys.includes(key) && !isBatteryKey(key)
                                 );
                                 
                                 return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
@@ -1486,22 +1493,29 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                                   }
                                 }
                                 
-                                // NEW: Filter out single specs - exclude specs that exist in product.specs
-                                // Single specs should be in product.specs, multiple specs should be in variant.specs
-                                if (variantSpecsObj && item.productId?.specs) {
-                                  const productSpecsObj = item.productId.specs instanceof Map 
-                                    ? Object.fromEntries(item.productId.specs) 
-                                    : item.productId.specs;
-                                  
-                                  const productSpecKeys = Object.keys(productSpecsObj);
-                                  
-                                  // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
-                                  const filteredSpecs = Object.entries(variantSpecsObj).filter(
-                                    ([key]) => !productSpecKeys.includes(key)
-                                  );
-                                  
-                                  return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
-                                }
+                              // NEW: Filter out single specs - exclude specs that exist in product.specs
+                              // Single specs should be in product.specs, multiple specs should be in variant.specs
+                              if (variantSpecsObj && item.productId?.specs) {
+                                const productSpecsObj = item.productId.specs instanceof Map 
+                                  ? Object.fromEntries(item.productId.specs) 
+                                  : item.productId.specs;
+                                
+                                const productSpecKeys = Object.keys(productSpecsObj);
+                                
+                                // Helper: detect battery spec name
+                                const isBatteryKey = (key) => {
+                                  const normalized = String(key || "").toLowerCase();
+                                  return normalized === "battery condition" || normalized === "battery";
+                                };
+                                
+                                // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+                                // Also hide any battery-related specs from order item display (for all products)
+                                const filteredSpecs = Object.entries(variantSpecsObj).filter(
+                                  ([key]) => !productSpecKeys.includes(key) && !isBatteryKey(key)
+                                );
+                                
+                                return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
+                              }
                                 
                                 return variantSpecsObj;
                               };
@@ -2192,22 +2206,29 @@ const OnlinePaidProcessedOrders = ({ orders, fetchAllData, token, user }) => {
                               }
                             }
                             
-                            // NEW: Filter out single specs - exclude specs that exist in product.specs
-                            // Single specs should be in product.specs, multiple specs should be in variant.specs
-                            if (variantSpecsObj && item.productId?.specs) {
-                              const productSpecsObj = item.productId.specs instanceof Map 
-                                ? Object.fromEntries(item.productId.specs) 
-                                : item.productId.specs;
-                              
-                              const productSpecKeys = Object.keys(productSpecsObj);
-                              
-                              // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
-                              const filteredSpecs = Object.entries(variantSpecsObj).filter(
-                                ([key]) => !productSpecKeys.includes(key)
-                              );
-                              
-                              return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
-                            }
+                              // NEW: Filter out single specs - exclude specs that exist in product.specs
+                              // Single specs should be in product.specs, multiple specs should be in variant.specs
+                              if (variantSpecsObj && item.productId?.specs) {
+                                const productSpecsObj = item.productId.specs instanceof Map 
+                                  ? Object.fromEntries(item.productId.specs) 
+                                  : item.productId.specs;
+                                
+                                const productSpecKeys = Object.keys(productSpecsObj);
+
+                                // Helper: detect battery spec name
+                                const isBatteryKey = (key) => {
+                                  const normalized = String(key || "").toLowerCase();
+                                  return normalized === "battery condition" || normalized === "battery";
+                                };
+                                
+                                // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+                                // Also hide any battery-related specs from order item display (all products)
+                                const filteredSpecs = Object.entries(variantSpecsObj).filter(
+                                  ([key]) => !productSpecKeys.includes(key) && !isBatteryKey(key)
+                                );
+                                
+                                return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
+                              }
                             
                             return variantSpecsObj;
                           };
@@ -2458,9 +2479,16 @@ const CancelledOrdersManagement = ({ orders, fetchAllData, token }) => {
                                 
                                 const productSpecKeys = Object.keys(productSpecsObj);
                                 
+                                // Helper: detect battery spec name
+                                const isBatteryKey = (key) => {
+                                  const normalized = String(key || "").toLowerCase();
+                                  return normalized === "battery condition" || normalized === "battery";
+                                };
+                                
                                 // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+                                // Also hide any battery-related specs from cancelled order item display (all products)
                                 const filteredSpecs = Object.entries(variantSpecsObj).filter(
-                                  ([key]) => !productSpecKeys.includes(key)
+                                  ([key]) => !productSpecKeys.includes(key) && !isBatteryKey(key)
                                 );
                                 
                                 return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
@@ -2857,9 +2885,16 @@ const PickupProcessedOrders = ({ orders, fetchAllData, token }) => {
                                 
                                 const productSpecKeys = Object.keys(productSpecsObj);
                                 
+                                // Helper: detect battery spec name
+                                const isBatteryKey = (key) => {
+                                  const normalized = String(key || "").toLowerCase();
+                                  return normalized === "battery condition" || normalized === "battery";
+                                };
+                                
                                 // Filter variant specs to only include those NOT in product.specs (i.e., multiple specs)
+                                // Also hide any battery-related specs from pickup processed orders (all products)
                                 const filteredSpecs = Object.entries(variantSpecsObj).filter(
-                                  ([key]) => !productSpecKeys.includes(key)
+                                  ([key]) => !productSpecKeys.includes(key) && !isBatteryKey(key)
                                 );
                                 
                                 return filteredSpecs.length > 0 ? Object.fromEntries(filteredSpecs) : null;
@@ -3908,52 +3943,70 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
             </div>
 
             <div className="space-y-4">
-              {selectedProduct.variants.map((variant, index) => {
-                // NEW: Filter specs to only show multiple specs (not single specs)
-                // Get multiple spec names from category
-                const multipleSpecNames = selectedCategory?.specs
-                  ?.filter(spec => spec.type === 'multiple')
-                  .map(spec => spec.name) || [];
-                
-                // Filter variant specs to only include multiple specs
-                const variantSpecsObj = variant.specs instanceof Map 
-                  ? Object.fromEntries(variant.specs) 
-                  : (variant.specs || {});
-                
-                // NEW: Only show specs that are marked as 'multiple' in category
-                // Since variants should only contain multiple specs (after ProductModal changes),
-                // we filter based on category. If category is not available, show all variant specs
-                // (which should already be only multiple specs for new products)
-                const displaySpecs = selectedCategory && multipleSpecNames.length > 0
-                  ? Object.entries(variantSpecsObj).filter(([key]) => multipleSpecNames.includes(key))
-                  : Object.entries(variantSpecsObj); // Fallback: show all (should be only multiple specs anyway)
-                
-                // Get appearance and battery from direct properties or from specs map (same as ProductDetailPage)
-                const appearance = variant.appearance || 
-                  variantSpecsObj['Appearance (Phone Condition)'] || 
-                  variantSpecsObj['Appearance'] || 
-                  variantSpecsObj['appearance'];
-                
-                const battery = variant.battery || 
-                  variantSpecsObj['Battery Condition'] || 
-                  variantSpecsObj['Battery'] || 
-                  variantSpecsObj['battery'];
-                
-                // Filter out appearance and battery from displaySpecs since we'll show them separately
-                const filteredDisplaySpecs = displaySpecs.filter(([key]) => {
-                  const keyLower = key.toLowerCase();
-                  return !['Appearance (Phone Condition)', 'Appearance', 'appearance', 'Battery Condition', 'Battery', 'battery'].includes(key);
-                });
-                
-                // Build display text for variant info
-                const variantInfoParts = [];
-                if (appearance) variantInfoParts.push(`Appearance: ${appearance}`);
-                if (battery) variantInfoParts.push(`Battery Condition: ${battery}`);
-                filteredDisplaySpecs.forEach(([key, value]) => {
-                  variantInfoParts.push(`${key}: ${value}`);
-                });
-                
-                return (
+              {(() => {
+                // NEW: Hide redundant variants that only differ by battery condition (for all products)
+                const seenSpecCombos = new Set();
+
+                return selectedProduct.variants.map((variant, index) => {
+                  // Filter variant specs to only include multiple specs
+                  const variantSpecsObj = variant.specs instanceof Map 
+                    ? Object.fromEntries(variant.specs) 
+                    : (variant.specs || {});
+
+                  // Build a key that ignores battery-related specs to detect duplicates
+                  const specsWithoutBattery = {};
+                  Object.entries(variantSpecsObj || {}).forEach(([key, value]) => {
+                    const normalized = String(key || '').toLowerCase();
+                    if (normalized === 'battery condition' || normalized === 'battery') return;
+                    specsWithoutBattery[key] = value;
+                  });
+                  const comboKey = JSON.stringify(specsWithoutBattery);
+                  if (seenSpecCombos.has(comboKey)) {
+                    // Skip rendering this variant row as it's redundant
+                    return null;
+                  }
+                  seenSpecCombos.add(comboKey);
+
+                  // NEW: Filter specs to only show multiple specs (not single specs)
+                  // Get multiple spec names from category
+                  const multipleSpecNames = selectedCategory?.specs
+                    ?.filter(spec => spec.type === 'multiple')
+                    .map(spec => spec.name) || [];
+                  
+                  // NEW: Only show specs that are marked as 'multiple' in category
+                  // Since variants should only contain multiple specs (after ProductModal changes),
+                  // we filter based on category. If category is not available, show all variant specs
+                  // (which should already be only multiple specs for new products)
+                  const displaySpecs = selectedCategory && multipleSpecNames.length > 0
+                    ? Object.entries(variantSpecsObj).filter(([key]) => multipleSpecNames.includes(key))
+                    : Object.entries(variantSpecsObj); // Fallback: show all (should be only multiple specs anyway)
+                  
+                  // Get appearance and battery from direct properties or from specs map (same as ProductDetailPage)
+                  const appearance = variant.appearance || 
+                    variantSpecsObj['Appearance (Phone Condition)'] || 
+                    variantSpecsObj['Appearance'] || 
+                    variantSpecsObj['appearance'];
+                  
+                  const battery = variant.battery || 
+                    variantSpecsObj['Battery Condition'] || 
+                    variantSpecsObj['Battery'] || 
+                    variantSpecsObj['battery'];
+                  
+                  // Filter out appearance and battery from displaySpecs since we'll show them separately
+                  const filteredDisplaySpecs = displaySpecs.filter(([key]) => {
+                    const keyLower = key.toLowerCase();
+                    return !['Appearance (Phone Condition)', 'Appearance', 'appearance', 'Battery Condition', 'Battery', 'battery'].includes(key);
+                  });
+                  
+                  // Build display text for variant info
+                  const variantInfoParts = [];
+                  if (appearance) variantInfoParts.push(`Appearance: ${appearance}`);
+                  // Battery condition is intentionally not shown in admin variant summary for any product
+                  filteredDisplaySpecs.forEach(([key, value]) => {
+                    variantInfoParts.push(`${key}: ${value}`);
+                  });
+                  
+                  return (
                 <div key={index} className="border rounded p-4 bg-gray-50">
                   <div className="mb-3">
                     <h3 className="font-semibold text-sm">
@@ -3995,8 +4048,9 @@ const ProductManagement = ({ myProducts, fetchAllData, setIsProductModalOpen, se
                     </span>
                   )}
                 </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
