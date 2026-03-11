@@ -962,6 +962,9 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                               <p className="text-xs font-semibold text-gray-700 mb-1">📍 Delivery Address:</p>
                               <div className="text-xs text-gray-600 space-y-0.5">
                                 <p>{order.guestInfo?.address || order.userId?.address || 'N/A'}</p>
+                                {order.guestInfo?.city && (
+                                  <p><span className="font-medium">City:</span> {order.guestInfo.city}</p>
+                                )}
                                 {order.guestInfo?.postalCode && (
                                   <p><span className="font-medium">Postal Code:</span> {order.guestInfo.postalCode}</p>
                                 )}

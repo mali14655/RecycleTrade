@@ -125,6 +125,9 @@ export default function TrackOrder() {
                 order.guestInfo?.address ? (
                   <div className="space-y-1 text-sm">
                     <p>{order.guestInfo.address}</p>
+                    {order.guestInfo.city && (
+                      <p><span className="font-medium">City:</span> {order.guestInfo.city}</p>
+                    )}
                     {order.guestInfo.postalCode && (
                       <p><span className="font-medium">Postal Code:</span> {order.guestInfo.postalCode}</p>
                     )}

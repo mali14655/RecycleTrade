@@ -30,6 +30,17 @@ const COUNTRIES = [
   "Greenland", "Fiji", "Papua New Guinea", "Samoa", "Tonga", "Vanuatu", "Solomon Islands"
 ].sort();
 
+// City list per country (extendable). For countries without a predefined list, we'll fall back to a free-text input.
+const CITY_OPTIONS = {
+  Germany: [
+    "Berlin", "Hamburg", "Munich", "Cologne", "Frankfurt", "Stuttgart",
+    "Düsseldorf", "Dortmund", "Essen", "Leipzig", "Bremen", "Dresden",
+    "Hanover", "Nuremberg", "Duisburg", "Bochum", "Wuppertal", "Bielefeld",
+    "Bonn", "Mannheim",
+    "Other" // Allow custom city entry
+  ]
+};
+
 export default function Checkout() {
   const { cart, clearCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
@@ -48,7 +59,9 @@ export default function Checkout() {
     
     // Address Information
     address: "",
-    country: "",
+    city: "",
+    cityOther: "",
+    country: "Germany",
     postalCode: "",
     
     // Contact Information
@@ -113,6 +126,7 @@ export default function Checkout() {
     // Address validation for delivery
     if (formData.deliveryMethod === "delivery") {
       if (!formData.address.trim()) newErrors.address = "Address is required for delivery";
+      if (!formData.city.trim()) newErrors.city = "City is required";
       if (!formData.country.trim()) newErrors.country = "Country is required";
       if (!formData.postalCode.trim()) newErrors.postalCode = "Postal code is required";
     }
@@ -171,9 +185,14 @@ export default function Checkout() {
         };
       });
 
+      const guestInfoToSend = {
+        ...formData,
+        city: formData.cityOther && formData.city === "Other" ? formData.cityOther : formData.city,
+      };
+
       const orderData = {
         items: payloadItems,
-        guestInfo: formData, // Always use form data for shipping/delivery details
+        guestInfo: guestInfoToSend, // Always use form data for shipping/delivery details
         deliveryMethod: formData.deliveryMethod,
         outletId: formData.deliveryMethod === "pickup" ? selectedOutlet : null
       };
@@ -271,7 +290,10 @@ export default function Checkout() {
       const orderData = {
         items: payloadItems,
         total: total,
-        guestInfo: formData, // Always use form data for shipping/delivery details
+        guestInfo: {
+          ...formData,
+          city: formData.cityOther && formData.city === "Other" ? formData.cityOther : formData.city,
+        }, // Always use form data for shipping/delivery details
         outletId: selectedOutlet
       };
 
@@ -489,7 +511,8 @@ export default function Checkout() {
                   />
                   {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    {/* Country */}
                     <div>
                       <label className="block text-sm font-medium mb-2">Country *</label>
                       <select
@@ -499,7 +522,7 @@ export default function Checkout() {
                         className={`w-full p-3 border rounded-lg ${errors.country ? 'border-red-500' : 'border-gray-300'} bg-white`}
                         required
                       >
-                        <option value="">Select a country</option>
+                        {/* Default Germany */}
                         {COUNTRIES.map((country) => (
                           <option key={country} value={country}>
                             {country}
@@ -508,6 +531,54 @@ export default function Checkout() {
                       </select>
                       {errors.country && <p className="text-red-500 text-sm mt-1">{errors.country}</p>}
                     </div>
+
+                    {/* City */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">City *</label>
+                      {CITY_OPTIONS[formData.country] ? (
+                        <>
+                          <select
+                            name="city"
+                            value={formData.city}
+                            onChange={handleInputChange}
+                            className={`w-full p-3 border rounded-lg ${errors.city ? 'border-red-500' : 'border-gray-300'} bg-white`}
+                            required
+                          >
+                            <option value="">Select a city</option>
+                            {CITY_OPTIONS[formData.country].map((city) => (
+                              <option key={city} value={city}>
+                                {city}
+                              </option>
+                            ))}
+                          </select>
+                          {/* If "Other" selected, show custom city input */}
+                          {formData.city === "Other" && (
+                            <input
+                              type="text"
+                              name="cityOther"
+                              value={formData.cityOther}
+                              onChange={handleInputChange}
+                              className={`mt-2 w-full p-3 border rounded-lg ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
+                              placeholder="Enter your city"
+                              required
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <input
+                          type="text"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleInputChange}
+                          className={`w-full p-3 border rounded-lg ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
+                          placeholder="Enter your city"
+                          required
+                        />
+                      )}
+                      {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
+                    </div>
+
+                    {/* Postal Code */}
                     <div>
                       <label className="block text-sm font-medium mb-2">Postal Code *</label>
                       <input
