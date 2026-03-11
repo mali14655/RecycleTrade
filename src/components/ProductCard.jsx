@@ -85,19 +85,12 @@ export default function ProductCard({ product }) {
     return null;
   };
 
-  // NEW: Get minimum price from all enabled variants and show "Starts from" label
+  // NEW: Get minimum price from backend-computed product.price
   const getDisplayPrice = () => {
-    // If product has variants, find minimum price from all enabled variants
-    if (product.variants && product.variants.length > 0) {
-      const enabledVariants = product.variants.filter(v => v.enabled && v.price !== undefined && v.price !== null);
-      if (enabledVariants.length > 0) {
-        const prices = enabledVariants.map(v => parseFloat(v.price) || 0);
-        const minPrice = Math.min(...prices);
-        return { price: minPrice, hasVariants: true };
-      }
-    }
-    // Fallback to product price (no variants or no enabled variants with prices)
-    return { price: product.price || 0, hasVariants: false };
+    // Backend already sets product.price to the minimum logical variant price (grouped without battery)
+    // Simply use product.price here to avoid recomputing on the frontend
+    const basePrice = Number(product.price);
+    return { price: Number.isFinite(basePrice) ? basePrice : 0, hasVariants: !!(product.variants && product.variants.length > 0) };
   };
 
   const displayImage = getDisplayImage();
