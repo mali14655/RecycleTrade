@@ -1,11 +1,64 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const InfoTooltip = ({ content, className = '' }) => {
+// Appearance condition images (two per condition)
+import premiumImg1 from '../assets/premium/WhatsApp Image 2026-03-11 at 12.59.52 PM.jpeg';
+import premiumImg2 from '../assets/premium/WhatsApp Image 2026-03-11 at 12.59.52 PM (1).jpeg';
+import excellentImg1 from '../assets/Excellent/WhatsApp Image 2026-03-11 at 1.01.17 PM.jpeg';
+import excellentImg2 from '../assets/Excellent/WhatsApp Image 2026-03-11 at 1.01.17 PM (1).jpeg';
+import verygoodImg1 from '../assets/verygood/WhatsApp Image 2026-03-11 at 1.02.44 PM.jpeg';
+import verygoodImg2 from '../assets/verygood/WhatsApp Image 2026-03-11 at 1.02.44 PM (1).jpeg';
+import goodImg1 from '../assets/good/WhatsApp Image 2026-03-11 at 1.03.51 PM.jpeg';
+import goodImg2 from '../assets/good/WhatsApp Image 2026-03-11 at 1.03.51 PM (1).jpeg';
+
+const InfoTooltip = ({ content, className = '', type = 'generic' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const tooltipRef = useRef(null);
   const triggerRef = useRef(null);
+
+  // NEW: Appearance modal state (tabs + image slider)
+  const APPEARANCE_CONDITIONS = {
+    Premium: {
+      title: 'Premium',
+      description: 'Like-new device with no visible signs of use.',
+      details: [
+        'Screen: identical to new',
+        'Body: identical to new'
+      ],
+      images: [premiumImg1, premiumImg2]
+    },
+    Excellent: {
+      title: 'Excellent',
+      description: 'Device looks almost like new with minimal signs of use.',
+      details: [
+        'Screen: like new',
+        'Body: no visible scratches from a close distance'
+      ],
+      images: [excellentImg1, excellentImg2]
+    },
+    'Very good': {
+      title: 'Very good',
+      description: 'Light signs of use, not noticeable during normal use.',
+      details: [
+        'Screen: no visible scratches when turned on',
+        'Body: minimal signs of use — visible from 30cm'
+      ],
+      images: [verygoodImg1, verygoodImg2]
+    },
+    Good: {
+      title: 'Good',
+      description: 'Clearly used device with more visible signs of wear.',
+      details: [
+        'Screen: no visible scratches when turned on',
+        'Body: small scratches or dents'
+      ],
+      images: [goodImg1, goodImg2]
+    }
+  };
+
+  const [selectedAppearance, setSelectedAppearance] = useState('Premium');
+  const [appearanceImageIndex, setAppearanceImageIndex] = useState(0);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -84,6 +137,103 @@ const InfoTooltip = ({ content, className = '' }) => {
     );
   };
 
+  const renderAppearanceContent = () => {
+    const condition = APPEARANCE_CONDITIONS[selectedAppearance];
+    if (!condition) return null;
+
+    const images = condition.images || [];
+    const currentImage = images[appearanceImageIndex % images.length];
+
+    const goPrev = () => {
+      if (!images.length) return;
+      setAppearanceImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    };
+
+    const goNext = () => {
+      if (!images.length) return;
+      setAppearanceImageIndex((prev) => (prev + 1) % images.length);
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {Object.keys(APPEARANCE_CONDITIONS).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => {
+                setSelectedAppearance(key);
+                setAppearanceImageIndex(0);
+              }}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                selectedAppearance === key
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {key}
+            </button>
+          ))}
+        </div>
+
+        {/* Image slider */}
+        {images.length > 0 && (
+          <div className="relative w-full h-52 sm:h-64 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200">
+            {currentImage && (
+              <img
+                src={currentImage}
+                alt={`${condition.title} condition`}
+                className="max-h-full max-w-full object-contain"
+              />
+            )}
+
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={goPrev}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  {images.map((_, idx) => (
+                    <span
+                      key={idx}
+                      className={`w-2 h-2 rounded-full ${
+                        idx === appearanceImageIndex ? 'bg-white' : 'bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Text description */}
+        <div>
+          <h4 className="text-base font-semibold text-gray-900 mb-1">{condition.title}</h4>
+          <p className="text-sm text-gray-700 mb-3">{condition.description}</p>
+          <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+            {condition.details.map((d, idx) => (
+              <li key={idx}>{d}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       {/* Modal - Portal to body for both mobile and desktop */}
@@ -113,7 +263,7 @@ const InfoTooltip = ({ content, className = '' }) => {
             
             {/* Body */}
             <div className="p-6 overflow-y-auto flex-1">
-              {renderContent()}
+              {type === 'appearance' ? renderAppearanceContent() : renderContent()}
             </div>
           </div>
         </div>,

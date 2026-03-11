@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import Breadcrumb from "../components/Breadcrumb";
 import InfoTooltip from "../components/InfoTooltip";
 import { getAppearanceInfoText, getBatteryInfoText } from "../utils/productInfo";
+import FeaturedProducts from "../components/FeaturedProducts";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -19,6 +20,8 @@ export default function ProductDetails() {
   const [selectedSpecs, setSelectedSpecs] = useState({});
   const [reviews, setReviews] = useState([]);
   const { addToCart } = useContext(CartContext);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [relatedLoading, setRelatedLoading] = useState(true);
 
   // Fetch product and reviews
   useEffect(() => {
@@ -30,7 +33,8 @@ export default function ProductDetails() {
           axios.get(`${import.meta.env.VITE_API_URL}/products/${id}/reviews`)
         ]);
         
-        setProduct(productRes.data);
+        const productData = productRes.data;
+        setProduct(productData);
         setReviews(reviewsRes.data);
         console.log("Product fetched:", productRes.data);
         
@@ -52,6 +56,19 @@ export default function ProductDetails() {
           setSelectedVariant(null);
           setSelectedSpecs({});
         }
+        // Fetch featured products for this detail page (EXACT same logic as Home.jsx)
+        try {
+          // Same as Home: featured products, limit 8
+          const url = `${import.meta.env.VITE_API_URL}/products?featured=true&limit=8`;
+          const featuredRes = await axios.get(url);
+          setRelatedProducts(featuredRes.data);
+        } catch (e) {
+          console.error("Error fetching related/featured products:", e);
+          setRelatedProducts([]);
+        } finally {
+          setRelatedLoading(false);
+        }
+
       } catch (err) {
         console.error("Error fetching data:", err);
         toast.error("Product not found");
@@ -611,7 +628,7 @@ export default function ProductDetails() {
                       <div key={specName} className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700 capitalize flex items-center gap-1">
                           {displayLabel}
-                          {isAppearance && <InfoTooltip content={getAppearanceInfoText()} />}
+                          {isAppearance && <InfoTooltip type="appearance" content={getAppearanceInfoText()} />}
                           {isBattery && <InfoTooltip content={getBatteryInfoText()} />}
                         </label>
                         <div className="relative">
@@ -685,7 +702,7 @@ export default function ProductDetails() {
                       <div className="flex items-start gap-2">
                         <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px] flex items-center gap-1">
                           Appearance:
-                          <InfoTooltip content={getAppearanceInfoText()} />
+                          <InfoTooltip type="appearance" content={getAppearanceInfoText()} />
                         </span>
                         <span className="text-sm text-gray-900 flex-1">
                           {appearance}
@@ -962,6 +979,14 @@ export default function ProductDetails() {
               <p className="text-gray-500 text-center py-8">No specifications available.</p>
             )}
           </div>
+        </div>
+
+        {/* Featured / Related Products Section (same style as home featured list) */}
+        <div className="mt-16">
+          <FeaturedProducts
+            products={relatedProducts}
+            loading={relatedLoading}
+          />
         </div>
 
         {/* Reviews Section */}
