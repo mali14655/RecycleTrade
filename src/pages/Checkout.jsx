@@ -5,6 +5,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Breadcrumb from "../components/Breadcrumb";
 import toast from "react-hot-toast";
+import { Truck } from "lucide-react";
 import visaLogo from "../assets/cards/visa_white.svg";
 import mastercardLogo from "../assets/cards/mastercard.svg";
 import applePayLogo from "../assets/cards/pay_apple_pay.svg";
@@ -73,6 +74,33 @@ export default function Checkout() {
   });
 
   const [errors, setErrors] = useState({});
+  const [promoCode, setPromoCode] = useState("");
+  const [promoState, setPromoState] = useState({
+    applied: false,
+    loading: false,
+    error: "",
+    info: null, // { code, discountPercent, discountAmount }
+  });
+
+  // NEW: Delivery date window helper (reuse same logic as product detail)
+  const getDeliveryWindow = () => {
+    const today = new Date();
+    const start = new Date(today);
+    const end = new Date(today);
+    start.setDate(start.getDate() + 1);
+    end.setDate(end.getDate() + 2);
+
+    // English date format, e.g. "12 Mar"
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short'
+    });
+
+    const startStr = formatter.format(start);
+    const endStr = formatter.format(end);
+
+    return `${startStr} - ${endStr}`;
+  };
 
   useEffect(() => {
     fetchOutlets();
@@ -84,6 +112,27 @@ export default function Checkout() {
       }));
     }
   }, [user]);
+
+  // Helper: calculate cart total (without discounts)
+  const calculateCartTotal = () => {
+    if (!cart.items || cart.items.length === 0) return 0;
+    return cart.items.reduce((sum, item) => {
+      let itemPrice = item.price || item.productId?.price || 0;
+      if (item.variantId && item.productId?.variants) {
+        const variant = item.productId.variants.find(
+          v => v._id?.toString() === item.variantId?.toString()
+        );
+        if (variant) {
+          itemPrice = variant.price;
+        }
+      }
+      return sum + itemPrice * (item.quantity || 1);
+    }, 0);
+  };
+
+  const baseTotal = calculateCartTotal();
+  const discountAmount = promoState.applied && promoState.info ? promoState.info.discountAmount : 0;
+  const finalTotal = Math.max(baseTotal - discountAmount, 0);
 
   const fetchOutlets = async () => {
     try {
@@ -126,7 +175,15 @@ export default function Checkout() {
     // Address validation for delivery
     if (formData.deliveryMethod === "delivery") {
       if (!formData.address.trim()) newErrors.address = "Address is required for delivery";
-      if (!formData.city.trim()) newErrors.city = "City is required";
+      if (!formData.city.trim()) {
+        newErrors.city = "City is required";
+      } else if (
+        formData.city === "Other" &&
+        !formData.cityOther.trim()
+      ) {
+        // When user selects "Other", custom city name becomes mandatory
+        newErrors.cityOther = "Please enter your city name";
+      }
       if (!formData.country.trim()) newErrors.country = "Country is required";
       if (!formData.postalCode.trim()) newErrors.postalCode = "Postal code is required";
     }
@@ -182,6 +239,7 @@ export default function Checkout() {
           quantity: item.quantity || 1,
           variantId: item.variantId || null,
           sellerId: item.productId?.sellerId?._id || item.sellerId,
+          category: item.productId?.category || item.category,
         };
       });
 
@@ -194,7 +252,12 @@ export default function Checkout() {
         items: payloadItems,
         guestInfo: guestInfoToSend, // Always use form data for shipping/delivery details
         deliveryMethod: formData.deliveryMethod,
-        outletId: formData.deliveryMethod === "pickup" ? selectedOutlet : null
+        outletId: formData.deliveryMethod === "pickup" ? selectedOutlet : null,
+        promo: promoState.applied && promoState.info ? {
+          code: promoState.info.code,
+          discountPercent: promoState.info.discountPercent,
+          discountAmount,
+        } : null,
       };
 
       const headers = user
@@ -270,6 +333,7 @@ export default function Checkout() {
           quantity: item.quantity || 1,
           variantId: item.variantId || null,
           sellerId: item.productId?.sellerId?._id || item.sellerId,
+          category: item.productId?.category || item.category,
         };
       });
 
@@ -294,7 +358,12 @@ export default function Checkout() {
           ...formData,
           city: formData.cityOther && formData.city === "Other" ? formData.cityOther : formData.city,
         }, // Always use form data for shipping/delivery details
-        outletId: selectedOutlet
+        outletId: selectedOutlet,
+        promo: promoState.applied && promoState.info ? {
+          code: promoState.info.code,
+          discountPercent: promoState.info.discountPercent,
+          discountAmount,
+        } : null,
       };
 
       const headers = user
@@ -356,19 +425,7 @@ export default function Checkout() {
     );
   }
 
-  const total = cart.items.reduce((sum, item) => {
-    // Get variant price if variant exists
-    let itemPrice = item.price || item.productId?.price || 0;
-    if (item.variantId && item.productId?.variants) {
-      const variant = item.productId.variants.find(
-        v => v._id?.toString() === item.variantId?.toString()
-      );
-      if (variant) {
-        itemPrice = variant.price;
-      }
-    }
-    return sum + itemPrice * item.quantity;
-  }, 0);
+  const total = baseTotal;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -496,6 +553,18 @@ export default function Checkout() {
                   </div>
                 </label>
               </div>
+
+              {/* Delivery date info for home delivery */}
+              {formData.deliveryMethod === "delivery" && (
+                <div className="mt-4">
+                  <div className="w-full rounded-xl bg-blue-50 px-4 py-3 flex items-center gap-2 text-sm sm:text-base text-gray-900">
+                    <Truck className="w-5 h-5 text-gray-700 shrink-0" />
+                    <span className="font-medium">
+                      Free delivery: <span className="font-normal">{getDeliveryWindow()}</span>
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Address Fields for Delivery */}
               {formData.deliveryMethod === "delivery" && (
@@ -750,15 +819,108 @@ export default function Checkout() {
               <div className="space-y-2 border-t pt-4">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>€{total.toFixed(2)}</span>
+                  <span>€{baseTotal.toFixed(2)}</span>
                 </div>
+
+                {/* Promo code input */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => {
+                      setPromoCode(e.target.value);
+                      if (promoState.error) {
+                        setPromoState((prev) => ({ ...prev, error: "" }));
+                      }
+                    }}
+                    placeholder="Enter promo code"
+                    className="flex-1 px-3 py-2 border rounded-lg text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!promoCode.trim()) {
+                        setPromoState((prev) => ({ ...prev, error: "Please enter a promo code." }));
+                        return;
+                      }
+                      try {
+                        setPromoState({ applied: false, loading: true, error: "", info: null });
+
+                        const itemsForValidation = cart.items.map((item) => {
+                          let itemPrice = item.price || item.productId?.price || 0;
+                          if (item.variantId && item.productId?.variants) {
+                            const variant = item.productId.variants.find(
+                              (v) => v._id?.toString() === item.variantId?.toString()
+                            );
+                            if (variant) {
+                              itemPrice = variant.price;
+                            }
+                          }
+                          return {
+                            productId: item.productId?._id || item._id,
+                            category: item.productId?.category || item.category,
+                            price: itemPrice,
+                            quantity: item.quantity || 1,
+                          };
+                        });
+
+                        const res = await axios.post(
+                          `${import.meta.env.VITE_API_URL}/promocodes/validate`,
+                          {
+                            code: promoCode,
+                            items: itemsForValidation,
+                          }
+                        );
+
+                        setPromoState({
+                          applied: true,
+                          loading: false,
+                          error: "",
+                          info: {
+                            code: res.data.promo.code,
+                            discountPercent: res.data.promo.discountPercent,
+                            discountAmount: res.data.discountAmount,
+                          },
+                        });
+
+                        toast.success(`Promo code ${res.data.promo.code} applied`);
+                      } catch (error) {
+                        console.error("Promo validation failed:", error);
+                        setPromoState({
+                          applied: false,
+                          loading: false,
+                          error:
+                            error.response?.data?.message ||
+                            "Promo code is invalid or does not apply to these products.",
+                          info: null,
+                        });
+                      }
+                    }}
+                    className="px-4 py-2 bg-black text-white rounded-lg text-sm font-semibold hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={promoState.loading}
+                  >
+                    {promoState.loading ? "Checking..." : promoState.applied ? "Applied" : "Apply"}
+                  </button>
+                </div>
+                {promoState.error && (
+                  <p className="text-xs text-red-500">{promoState.error}</p>
+                )}
+                {promoState.applied && promoState.info && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>
+                      Promo ({promoState.info.code}) -{promoState.info.discountPercent}%{" "}
+                    </span>
+                    <span>-€{discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between">
                   <span>Shipping</span>
                   <span>{formData.deliveryMethod === "delivery" ? "Free" : "Pickup"}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
                   <span>Total</span>
-                  <span>€{total.toFixed(2)}</span>
+                  <span>€{finalTotal.toFixed(2)}</span>
                 </div>
               </div>
 

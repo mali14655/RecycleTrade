@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
-import { ChevronLeft, ChevronRight, Star, ShoppingCart, User, Mail, MessageSquare, X, Edit2, Trash2, Image as ImageIcon, Maximize2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, ShoppingCart, Truck, User, Mail, MessageSquare, X, Edit2, Trash2, Image as ImageIcon, Maximize2 } from "lucide-react";
 import toast from "react-hot-toast";
 import Breadcrumb from "../components/Breadcrumb";
 import InfoTooltip from "../components/InfoTooltip";
@@ -22,6 +22,26 @@ export default function ProductDetails() {
   const { addToCart } = useContext(CartContext);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [relatedLoading, setRelatedLoading] = useState(true);
+
+  // NEW: Delivery date window (e.g., "12 Mar - 13 Mar")
+  const getDeliveryWindow = () => {
+    const today = new Date();
+    const start = new Date(today);
+    const end = new Date(today);
+    start.setDate(start.getDate() + 1);
+    end.setDate(end.getDate() + 2);
+
+    // English date format, e.g. "12 Mar"
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short'
+    });
+
+    const startStr = formatter.format(start);
+    const endStr = formatter.format(end);
+
+    return `${startStr} - ${endStr}`;
+  };
 
   // Fetch product and reviews
   useEffect(() => {
@@ -495,6 +515,16 @@ export default function ProductDetails() {
                 </div>
               )}
             </div>
+            
+            {/* Delivery info under images (left column) */}
+            <div className="mt-6">
+              <div className="w-full rounded-xl bg-blue-50 px-4 py-3 flex items-center gap-2 text-sm sm:text-base text-gray-900">
+                <Truck className="w-5 h-5 text-gray-700 shrink-0" />
+                <span className="font-medium">
+                  Free delivery: <span className="font-normal">{getDeliveryWindow()}</span>
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Right: Product Info */}
@@ -546,7 +576,7 @@ export default function ProductDetails() {
             {/* </div> */}
 
             {/* Price and Stock Status */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="text-4xl font-bold text-gray-900">
                 €{selectedVariant ? selectedVariant.price : product.price}
               </div>
@@ -836,29 +866,31 @@ export default function ProductDetails() {
             )} */}
 
             {/* Add to Cart Button */}
-            <button
-              onClick={handleAddToCart}
-              disabled={
-                (product.variants && product.variants.length > 0 && !selectedVariant) ||
-                (selectedVariant && !isVariantInStock(selectedVariant))
-              }
-              className={`w-full py-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
-                (product.variants && product.variants.length > 0 && !selectedVariant) ||
-                (selectedVariant && !isVariantInStock(selectedVariant))
-                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                  : 'bg-black text-white hover:bg-gray-900'
-              }`}
-            >
-              <span>
-                {product.variants && product.variants.length > 0 && !selectedVariant 
-                  ? "SELECT VARIANT"
-                  : selectedVariant && !isVariantInStock(selectedVariant)
-                  ? "OUT OF STOCK"
-                  : "ADD TO CART"
+            <div className="mt-4">
+              <button
+                onClick={handleAddToCart}
+                disabled={
+                  (product.variants && product.variants.length > 0 && !selectedVariant) ||
+                  (selectedVariant && !isVariantInStock(selectedVariant))
                 }
-              </span>
-              <ShoppingCart size={20} />
-            </button>
+                className={`w-full py-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
+                  (product.variants && product.variants.length > 0 && !selectedVariant) ||
+                  (selectedVariant && !isVariantInStock(selectedVariant))
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-black text-white hover:bg-gray-900'
+                }`}
+              >
+                <span>
+                  {product.variants && product.variants.length > 0 && !selectedVariant 
+                    ? "SELECT VARIANT"
+                    : selectedVariant && !isVariantInStock(selectedVariant)
+                    ? "OUT OF STOCK"
+                    : "ADD TO CART"
+                  }
+                </span>
+                <ShoppingCart size={20} />
+              </button>
+            </div>
           </div>
         </div>
 

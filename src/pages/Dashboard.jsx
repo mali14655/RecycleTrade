@@ -18,6 +18,7 @@ const DashboardSidebar = ({ activeSection, setActiveSection, user }) => {
     { id: "outlets", label: "Outlet Management", icon: "🏪" },
     { id: "products", label: "Product Management", icon: "📦" },
     { id: "reviews-management", label: "Reviews Management", icon: "💬" },
+    { id: "promo-codes", label: "Promo Codes", icon: "🏷️" },
     { id: "online-orders", label: "Online Paid Orders", icon: "🚚" },
     { id: "pickup-orders", label: "Pickup Orders", icon: "🏪" },
     { id: "online-processed", label: "Online Paid Processed", icon: "✅" },
@@ -146,6 +147,7 @@ export default function Dashboard() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [promoCodes, setPromoCodes] = useState([]);
 
   const token = localStorage.getItem("accessToken");
 
@@ -194,19 +196,23 @@ export default function Dashboard() {
         const [
           ordersRes,
           cancelledOrdersRes,
-          outletsRes
+          outletsRes,
+          promoRes,
         ] = await Promise.all([
           axios.get(`${import.meta.env.VITE_API_URL}/orders/all`, 
             { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`${import.meta.env.VITE_API_URL}/orders/cancelled`, 
             { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`${import.meta.env.VITE_API_URL}/outlets/all`, 
-            { headers: { Authorization: `Bearer ${token}` } })
+            { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${import.meta.env.VITE_API_URL}/promocodes`, 
+            { headers: { Authorization: `Bearer ${token}` } }),
         ]);
 
         setCompanyOrders(ordersRes.data);
         setCancelledOrders(cancelledOrdersRes.data);
         setOutlets(outletsRes.data);
+        setPromoCodes(promoRes.data || []);
 
         // COMMENTED OUT: Seller candidate orders not needed
         // For seller candidate orders, filter from all orders
@@ -333,6 +339,16 @@ export default function Dashboard() {
           token={token}
         />;
       
+      case "promo-codes":
+        return (
+          <PromoCodesManagement
+            promoCodes={promoCodes}
+            setPromoCodes={setPromoCodes}
+            fetchAllData={fetchAllData}
+            token={token}
+          />
+        );
+      
       case "featured-products":
         return <FeaturedProductsManagement 
           products={allProducts} 
@@ -431,6 +447,7 @@ function getSectionTitle(section) {
     "outlets": "Outlet Management",
     "products": "Product Management",
     "reviews-management": "Reviews Management",
+    "promo-codes": "Promo Codes",
     "online-orders": "Online Paid Orders",
     "pickup-orders": "Pickup Orders",
     "online-processed": "Online Paid Processed",
@@ -4831,3 +4848,296 @@ const FeaturedProductsManagement = ({ products, fetchAllData, token }) => {
   );
 };
 
+// NEW: Promo Codes Management Section
+const PromoCodesManagement = ({ promoCodes, setPromoCodes, fetchAllData, token }) => {
+  const [categories, setCategories] = useState([]);
+  const [form, setForm] = useState({
+    code: "",
+    description: "",
+    discountPercent: 5,
+    categories: [],
+    isHidden: false,
+    isActive: true,
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/categories`);
+        setCategories(res.data || []);
+      } catch (error) {
+        console.error("Error fetching categories for promo codes:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const toggleCategory = (name) => {
+    setForm((prev) => {
+      const exists = prev.categories.includes(name);
+      return {
+        ...prev,
+        categories: exists
+          ? prev.categories.filter((c) => c !== name)
+          : [...prev.categories, name],
+      };
+    });
+  };
+
+  const handleCreate = async () => {
+    if (!form.code.trim() || !form.discountPercent || form.categories.length === 0) {
+      toast.error("Code, discount percentage and at least one category are required.");
+      return;
+    }
+    try {
+      setSaving(true);
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/promocodes`,
+        {
+          code: form.code,
+          description: form.description,
+          discountPercent: Number(form.discountPercent),
+          categories: form.categories,
+          isHidden: form.isHidden,
+          isActive: form.isActive,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Promo code created");
+      setForm({
+        code: "",
+        description: "",
+        discountPercent: 5,
+        categories: [],
+        isHidden: false,
+        isActive: true,
+      });
+      fetchAllData();
+    } catch (error) {
+      console.error("Error creating promo code:", error);
+      toast.error(error.response?.data?.message || "Failed to create promo code");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updatePromo = async (id, updates) => {
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/promocodes/${id}`,
+        updates,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Promo code updated");
+      fetchAllData();
+    } catch (error) {
+      console.error("Error updating promo code:", error);
+      toast.error(error.response?.data?.message || "Failed to update promo code");
+    }
+  };
+
+  const deactivatePromo = async (id) => {
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/promocodes/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Promo code deactivated");
+      fetchAllData();
+    } catch (error) {
+      console.error("Error deactivating promo code:", error);
+      toast.error(error.response?.data?.message || "Failed to deactivate promo code");
+    }
+  };
+
+  const allCategoryNames = categories.map((c) => c.name);
+
+  return (
+    <div className="space-y-6">
+      {/* Create form */}
+      <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">Promo Codes</h1>
+        <p className="text-gray-600 mb-4">
+          Create promo codes with a percentage discount and select which product categories they apply to.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Promo Code *</label>
+            <input
+              type="text"
+              value={form.code}
+              onChange={(e) => setForm((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
+              placeholder="e.g. MACPAD5"
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Discount Percentage (%) *</label>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={form.discountPercent}
+              onChange={(e) => setForm((prev) => ({ ...prev, discountPercent: e.target.value }))}
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Description</label>
+          <input
+            type="text"
+            value={form.description}
+            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+            placeholder="Optional description for internal use"
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Applies to Categories *</label>
+          <div className="flex flex-wrap gap-2">
+            {allCategoryNames.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => toggleCategory(name)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                  form.categories.includes(name)
+                    ? "bg-green-600 text-white border-green-600"
+                    : "bg-gray-50 text-gray-700 border-gray-300"
+                }`}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 mb-4">
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={form.isHidden}
+              onChange={(e) => setForm((prev) => ({ ...prev, isHidden: e.target.checked }))}
+            />
+            <span>Hide from hero / public banner</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={form.isActive}
+              onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))}
+            />
+            <span>Active</span>
+          </label>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleCreate}
+          disabled={saving}
+          className="px-4 py-2 bg-black text-white rounded-lg text-sm font-semibold hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? "Saving..." : "Create Promo Code"}
+        </button>
+      </div>
+
+      {/* Existing promo codes table */}
+      <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">Existing Promo Codes</h2>
+          <span className="text-sm text-gray-500">
+            {promoCodes?.length || 0} promo code(s)
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="p-3 text-left font-semibold text-gray-600">Code</th>
+                <th className="p-3 text-left font-semibold text-gray-600">Discount</th>
+                <th className="p-3 text-left font-semibold text-gray-600">Categories</th>
+                <th className="p-3 text-left font-semibold text-gray-600">Visibility</th>
+                <th className="p-3 text-left font-semibold text-gray-600">Status</th>
+                <th className="p-3 text-left font-semibold text-gray-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {promoCodes && promoCodes.length > 0 ? (
+                promoCodes.map((promo) => (
+                  <tr key={promo._id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="p-3 font-semibold">{promo.code}</td>
+                    <td className="p-3">{promo.discountPercent}%</td>
+                    <td className="p-3">
+                      {(promo.categories || []).join(", ")}
+                    </td>
+                    <td className="p-3">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          promo.isHidden
+                            ? "bg-gray-200 text-gray-700"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {promo.isHidden ? "Hidden" : "Visible"}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          promo.isActive
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {promo.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="p-3 space-x-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updatePromo(promo._id, { isHidden: !promo.isHidden })
+                        }
+                        className="px-3 py-1 rounded bg-gray-800 text-white text-xs font-medium hover:bg-gray-900"
+                      >
+                        {promo.isHidden ? "Show" : "Hide"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updatePromo(promo._id, { isActive: !promo.isActive })
+                        }
+                        className="px-3 py-1 rounded bg-blue-600 text-white text-xs font-medium hover:bg-blue-700"
+                      >
+                        {promo.isActive ? "Deactivate" : "Activate"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deactivatePromo(promo._id)}
+                        className="px-3 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="p-4 text-center text-gray-500" colSpan={6}>
+                    No promo codes created yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};

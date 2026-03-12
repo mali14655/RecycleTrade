@@ -19,6 +19,35 @@ import heroAccessoriesImage from "../assets/heroAccessories.png";
 const Hero = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  // NEW: Active promo for hero bar
+  const [activePromo, setActivePromo] = useState(null);
+
+  // NEW: Build compact brand/category label for hero
+  const getPromoCategorySummary = (promo) => {
+    if (!promo) return "";
+    const raw = promo.categories || [];
+
+    const groups = new Set();
+    raw.forEach((name) => {
+      if (!name) return;
+      const lower = String(name).toLowerCase();
+      if (lower.includes("iphone")) {
+        groups.add("iPhones");
+      } else if (lower.includes("samsung")) {
+        groups.add("Samsung");
+      } else {
+        groups.add(name);
+      }
+    });
+
+    const list = Array.from(groups);
+    if (list.length === 0) return "";
+    if (list.length === 1) return list[0];
+    if (list.length === 2) return `${list[0]} and ${list[1]}`;
+    const allButLast = list.slice(0, -1).join(", ");
+    const last = list[list.length - 1];
+    return `${allButLast} and ${last}`;
+  };
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollContainerRef = useRef(null);
@@ -45,7 +74,20 @@ const Hero = () => {
       }
     };
 
+    const fetchActivePromo = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/promocodes/public/active`
+        );
+        setActivePromo(res.data);
+      } catch (error) {
+        console.error("Error fetching active promo:", error);
+        setActivePromo(null);
+      }
+    };
+
     fetchCategories();
+    fetchActivePromo();
   }, []);
 
   const scrollLeft = (e) => {
@@ -95,12 +137,16 @@ const Hero = () => {
   return (
     <div className="w-[95%] mx-auto">
       {/* Promo Bar */}
-      <div className="bg-gradient-to-r from-[#000000] to-[#666666] text-white text-center py-2 px-4">
-        <p className="text-sm">
-          <span className="mr-1">🎉</span>
-          Save big 5% EXTRA on iPhones & Oppo - Code: MACPAD5
-        </p>
-      </div>
+      {activePromo && !activePromo.isHidden && activePromo.isActive && (
+        <div className="bg-gradient-to-r from-[#000000] to-[#666666] text-white text-center py-2 px-4">
+          <p className="text-sm">
+            <span className="mr-1">🎉</span>
+            Save {activePromo.discountPercent}% EXTRA on{" "}
+            {getPromoCategorySummary(activePromo)} - Code:{" "}
+            <span className="font-semibold">{activePromo.code}</span>
+          </p>
+        </div>
+      )}
 
       {/* Hero Banner - COMPACT HEIGHT */}
       <div className="relative bg-[#212121] overflow-hidden min-h-[50vh] lg:min-h-[60vh]">
