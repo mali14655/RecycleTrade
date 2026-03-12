@@ -5,7 +5,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Breadcrumb from "../components/Breadcrumb";
 import toast from "react-hot-toast";
-import { Truck } from "lucide-react";
+import { Truck, Lock } from "lucide-react";
 import visaLogo from "../assets/cards/visa_white.svg";
 import mastercardLogo from "../assets/cards/mastercard.svg";
 import applePayLogo from "../assets/cards/pay_apple_pay.svg";
@@ -949,35 +949,71 @@ export default function Checkout() {
                 )}
               </div>
 
-              {/* Payment Methods Display - Only show for delivery */}
+              {/* NEW: Enhanced Payment Methods Display - Only show for delivery */}
               {formData.deliveryMethod === "delivery" && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-500 mb-3 text-center">We accept:</p>
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    {/* Visa */}
-                    <div className="flex items-center justify-center h-8 px-3 bg-white rounded shadow-sm border border-gray-100">
-                      <img src={visaLogo} alt="Visa" className="h-5 object-contain" />
+                <div className="mt-5 pt-5 border-t border-gray-200">
+                  <p className="text-sm font-semibold text-gray-700 mb-3">Choose payment method at checkout:</p>
+                  
+                  {/* Payment option descriptions */}
+                  <div className="space-y-2.5 mb-4">
+                    {/* Credit/Debit Cards */}
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <img src={visaLogo} alt="Visa" className="h-5 object-contain" />
+                        <img src={mastercardLogo} alt="Mastercard" className="h-5 object-contain" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-800">Credit / Debit card</p>
+                      </div>
                     </div>
-                    {/* Mastercard */}
-                    <div className="flex items-center justify-center h-8 px-3 bg-white rounded shadow-sm border border-gray-100">
-                      <img src={mastercardLogo} alt="Mastercard" className="h-5 object-contain" />
+
+                    {/* PayPal */}
+                    <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                      <img src={paypalLogo} alt="PayPal" className="h-5 object-contain shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-800">Pay now or in installments with PayPal</p>
+                        <p className="text-xs text-gray-500">Pay later in up to 24 monthly payments.</p>
+                      </div>
                     </div>
-                    {/* Apple Pay */}
-                    <div className="flex items-center justify-center h-8 px-3 bg-white rounded shadow-sm border border-gray-100">
-                      <img src={applePayLogo} alt="Apple Pay" className="h-5 object-contain" />
-                    </div>
-                    {/* Google Pay */}
-                    <div className="flex items-center justify-center h-8 px-3 bg-white rounded shadow-sm border border-gray-100">
-                      <img src={googlePayLogo} alt="Google Pay" className="h-5 object-contain" />
-                    </div>
+
                     {/* Klarna */}
-                    <div className="flex items-center justify-center h-8 px-3 bg-white rounded shadow-sm border border-gray-100">
-                      <img src={klarnaLogo} alt="Klarna" className="h-5 object-contain" />
+                    <div className="flex items-center gap-3 p-3 bg-pink-50 rounded-lg border border-pink-100">
+                      <img src={klarnaLogo} alt="Klarna" className="h-5 object-contain shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-800">Pay in 3 interest-free payments with Klarna</p>
+                        <p className="text-xs text-gray-500">
+                          3 × €{(finalTotal / 3).toFixed(2)} — or finance 3–36 months.
+                        </p>
+                      </div>
                     </div>
-                    {/* NEW: PayPal */}
-                    <div className="flex items-center justify-center h-8 px-3 bg-white rounded shadow-sm border border-gray-100">
-                      <img src={paypalLogo} alt="PayPal" className="h-5 object-contain" />
+                  </div>
+
+                  {/* All accepted payment icons */}
+                  <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+                    <div className="flex items-center justify-center h-7 px-2 bg-white rounded border border-gray-200">
+                      <img src={visaLogo} alt="Visa" className="h-4 object-contain" />
                     </div>
+                    <div className="flex items-center justify-center h-7 px-2 bg-white rounded border border-gray-200">
+                      <img src={mastercardLogo} alt="Mastercard" className="h-4 object-contain" />
+                    </div>
+                    <div className="flex items-center justify-center h-7 px-2 bg-white rounded border border-gray-200">
+                      <img src={paypalLogo} alt="PayPal" className="h-4 object-contain" />
+                    </div>
+                    <div className="flex items-center justify-center h-7 px-2 bg-white rounded border border-gray-200">
+                      <img src={applePayLogo} alt="Apple Pay" className="h-4 object-contain" />
+                    </div>
+                    <div className="flex items-center justify-center h-7 px-2 bg-white rounded border border-gray-200">
+                      <img src={googlePayLogo} alt="Google Pay" className="h-4 object-contain" />
+                    </div>
+                    <div className="flex items-center justify-center h-7 px-2 bg-white rounded border border-gray-200">
+                      <img src={klarnaLogo} alt="Klarna" className="h-4 object-contain" />
+                    </div>
+                  </div>
+
+                  {/* Secure payment badge */}
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
+                    <Lock size={12} />
+                    <span>Secure payment</span>
                   </div>
                 </div>
               )}
