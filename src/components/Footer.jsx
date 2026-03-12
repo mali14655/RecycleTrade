@@ -8,6 +8,8 @@ import mastercardLogo from "../assets/cards/mastercard.svg";
 import applePayLogo from "../assets/cards/pay_apple_pay.svg";
 import googlePayLogo from "../assets/cards/pay_google_pay.svg";
 import klarnaLogo from "../assets/cards/klarna.svg";
+// NEW: PayPal payment icon
+import paypalLogo from "../assets/cards/pay_paypal_logo.svg";
 
 const Footer = () => {
   return (
@@ -161,6 +163,10 @@ const Footer = () => {
             {/* Klarna */}
             <div className="flex items-center justify-center h-10 px-3 bg-white rounded shadow-sm hover:shadow-md transition-shadow">
               <img src={klarnaLogo} alt="Klarna" className="h-6 object-contain" />
+            </div>
+            {/* NEW: PayPal */}
+            <div className="flex items-center justify-center h-10 px-3 bg-white rounded shadow-sm hover:shadow-md transition-shadow">
+              <img src={paypalLogo} alt="PayPal" className="h-6 object-contain" />
             </div>
           </div>
         </div>
