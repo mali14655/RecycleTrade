@@ -17,7 +17,7 @@ const Accessibility = () => {
                 className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-lg shrink-0"
               />
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-center">
-                Imprint
+                Impressum
               </h1>
             </div>
             <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mt-4 sm:mt-6 px-4">
@@ -32,21 +32,51 @@ const Accessibility = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 md:p-12">
             <div className="prose prose-lg max-w-none">
-              {/* Company Information */}
+              {/* Verantwortlicher */}
               <section className="mb-6 sm:mb-8">
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
-                  F&s Smartphones
+                  Verantwortlicher
+                </h2>
+                <div className="text-sm sm:text-base text-gray-700 leading-relaxed space-y-1">
+                  <p>Fahad Shah Lalpurwal</p>
+                  <p>Q1 5-6</p>
+                  <p>68161 Mannheim</p>
+                  <p>Germany</p>
+                </div>
+              </section>
+
+              {/* Lieferadresse */}
+              <section className="mb-6 sm:mb-8">
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                  Lieferadresse
+                </h2>
+                <div className="text-sm sm:text-base text-gray-700 leading-relaxed space-y-1">
+                  <p>F&s Smartphones</p>
+                  <p>Q1 5-6</p>
+                  <p>68161 Mannheim</p>
+                </div>
+              </section>
+
+              {/* Registration & Tax Numbers */}
+              <section className="mb-6 sm:mb-8">
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                  Steuer- & Registrierungsnummern
                 </h2>
                 <div className="text-sm sm:text-base text-gray-700 leading-relaxed space-y-2">
                   <p>
-                    Q1 5-6
-                    <br />
-                    68161 Mannheim
+                    <strong>Steuernummer:</strong> 38289/00431
                   </p>
                   <p>
-                    <strong>Represented by:</strong>
-                    <br />
-                    Fahad Shah Lalpurwal
+                    <strong>Umsatzsteuer ID Nr.:</strong> DE454837631
+                  </p>
+                  <p>
+                    <strong>Registrierungsnummer Lucid:</strong> DE3319821243613
+                  </p>
+                  <p>
+                    <strong>Händel Registernummer:</strong> HRA 713079
+                  </p>
+                  <p>
+                    <strong>IBAN:</strong> IE96SUMU99036511821646
                   </p>
                 </div>
               </section>
@@ -54,16 +84,27 @@ const Accessibility = () => {
               {/* Contact Information */}
               <section className="mb-6 sm:mb-8">
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
-                  Contact
+                  Kontakt
                 </h2>
                 <div className="text-sm sm:text-base text-gray-700 leading-relaxed space-y-2">
                   <p>
-                    <strong>Telephone:</strong>{" "}
+                    <strong>Paypal-Konto:</strong>{" "}
                     <a
-                      href="tel:+4917680312302"
+                      href="mailto:F-und-ssmartphones@web.de"
                       className="text-blue-600 hover:underline"
                     >
-                      017680312302
+                      F-und-ssmartphones@web.de
+                    </a>
+                  </p>
+                  <p>
+                    <strong>Web:</strong>{" "}
+                    <a
+                      href="https://Fundssmartphones.de"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      https://Fundssmartphones.de
                     </a>
                   </p>
                   <p>
@@ -72,49 +113,51 @@ const Accessibility = () => {
                       href="mailto:F-und-ssmartphones@web.de"
                       className="text-blue-600 hover:underline"
                     >
-                      f-und-ssmartphones@web.de
+                      F-und-ssmartphones@web.de
+                    </a>
+                  </p>
+                  <p>
+                    <strong>Telefon:</strong>{" "}
+                    <a
+                      href="tel:+4917680312302"
+                      className="text-blue-600 hover:underline"
+                    >
+                      017680312302
                     </a>
                   </p>
                 </div>
               </section>
 
-              {/* Tax Information */}
+              {/* EU Dispute Resolution */}
               <section className="mb-6 sm:mb-8">
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
-                  VAT ID
+                  Online-Streitbeilegung
                 </h2>
-                <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                  VAT identification number according to §27a of the German VAT Act:{" "}
-                  <strong>DE454837631</strong>
-                </p>
+                <div className="text-sm sm:text-base text-gray-700 leading-relaxed space-y-3">
+                  <p>
+                    Plattform der EU-Kommission zur Online-Streitbeilegung:{" "}
+                    <a
+                      href="https://ec.europa.eu/consumers/odr/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline break-all"
+                    >
+                      https://ec.europa.eu/consumers/odr/
+                    </a>
+                  </p>
+                  <p>
+                    Hinweis nach § 36 VSBG: Wir nehmen nicht an einem Streitbeilegungsverfahren von einer Verbraucherschlichtungsstelle teil.
+                  </p>
+                </div>
               </section>
 
-              {/* Business ID */}
+              {/* Pricing Note */}
               <section className="mb-6 sm:mb-8">
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
-                  Business ID
+                  Preishinweis
                 </h2>
                 <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                  <strong>38289/00431</strong>
-                </p>
-              </section>
-
-              {/* Consumer Dispute Resolution */}
-              <section className="mb-6 sm:mb-8">
-                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
-                  Consumer Dispute Resolution / Universal Arbitration Board
-                </h2>
-                <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
-                  We participate in dispute resolution proceedings before a consumer arbitration board. The responsible body is the Universal Arbitration Board of the Center for Arbitration eV, Straßburger Straße 8, 77694 Kehl am Rhein, website:{" "}
-                  <a
-                    href="https://www.verbraucher-schlichter.de"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    https://www.verbraucher-schlichter.de
-                  </a>
-                  .
+                  Der im Angebot ausgewiesene Preis ist ein Endpreis. Es erfolgt eine Differenzbesteuerung nach § 25 a UStG.
                 </p>
               </section>
 

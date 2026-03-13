@@ -516,15 +516,6 @@ export default function ProductDetails() {
               )}
             </div>
             
-            {/* Delivery info under images (left column) */}
-            <div className="mt-6">
-              <div className="w-full rounded-xl bg-blue-50 px-4 py-3 flex items-center gap-2 text-sm sm:text-base text-gray-900">
-                <Truck className="w-5 h-5 text-gray-700 shrink-0" />
-                <span className="font-medium">
-                  Free delivery: <span className="font-normal">{getDeliveryWindow()}</span>
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* Right: Product Info */}
@@ -638,6 +629,14 @@ export default function ProductDetails() {
                   </div>
                 );
               })()}
+            </div>
+
+            {/* NEW: Free delivery tag - after price/stock, above variant selection */}
+            <div className="w-full rounded-xl bg-blue-50 px-4 py-3 flex items-center gap-2 text-sm sm:text-base text-gray-900">
+              <Truck className="w-5 h-5 text-gray-700 shrink-0" />
+              <span className="font-medium">
+                Free delivery: <span className="font-normal">{getDeliveryWindow()}</span>
+              </span>
             </div>
 
             {/* Variant Selection - Improved UI */}
