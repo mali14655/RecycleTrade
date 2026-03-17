@@ -13,7 +13,7 @@ const Privacy = () => {
             <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 mb-6">
               <img 
                 src={logo} 
-                alt="F&S Smartphones" 
+                alt="F&s Smartphones" 
                 className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-lg shrink-0"
               />
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-center">
@@ -186,10 +186,13 @@ const Privacy = () => {
                     <strong>Pickup Orders:</strong> For orders collected from our outlet locations, no online payment is processed. Payment is made when you collect your order from the selected outlet. Therefore, no payment data is transmitted to payment service providers for pickup orders.
                   </p>
                   <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
-                    <strong>Future Payment Methods:</strong> We may add additional payment methods (such as PayPal) in the future. Any new payment methods will be clearly displayed during checkout, and their respective data protection policies will apply.
+                    <strong>PayPal:</strong> We also offer PayPal as a payment method. When you choose to pay with PayPal, your payment data is processed by PayPal (Europe) S.à r.l. et Cie, S.C.A., 22-24 Boulevard Royal, L-2449 Luxembourg. PayPal processes the payment on their own secure platform. In this respect, PayPal's data protection policy applies. You can find PayPal's privacy policy at: <a href="https://www.paypal.com/de/webapps/mpp/ua/privacy-full" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">https://www.paypal.com/de/webapps/mpp/ua/privacy-full</a>.
                   </p>
                   <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
-                    Data may be transferred to third countries outside the EU/EEA (specifically to the USA where Stripe's servers are located) for which the European Commission has determined an adequate level of data protection. Where data is transferred to third countries outside the EU/EEA for which the European Commission has not issued an adequacy decision, cooperation is based on standard data protection clauses of the European Commission.
+                    <strong>Future Payment Methods:</strong> We may add additional payment methods in the future. Any new payment methods will be clearly displayed during checkout, and their respective data protection policies will apply.
+                  </p>
+                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                    Data may be transferred to third countries outside the EU/EEA (specifically to the USA where Stripe's and PayPal's servers are located) for which the European Commission has determined an adequate level of data protection. Where data is transferred to third countries outside the EU/EEA for which the European Commission has not issued an adequacy decision, cooperation is based on standard data protection clauses of the European Commission.
                   </p>
                   <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
                     If you have any questions about our payment processing partners or the basis of our cooperation with them, please contact us using the contact details provided in this privacy policy.
@@ -294,7 +297,7 @@ const Privacy = () => {
                   </h3>
                   <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
                     If you have any questions about the collection, processing or use of your personal data, for information, correction, restriction or deletion of data, as well as for the revocation of granted consent or objection to a specific use of data, please contact us directly using the contact details in our{" "}
-                    <Link to="/accessibility" className="text-blue-600 hover:underline">
+                    <Link to="/impressum" className="text-blue-600 hover:underline">
                       legal notice
                     </Link>
                     {" "}or through our{" "}

@@ -11,7 +11,7 @@ const Contact = () => {
         <div className="text-center mb-8 sm:mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">Contact Us</h1>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 px-4">
-            Get in touch with F&S Smartphones. Reach out through any of the following methods.
+            Get in touch with F&s Smartphones. Reach out through any of the following methods.
           </p>
         </div>
 

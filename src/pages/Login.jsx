@@ -217,11 +217,11 @@ export default function Login() {
           <div className="flex flex-col items-center justify-center gap-3 mb-2">
             <img 
               src={logo} 
-              alt="F&S Smartphones" 
+              alt="F&s Smartphones" 
               className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-lg shrink-0"
             />
             <span className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-center">
-              F<span className="text-white/80 font-normal">&</span>S Smartphones
+              F<span className="text-white/80 font-normal">&</span>s Smartphones
             </span>
           </div>
 

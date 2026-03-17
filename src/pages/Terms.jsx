@@ -12,7 +12,7 @@ const Terms = () => {
             <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 mb-6">
               <img 
                 src={logo} 
-                alt="F&S Smartphones" 
+                alt="F&s Smartphones" 
                 className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-lg shrink-0"
               />
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-center">
@@ -109,6 +109,7 @@ const Terms = () => {
                   </p>
                   <ul className="list-disc pl-5 sm:pl-6 text-sm sm:text-base text-gray-700 space-y-2 mb-2">
                     <li><strong>Credit/Debit Cards:</strong> Visa and Mastercard cards are accepted through Stripe's secure payment gateway.</li>
+                    <li><strong>PayPal:</strong> Pay now or in installments with PayPal. Pay later in up to 24 monthly payments.</li>
                     <li><strong>Apple Pay:</strong> Available for customers using Apple devices (iPhone, iPad, Mac).</li>
                     <li><strong>Google Pay:</strong> Available for customers using Android devices.</li>
                     <li><strong>Klarna:</strong> Buy now, pay later options available through Klarna's payment solutions.</li>
@@ -132,7 +133,7 @@ const Terms = () => {
                     5.3 Future Payment Methods
                   </h3>
                   <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
-                    We are continuously working to expand our payment options and may introduce additional methods like PayPal in the future. Any new payment methods will be clearly displayed during checkout, and their respective terms and conditions will apply.
+                    We are continuously working to expand our payment options and may introduce additional methods in the future. Any new payment methods will be clearly displayed during checkout, and their respective terms and conditions will apply.
                   </p>
                 </div>
               </section>
@@ -288,7 +289,7 @@ const Terms = () => {
                     contact page
                   </Link>
                   {" "}or{" "}
-                  <Link to="/accessibility" className="text-blue-600 hover:underline">
+                  <Link to="/impressum" className="text-blue-600 hover:underline">
                     legal notice
                   </Link>
                   .

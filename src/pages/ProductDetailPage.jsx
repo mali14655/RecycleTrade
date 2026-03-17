@@ -3,12 +3,19 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
-import { ChevronLeft, ChevronRight, Star, ShoppingCart, Truck, User, Mail, MessageSquare, X, Edit2, Trash2, Image as ImageIcon, Maximize2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Star, ShoppingCart, Truck, User, Mail, MessageSquare, X, Edit2, Trash2, Image as ImageIcon, Maximize2, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 import Breadcrumb from "../components/Breadcrumb";
 import InfoTooltip from "../components/InfoTooltip";
 import { getAppearanceInfoText, getBatteryInfoText } from "../utils/productInfo";
 import FeaturedProducts from "../components/FeaturedProducts";
+// NEW: Payment method logos for product details
+import visaLogo from "../assets/cards/visa_white.svg";
+import mastercardLogo from "../assets/cards/mastercard.svg";
+import paypalLogo from "../assets/cards/pay_paypal_logo.svg";
+import applePayLogo from "../assets/cards/pay_apple_pay.svg";
+import googlePayLogo from "../assets/cards/pay_google_pay.svg";
+import klarnaLogo from "../assets/cards/klarna.svg";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -22,6 +29,9 @@ export default function ProductDetails() {
   const { addToCart } = useContext(CartContext);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [relatedLoading, setRelatedLoading] = useState(true);
+  // NEW: FAQ accordion state
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [showFaqs, setShowFaqs] = useState(false);
 
   // NEW: Delivery date window (e.g., "12 Mar - 13 Mar")
   const getDeliveryWindow = () => {
@@ -515,7 +525,59 @@ export default function ProductDetails() {
                 </div>
               )}
             </div>
-            
+
+            {/* NEW: Payment Methods & Installment Info Section - below images */}
+            <div className="mt-6 pt-5 border-t border-gray-200">
+              {/* Payment method icons */}
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+                <div className="flex items-center justify-center h-8 px-2.5 bg-white rounded border border-gray-200">
+                  <img src={visaLogo} alt="Visa" className="h-5 object-contain" />
+                </div>
+                <div className="flex items-center justify-center h-8 px-2.5 bg-white rounded border border-gray-200">
+                  <img src={mastercardLogo} alt="Mastercard" className="h-5 object-contain" />
+                </div>
+                <div className="flex items-center justify-center h-8 px-2.5 bg-white rounded border border-gray-200">
+                  <img src={paypalLogo} alt="PayPal" className="h-5 object-contain" />
+                </div>
+                <div className="flex items-center justify-center h-8 px-2.5 bg-white rounded border border-gray-200">
+                  <img src={applePayLogo} alt="Apple Pay" className="h-5 object-contain" />
+                </div>
+                <div className="flex items-center justify-center h-8 px-2.5 bg-white rounded border border-gray-200">
+                  <img src={googlePayLogo} alt="Google Pay" className="h-5 object-contain" />
+                </div>
+                <div className="flex items-center justify-center h-8 px-2.5 bg-white rounded border border-gray-200">
+                  <img src={klarnaLogo} alt="Klarna" className="h-5 object-contain" />
+                </div>
+              </div>
+
+              {/* Installment options info */}
+              <div className="space-y-2.5">
+                {/* PayPal Pay Later */}
+                <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                  <img src={paypalLogo} alt="PayPal" className="h-5 object-contain shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800">Pay now or later with PayPal</p>
+                    <p className="text-xs text-gray-500">Pay in installments up to 24 months.</p>
+                  </div>
+                </div>
+                {/* Klarna */}
+                <div className="flex items-center gap-3 p-3 bg-pink-50 rounded-lg border border-pink-100">
+                  <img src={klarnaLogo} alt="Klarna" className="h-5 object-contain shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800">Pay in 3 interest-free payments</p>
+                    <p className="text-xs text-gray-500">
+                      3 × €{((selectedVariant ? selectedVariant.price : product.price) / 3).toFixed(2)} — or finance 3–36 months.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Secure payment badge */}
+              <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-400">
+                <Lock size={12} />
+                <span>Secure payment</span>
+              </div>
+            </div>
           </div>
 
           {/* Right: Product Info */}
@@ -1009,6 +1071,92 @@ export default function ProductDetails() {
             ) : (
               <p className="text-gray-500 text-center py-8">No specifications available.</p>
             )}
+          </div>
+        </div>
+
+        {/* NEW: Product FAQs Section - inspired by refurbed.de */}
+        <div className="mt-12">
+          <button
+            onClick={() => { setShowFaqs(!showFaqs); if (showFaqs) setOpenFaqIndex(null); }}
+            className="w-full flex items-center justify-between mb-6 group"
+          >
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              FAQs
+            </h2>
+            <ChevronDown 
+              size={24} 
+              className={`text-gray-500 group-hover:text-gray-900 transition-transform duration-300 ${
+                showFaqs ? 'rotate-180' : ''
+              }`} 
+            />
+          </button>
+          <div className={`overflow-hidden transition-all duration-400 ease-in-out ${
+            showFaqs ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
+          }`}>
+          <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-200">
+            {[
+              {
+                question: `What is F&s Smartphones?`,
+                answer: `F&s Smartphones is an online marketplace for refurbished electronics. All F&s Smartphones ${product.name} function like new, but are much cheaper. How is that the case? Once sourced, experts put our products through an up to 40-step refurbishment process to ensure that all products work and look like new. This results in us offering better value products that are also more sustainable.`
+              },
+              {
+                question: `Why should I buy my ${product.name} from F&s Smartphones?`,
+                answer: `F&s Smartphones ${product.name} are great value, at up to 40% cheaper than new. Equally as important is trust. We give you a minimum 12-month warranty on each device and a 30-day free trial period, during which you can return for a full refund. This means you save money, and get to test the device to make sure it works perfectly for you.`
+              },
+              {
+                question: `Why are F&s Smartphones ${product.name} so cheap?`,
+                answer: `We are specialised in certain brands. We mostly buy exhibit and corporate phones in large quantities at low prices. Our specialisation makes the renewal processes very efficient, resulting in 100% renewed products that are up to 40% cheaper than new devices.`
+              },
+              {
+                question: `What exactly do the product grades mean?`,
+                answer: `F&s Smartphones ${product.name} function like new devices and therefore have no functional limitations. The visual condition of the devices can be selected based on your preference. What are the visual categories?\n\nPremium (AA-Grading)\nPremium ${product.name} are visually indistinguishable from new devices, without visible signs of use or wear. No scratches, scuffs, dents or marks on the housing or display.\n\nExcellent (A-Grading)\nExcellent ${product.name} have no dents, scratches or signs of use visible from a distance of 30 cm — neither on the housing nor on the display.\n\nVery Good (B-Grading)\nVery good ${product.name} may have minimal dents, scratches or wear on the housing that are visible from 30 cm away. There may be micro-scratches on the display/screen, but these are not visible when the display is switched on.\n\nGood (C-Grading)\nGood ${product.name} show visible signs of use such as scratches and/or dents on the housing. There may be micro-scratches on the display/screen, but these are not visible when the display is switched on.`
+              },
+              {
+                question: `How does the 30-day free trial work?`,
+                answer: `If you want to return your product for any reason, you can return it free of charge within 30 days. To do so, contact our team directly and let them know that you would like to exchange or return your device. You will receive a free return label from us by email. Alternatively, you can contact our F&s Smartphones customer service. We will be happy to help you.`
+              },
+              {
+                question: `What are my warranty terms?`,
+                answer: `We offer a minimum 12‑month warranty on all refurbished ${product.name}. This covers any technical defects that might occur during this period and are not caused by your own fault.\n\nExamples include:\n- The device can no longer be switched on.\n- The device cannot find a network.\n- The loudspeaker does not work.\n\nThe battery is also covered by the warranty. A distinction is made between wear and tear and technical defects. Technical defects are covered by the warranty and are characterised by abnormal behaviour. Abnormal behaviour could be, for example, that the device can only be charged up to 40%. Please note that your minimum 12‑month warranty is F&s Smartphones' voluntary commercial promise to you. This does not affect your statutory consumer rights.`
+              },
+              {
+                question: `How can F&s Smartphones guarantee the quality of your ${product.name}?`,
+                answer: `Only professional and certified partners are allowed to offer their electronic products via F&s Smartphones. We ensure this with ongoing quality tests and constant monitoring. Our partners are all located within the EU. This allows us to guarantee fast delivery times and optimal contact to always perform our best.`
+              },
+              {
+                question: `Which environmental protection projects do we invest in?`,
+                answer: `We have planted over 6.6 million trees since our founding, and we are very proud! We realised that planting trees alone does not tackle all of the environmental issues we are passionate about, however. That's why we now also support projects that\n- restore landscapes — ecosystems are repaired and jobs are created, including tree planting along the way\n- remove carbon from the atmosphere and store it permanently\n- recycle electronic waste and reuse materials`
+              },
+              {
+                question: `What does the strikethrough price mean on various devices?`,
+                answer: `Our reference prices are based on the average new device price of all offers listed on the online price comparison portal of Preisvergleich Internet Services AG ("Geizhals"), which we determine once daily at 04:15 am.`
+              }
+            ].map((faq, index) => (
+              <div key={index}>
+                <button
+                  onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                  className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-base sm:text-lg font-medium text-gray-900 pr-4">{faq.question}</span>
+                  <ChevronDown 
+                    size={20} 
+                    className={`shrink-0 text-gray-500 transition-transform duration-300 ${
+                      openFaqIndex === index ? 'rotate-180' : ''
+                    }`} 
+                  />
+                </button>
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  openFaqIndex === index ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                  <div className="px-6 pb-5">
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line">
+                      {faq.answer}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
           </div>
         </div>
 

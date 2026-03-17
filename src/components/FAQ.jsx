@@ -13,7 +13,7 @@ const FAQ = () => {
     {
       id: 1,
       question: "How long is the warranty period?",
-      answer: "All F&S Smartphones products come with a minimum 12-month warranty. Some products may have extended warranty periods depending on the manufacturer and product type.",
+      answer: "All F&s Smartphones products come with a minimum 12-month warranty. Some products may have extended warranty periods depending on the manufacturer and product type.",
       points: [
         "12-month comprehensive warranty on all devices",
         "Extended warranty options available",

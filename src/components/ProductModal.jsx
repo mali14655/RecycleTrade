@@ -597,7 +597,36 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
       return value.trim().toLowerCase();
     };
 
+    // NEW: When editing, merge new combinations with existing variants
+    // This preserves existing variant _id, price, stock, images for order/cart safety
+    const existingVariantsMap = new Map();
+    if (product && product.variants && product.variants.length > 0) {
+      product.variants.forEach(variant => {
+        const specsObj = variant.specs instanceof Map
+          ? Object.fromEntries(variant.specs)
+          : (variant.specs || {});
+        const specsKey = JSON.stringify(specsObj, Object.keys(specsObj).sort());
+        existingVariantsMap.set(specsKey, variant);
+      });
+    }
+
     const variants = combinations.map((combo, index) => {
+      // Check if this combination already exists in existing variants (when editing)
+      const comboKey = JSON.stringify(combo, Object.keys(combo).sort());
+      const existingVariant = existingVariantsMap.get(comboKey);
+
+      if (existingVariant) {
+        // Preserve existing variant data (including _id for order/cart references)
+        existingVariantsMap.delete(comboKey); // Remove from map so we know what's left over
+        return {
+          ...existingVariant,
+          specs: combo,
+          enabled: existingVariant.enabled !== undefined ? existingVariant.enabled : true,
+          stock: existingVariant.stock !== undefined ? existingVariant.stock : 0
+        };
+      }
+
+      // New combination — create fresh variant
       // Check if this variant has a "Color" spec and if we have images for that color
       let variantImages = [];
       
@@ -646,8 +675,24 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
       };
     });
 
+    // NEW: When editing, keep removed combinations as disabled variants
+    // This preserves their _id so existing orders/carts still reference valid variants
+    if (product) {
+      const removedVariants = [];
+      existingVariantsMap.forEach((variant) => {
+        removedVariants.push({
+          ...variant,
+          enabled: false // Disable instead of deleting
+        });
+      });
+      if (removedVariants.length > 0) {
+        variants.push(...removedVariants);
+        console.log(`Preserved ${removedVariants.length} removed variant(s) as disabled for order safety`);
+      }
+    }
+
     setGeneratedVariants(variants);
-    setSelectedVariants(variants);
+    setSelectedVariants(variants.filter(v => v.enabled !== false));
     setStep(3);
     console.log("Variants generated:", variants.length);
     console.log("Variants with auto-assigned images:", variants);
@@ -1468,10 +1513,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                               placeholder={`Enter ${spec.name} values separated by commas (e.g., Black, White, Blue)`}
                               value={multipleSpecs[spec.name] || ''}
                               onChange={(e) => handleSpecChange(spec.name, e.target.value, true)}
-                              disabled={!!product} // NEW: Disable multiple specs when editing
-                              className={`w-full p-2 border rounded mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                product ? 'bg-gray-100 cursor-not-allowed' : ''
-                              }`}
+                              className="w-full p-2 border rounded mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               required={spec.required}
                             />
                             {multipleSpecs[spec.name] && (
@@ -1480,8 +1522,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                               </div>
                             )}
                             {product && (
-                              <p className="text-xs text-orange-600 mb-2">
-                                ⚠️ Multiple specs cannot be changed when editing. Variants are already created.
+                              <p className="text-xs text-blue-600 mb-2">
+                                ℹ️ You can add or remove spec values. Existing variants will be preserved, new combinations will be added.
                               </p>
                             )}
                             {!product && (
@@ -1529,14 +1571,26 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                     ← Back
                   </button>
                   {product && generatedVariants.length > 0 ? (
-                    // When editing and variants exist, go directly to Step 3
-                    <button
-                      type="button"
-                      onClick={() => setStep(3)}
-                      className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition-colors"
-                    >
-                      Go to Variants →
-                    </button>
+                    // When editing and variants exist, show both options
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={generateVariants}
+                        disabled={
+                          !Object.keys(multipleSpecs).some(key => multipleSpecs[key] && multipleSpecs[key].trim())
+                        }
+                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                      >
+                        Re-generate Variants
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStep(3)}
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors text-sm"
+                      >
+                        Skip to Variants →
+                      </button>
+                    </div>
                   ) : (
                     // When creating new product, generate variants
                     <button
@@ -1667,7 +1721,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
               {product && (
                 <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                   <span className="text-sm font-medium text-blue-800">
-                    Editing {selectedVariants.length} variant(s) - You can edit images and quantities only
+                    Editing {selectedVariants.length} variant(s) - You can edit prices, images, stock, and add new spec values
                   </span>
                 </div>
               )}
@@ -1680,7 +1734,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
                   </h4>
                   {product && (
                     <p className="text-sm text-gray-600 mb-4">
-                      You can edit prices, images, and quantities.
+                      You can edit prices, images, stock, and spec values. Existing variant data is preserved.
                     </p>
                   )}
                   <div className="space-y-6">

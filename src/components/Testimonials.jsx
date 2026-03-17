@@ -9,14 +9,14 @@ const Testimonials = () => {
   const testimonials = [
     {
       id: 1,
-      text: "I've been using F&S Smartphones for over a year and I'm really impressed with the quality and support. The refurbished phones work perfectly and the customer service is always quick to help with any issues I have. Highly recommend!",
+      text: "I've been using F&s Smartphones for over a year and I'm really impressed with the quality and support. The refurbished phones work perfectly and the customer service is always quick to help with any issues I have. Highly recommend!",
       rating: 5,
       name: "Jane Smith",
       image: janeSmithImg,
     },
     {
       id: 2,
-      text: "I've purchased multiple devices from F&S Smartphones and overall it's been great. The quality is good and I haven't had any major issues. The pricing is also very reasonable compared to new devices.",
+      text: "I've purchased multiple devices from F&s Smartphones and overall it's been great. The quality is good and I haven't had any major issues. The pricing is also very reasonable compared to new devices.",
       rating: 4,
       name: "Tom Williams",
       image: tomWilliamsImg,

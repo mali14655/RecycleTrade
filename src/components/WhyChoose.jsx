@@ -33,7 +33,7 @@ const WhyChoose = () => {
             {/* Left Content */}
             <div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
-                Why Choose F&S Smartphones?
+                Why Choose F&s Smartphones?
               </h2>
 
               <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 leading-relaxed">

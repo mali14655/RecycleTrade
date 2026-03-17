@@ -1,4 +1,4 @@
-// components/layout/Footer.jsx - UPDATED with new F&S Smartphones design
+// components/layout/Footer.jsx - UPDATED with new F&s Smartphones design
 import React from "react";
 import { Link } from "react-router-dom";
 import { Facebook } from "lucide-react";
@@ -21,10 +21,10 @@ const Footer = () => {
             <div className="flex items-center gap-2 mb-4">
               <img 
                 src={logo} 
-                alt="F&S Smartphones" 
+                alt="F&s Smartphones" 
                 className="w-8 h-8 rounded object-cover"
               />
-              <span className="text-xl font-semibold">F&S Smartphones</span>
+              <span className="text-xl font-semibold">F&s Smartphones</span>
             </div>
             <p className="text-gray-400 text-sm mb-6">
               Your trusted marketplace for refurbished phones and accessories.
@@ -114,9 +114,9 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* About F&S Smartphones Section */}
+          {/* About F&s Smartphones Section */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">About F&S Smartphones</h3>
+            <h3 className="font-semibold text-lg mb-4">About F&s Smartphones</h3>
             <ul className="space-y-3">
               <li>
                 <Link
@@ -174,7 +174,7 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="pt-4 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-400 text-sm">
-            © {new Date().getFullYear()} F&S Smartphones. All rights reserved.
+            © {new Date().getFullYear()} F&s Smartphones. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link
@@ -190,10 +190,16 @@ const Footer = () => {
               Terms of Service
             </Link>
             <Link
-              to="/accessibility"
+              to="/return-policy"
               className="text-gray-400 hover:text-white text-sm transition-colors"
             >
-              Accessibility
+              Return Policy
+            </Link>
+            <Link
+              to="/impressum"
+              className="text-gray-400 hover:text-white text-sm transition-colors"
+            >
+              Impressum
             </Link>
           </div>
         </div>

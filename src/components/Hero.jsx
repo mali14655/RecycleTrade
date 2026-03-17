@@ -163,7 +163,7 @@ const Hero = () => {
           <div className="flex flex-col items-center text-center gap-4 sm:gap-6">
             {/* Title - COMPACT */}
             <h1 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight mb-2 sm:mb-4 px-2">
-              F&S Smartphones products with at least a 12-month warranty
+              F&s Smartphones products with at least a 12-month warranty
             </h1>
 
             {/* Categories Section */}

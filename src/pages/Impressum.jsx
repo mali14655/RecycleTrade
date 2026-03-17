@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.jpeg";
 
-const Accessibility = () => {
+const Impressum = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -13,7 +13,7 @@ const Accessibility = () => {
             <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 mb-6">
               <img 
                 src={logo} 
-                alt="F&S Smartphones" 
+                alt="F&s Smartphones" 
                 className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-lg shrink-0"
               />
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-center">
@@ -229,4 +229,4 @@ const Accessibility = () => {
   );
 };
 
-export default Accessibility;
+export default Impressum;

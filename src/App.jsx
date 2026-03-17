@@ -27,7 +27,8 @@ import About from "./pages/About.jsx";
 import Terms from "./pages/Terms.jsx";
 import Privacy from "./pages/Privacy.jsx";
 import Contact from "./pages/Contact.jsx";
-import Accessibility from "./pages/Accessibility.jsx";
+import Impressum from "./pages/Impressum.jsx";
+import ReturnPolicy from "./pages/ReturnPolicy.jsx";
 import { Toaster } from "react-hot-toast";
 
 function App() {
@@ -91,7 +92,8 @@ function App() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/accessibility" element={<Accessibility />} />
+        <Route path="/impressum" element={<Impressum />} />
+        <Route path="/return-policy" element={<ReturnPolicy />} />
 
         {/* 404 - Must be last */}
         <Route path="*" element={<NotFound />} />

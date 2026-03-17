@@ -14,11 +14,11 @@ const About = () => {
             <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 mb-6">
               <img 
                 src={logo} 
-                alt="F&S Smartphones" 
+                alt="F&s Smartphones" 
                 className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-lg shrink-0"
               />
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-center">
-                F<span className="text-white/80 font-normal">&</span>S Smartphones
+                F<span className="text-white/80 font-normal">&</span>s Smartphones
               </h1>
             </div>
             <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mt-4 sm:mt-6 px-4">
@@ -82,7 +82,7 @@ const About = () => {
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">Our Story</h2>
               <div className="space-y-4 text-gray-700 leading-relaxed">
                 <p>
-                  F&S Smartphones was founded with a simple yet powerful vision: to make quality technology 
+                  F&s Smartphones was founded with a simple yet powerful vision: to make quality technology 
                   accessible to everyone while making a positive impact on the environment. We recognized 
                   that millions of perfectly functional devices were being discarded each year, contributing 
                   to the growing problem of electronic waste.
@@ -94,14 +94,14 @@ const About = () => {
                   makes premium technology affordable for more people.
                 </p>
                 <p>
-                  Today, F&S Smartphones has become a trusted name in the refurbished electronics market, 
+                  Today, F&s Smartphones has become a trusted name in the refurbished electronics market, 
                   serving thousands of satisfied customers who appreciate both the quality of our products 
                   and our commitment to sustainability.
                 </p>
               </div>
             </div>
             <div className="bg-white rounded-lg shadow-lg p-8">
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6">Why Choose F&S Smartphones?</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-6">Why Choose F&s Smartphones?</h3>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <Award className="w-6 h-6 text-black flex-shrink-0 mt-1" />
@@ -258,7 +258,7 @@ const About = () => {
       {/* CTA Section */}
       <div className="py-16 bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 px-4">Join the F&S Smartphones Community</h2>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 px-4">Join the F&s Smartphones Community</h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
             Whether you're looking to buy quality refurbished devices, 
             we're here to help you every step of the way.

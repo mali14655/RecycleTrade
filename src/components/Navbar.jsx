@@ -317,11 +317,11 @@ const Navbar = () => {
               >
                 <img 
                   src={logo} 
-                  alt="F&S Smartphones" 
+                  alt="F&s Smartphones" 
                   className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg object-cover"
                 />
                 <span className="text-base sm:text-lg font-semibold text-gray-900 whitespace-nowrap">
-                  F<span className="text-gray-500 font-normal">&</span>S Smartphones
+                  F<span className="text-gray-500 font-normal">&</span>s Smartphones
                 </span>
               </Link>
 
