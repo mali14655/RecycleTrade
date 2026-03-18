@@ -7,8 +7,11 @@ import { FiUserPlus } from "react-icons/fi";
 import toast from "react-hot-toast";
 import Breadcrumb from "../components/Breadcrumb";
 import { buildApiEndpoint } from "../utils/api";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Register() {
+  const { language, t } = useLanguage();
+  const isDE = language === "de";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,8 +31,8 @@ export default function Register() {
           <FiUserPlus size={16} className="text-black" />
         </div>
         <div>
-          <p className="font-medium text-gray-900">Creating Account</p>
-          <p className="text-sm text-gray-600">Please wait...</p>
+          <p className="font-medium text-gray-900">{isDE ? "Konto wird erstellt" : "Creating Account"}</p>
+          <p className="text-sm text-gray-600">{isDE ? "Bitte warten..." : "Please wait..."}</p>
         </div>
       </div>, 
       {
@@ -82,8 +85,12 @@ export default function Register() {
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Account Created</p>
-                <p className="text-sm text-gray-600">Verification email could not be sent. Please use 'Resend Verification' on the login page.</p>
+                <p className="font-medium text-gray-900">{isDE ? "Konto erstellt" : "Account Created"}</p>
+                <p className="text-sm text-gray-600">
+                  {isDE
+                    ? "Bestätigungs-E-Mail konnte nicht gesendet werden. Bitte nutzen Sie „Bestätigung erneut senden“ auf der Login-Seite."
+                    : "Verification email could not be sent. Please use 'Resend Verification' on the login page."}
+                </p>
               </div>
             </div>, 
             {
@@ -114,8 +121,10 @@ export default function Register() {
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Account Created</p>
-                <p className="text-sm text-gray-600">Please check your email to verify your account</p>
+                <p className="font-medium text-gray-900">{isDE ? "Konto erstellt" : "Account Created"}</p>
+                <p className="text-sm text-gray-600">
+                  {isDE ? "Bitte prüfen Sie Ihre E‑Mails, um Ihr Konto zu verifizieren" : "Please check your email to verify your account"}
+                </p>
               </div>
             </div>, 
             {
@@ -148,16 +157,18 @@ export default function Register() {
       console.error(err.response?.data || err.message);
       
       // NEW: Show better error messages
-      let errorMessage = 'Registration error';
+      let errorMessage = isDE ? "Registrierungsfehler" : "Registration error";
       if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
         // Improve specific error messages
         if (errorMessage.includes('already registered') || errorMessage.includes('Email already')) {
-          errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+          errorMessage = isDE
+            ? "Diese E‑Mail ist bereits registriert. Bitte verwenden Sie eine andere E‑Mail oder versuchen Sie sich anzumelden."
+            : "This email is already registered. Please use a different email or try logging in.";
         } else if (errorMessage.includes('email') && errorMessage.includes('invalid')) {
-          errorMessage = 'Please enter a valid email address.';
+          errorMessage = isDE ? "Bitte geben Sie eine gültige E‑Mail‑Adresse ein." : "Please enter a valid email address.";
         } else if (errorMessage.includes('password') && errorMessage.includes('length')) {
-          errorMessage = 'Password must be at least 6 characters long.';
+          errorMessage = isDE ? "Das Passwort muss mindestens 6 Zeichen lang sein." : "Password must be at least 6 characters long.";
         }
       }
       
@@ -171,7 +182,7 @@ export default function Register() {
               </svg>
             </div>
             <div>
-              <p className="font-medium text-gray-900">Registration Failed</p>
+              <p className="font-medium text-gray-900">{isDE ? "Registrierung fehlgeschlagen" : "Registration Failed"}</p>
               <p className="text-sm text-gray-600">{errorMessage}</p>
             </div>
           </div>, 
@@ -245,7 +256,7 @@ export default function Register() {
               className={`flex-1 flex justify-center items-center gap-2 py-3.5 rounded-full text-sm font-medium transition-all bg-white text-gray-900 shadow-sm`}
             >
               <FiUserPlus size={18} />
-              <span>Create Account</span>
+              <span>{t("auth.createAccount")}</span>
             </button>
           </div>
 
@@ -254,7 +265,7 @@ export default function Register() {
             {/* Full Name Input */}
             <div>
               <label className="block text-base font-semibold text-gray-900 mb-3">
-                Full Name
+                {t("auth.fullName")}
               </label>
               <input
                 value={name}
@@ -268,7 +279,7 @@ export default function Register() {
             {/* Email Input */}
             <div>
               <label className="block text-base font-semibold text-gray-900 mb-3">
-                Email
+                {t("auth.email")}
               </label>
               <input
                 value={email}
@@ -283,7 +294,7 @@ export default function Register() {
             {/* Password Input */}
             <div>
               <label className="block text-base font-semibold text-gray-900 mb-3">
-                Password
+                {t("auth.password")}
               </label>
               <input
                 value={password}
@@ -333,12 +344,12 @@ export default function Register() {
               type="submit"
               className="w-full bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-900 transition-colors mt-8 text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Creating Account..." : "Create Account"}
+              {loading ? (isDE ? "Konto wird erstellt..." : "Creating Account...") : t("auth.signUp")}
             </button>
 
             {/* Sign In Link */}
             <p className="text-center text-base text-gray-700 pt-4">
-              Already have an account?{" "}
+              {t("auth.hasAccount")}{" "}
               <Link to="/login" className="text-black font-semibold hover:underline">
                 Sign in here
               </Link>

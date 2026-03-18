@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import Breadcrumb from "../components/Breadcrumb";
 import toast from "react-hot-toast";
 import { Truck, Lock } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 import visaLogo from "../assets/cards/visa_white.svg";
 import mastercardLogo from "../assets/cards/mastercard.svg";
 import applePayLogo from "../assets/cards/pay_apple_pay.svg";
@@ -45,6 +46,7 @@ const CITY_OPTIONS = {
 };
 
 export default function Checkout() {
+  const { t, language } = useLanguage();
   const { cart, clearCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -92,8 +94,7 @@ export default function Checkout() {
     start.setDate(start.getDate() + 1);
     end.setDate(end.getDate() + 2);
 
-    // English date format, e.g. "12 Mar"
-    const formatter = new Intl.DateTimeFormat('en-GB', {
+    const formatter = new Intl.DateTimeFormat(language === "de" ? "de-DE" : "en-GB", {
       day: '2-digit',
       month: 'short'
     });
@@ -165,34 +166,34 @@ export default function Checkout() {
     const newErrors = {};
     
     // Personal Information
-    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.gender) newErrors.gender = "Please select gender";
+    if (!formData.firstName.trim()) newErrors.firstName = t("checkout.firstNameRequired");
+    if (!formData.lastName.trim()) newErrors.lastName = t("checkout.lastNameRequired");
+    if (!formData.gender) newErrors.gender = t("checkout.genderRequired");
     
     // Contact Information
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Email is invalid";
-    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+    if (!formData.email.trim()) newErrors.email = t("checkout.emailRequired");
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = t("checkout.emailInvalid");
+    if (!formData.phone.trim()) newErrors.phone = t("checkout.phoneRequired");
     
     // Address validation for delivery
     if (formData.deliveryMethod === "delivery") {
-      if (!formData.address.trim()) newErrors.address = "Address is required for delivery";
+      if (!formData.address.trim()) newErrors.address = t("checkout.addressRequired");
       if (!formData.city.trim()) {
-        newErrors.city = "City is required";
+        newErrors.city = t("checkout.cityRequired");
       } else if (
         formData.city === "Other" &&
         !formData.cityOther.trim()
       ) {
         // When user selects "Other", custom city name becomes mandatory
-        newErrors.cityOther = "Please enter your city name";
+        newErrors.cityOther = t("checkout.cityOtherRequired");
       }
-      if (!formData.country.trim()) newErrors.country = "Country is required";
-      if (!formData.postalCode.trim()) newErrors.postalCode = "Postal code is required";
+      if (!formData.country.trim()) newErrors.country = t("checkout.countryRequired");
+      if (!formData.postalCode.trim()) newErrors.postalCode = t("checkout.postalCodeRequired");
     }
     
     // Outlet validation for pickup
     if (formData.deliveryMethod === "pickup" && !selectedOutlet) {
-      newErrors.outlet = "Please select an outlet for pickup";
+      newErrors.outlet = t("checkout.outletRequired");
     }
     
     setErrors(newErrors);
@@ -209,8 +210,8 @@ export default function Checkout() {
             </svg>
           </div>
           <div>
-            <p className="font-medium text-gray-900">Validation Error</p>
-            <p className="text-sm text-gray-600">Please fill all required fields correctly</p>
+            <p className="font-medium text-gray-900">{t("checkout.validationErrorTitle")}</p>
+            <p className="text-sm text-gray-600">{t("checkout.validationErrorSubtitle")}</p>
           </div>
         </div>,
         { icon: null }
@@ -283,8 +284,8 @@ export default function Checkout() {
             </svg>
           </div>
           <div>
-            <p className="font-medium text-gray-900">Checkout Failed</p>
-            <p className="text-sm text-gray-600">{error.response?.data?.message || "Checkout failed"}</p>
+            <p className="font-medium text-gray-900">{t("checkout.checkoutFailedTitle")}</p>
+            <p className="text-sm text-gray-600">{error.response?.data?.message || t("checkout.checkoutFailed")}</p>
           </div>
         </div>,
         { icon: null }
@@ -390,8 +391,8 @@ export default function Checkout() {
             </svg>
           </div>
           <div>
-            <p className="font-medium text-gray-900">Order Failed</p>
-            <p className="text-sm text-gray-600">{error.response?.data?.message || "Order failed"}</p>
+            <p className="font-medium text-gray-900">{t("checkout.orderFailedTitle")}</p>
+            <p className="text-sm text-gray-600">{error.response?.data?.message || t("checkout.orderFailed")}</p>
           </div>
         </div>
       );
@@ -412,13 +413,13 @@ export default function Checkout() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5.5M7 13l2.5 5.5m0 0L17 21" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Your cart is empty</h2>
-              <p className="text-gray-600 mb-8">Add some products to proceed to checkout</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">{t("checkout.emptyCartTitle")}</h2>
+              <p className="text-gray-600 mb-8">{t("checkout.emptyCartSubtitle")}</p>
               <button
                 onClick={() => navigate("/products")}
                 className="bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors"
               >
-                Continue Shopping
+                {t("checkout.continueShopping")}
               </button>
             </div>
           </div>
@@ -434,17 +435,17 @@ export default function Checkout() {
       <Breadcrumb />
       
       <div className="max-w-[90%] mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">{t("checkout.title")}</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Form */}
           <div className="space-y-8">
             {/* Personal Information */}
             <section className="bg-white p-6 rounded-lg border border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Personal Information</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">{t("checkout.personalInfo")}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">First Name *</label>
+                  <label className="block text-sm font-medium mb-2">{t("checkout.firstName")} *</label>
                   <input
                     type="text"
                     name="firstName"
@@ -456,7 +457,7 @@ export default function Checkout() {
                   {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Last Name *</label>
+                  <label className="block text-sm font-medium mb-2">{t("checkout.lastName")} *</label>
                   <input
                     type="text"
                     name="lastName"
@@ -470,7 +471,7 @@ export default function Checkout() {
               </div>
               
               <div className="mt-4">
-                <label className="block text-sm font-medium mb-2">Gender *</label>
+                <label className="block text-sm font-medium mb-2">{t("checkout.gender")} *</label>
                 <div className="flex space-x-4">
                   {["male", "female", "other"].map(gender => (
                     <label key={gender} className="flex items-center">
@@ -482,7 +483,13 @@ export default function Checkout() {
                         onChange={handleInputChange}
                         className="mr-2"
                       />
-                      <span className="capitalize">{gender}</span>
+                      <span className="capitalize">
+                        {gender === "male"
+                          ? t("checkout.genderMale")
+                          : gender === "female"
+                          ? t("checkout.genderFemale")
+                          : t("checkout.genderOther")}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -492,10 +499,10 @@ export default function Checkout() {
 
             {/* Contact Information */}
             <section className="bg-white p-6 rounded-lg border border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">{t("checkout.contactInfo")}</h2>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Email Address *</label>
+                  <label className="block text-sm font-medium mb-2">{t("checkout.emailAddress")} *</label>
                   <input
                     type="email"
                     name="email"
@@ -507,7 +514,7 @@ export default function Checkout() {
                   {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Phone Number *</label>
+                  <label className="block text-sm font-medium mb-2">{t("checkout.phoneNumber")} *</label>
                   <input
                     type="tel"
                     name="phone"
@@ -523,7 +530,7 @@ export default function Checkout() {
 
             {/* Delivery Method */}
             <section className="bg-white p-6 rounded-lg border border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Delivery Method</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">{t("checkout.deliveryMethod")}</h2>
               <div className="space-y-4">
                 <label className="flex items-center p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
                   <input
@@ -535,8 +542,8 @@ export default function Checkout() {
                     className="mr-3"
                   />
                   <div>
-                    <span className="font-medium">Home Delivery</span>
-                    <p className="text-sm text-gray-600">Get your order delivered to your doorstep (Online payment required)</p>
+                    <span className="font-medium">{t("checkout.homeDelivery")}</span>
+                    <p className="text-sm text-gray-600">{t("checkout.homeDeliveryDesc")}</p>
                   </div>
                 </label>
                 
@@ -550,8 +557,8 @@ export default function Checkout() {
                     className="mr-3"
                   />
                   <div>
-                    <span className="font-medium">Pickup from Outlet</span>
-                    <p className="text-sm text-gray-600">Collect your order from a nearby outlet (No payment required)</p>
+                    <span className="font-medium">{t("checkout.pickupOutlet")}</span>
+                    <p className="text-sm text-gray-600">{t("checkout.pickupDesc")}</p>
                   </div>
                 </label>
               </div>
@@ -562,7 +569,7 @@ export default function Checkout() {
                   <div className="w-full rounded-xl bg-blue-50 px-4 py-3 flex items-center gap-2 text-sm sm:text-base text-gray-900">
                     <Truck className="w-5 h-5 text-gray-700 shrink-0" />
                     <span className="font-medium">
-                      Free delivery: <span className="font-normal">{getDeliveryWindow()}</span>
+                      {t("checkout.freeDeliveryWindow", { window: getDeliveryWindow() })}
                     </span>
                   </div>
                 </div>
@@ -571,21 +578,21 @@ export default function Checkout() {
               {/* Address Fields for Delivery */}
               {formData.deliveryMethod === "delivery" && (
                 <div className="mt-6">
-                  <label className="block text-sm font-medium mb-2">Delivery Address *</label>
+                  <label className="block text-sm font-medium mb-2">{t("checkout.deliveryAddress")} *</label>
                   <textarea
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
                     rows="3"
                     className={`w-full p-3 border rounded-lg ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
-                    placeholder="Enter your complete delivery address"
+                    placeholder={t("checkout.deliveryAddressPlaceholder")}
                   />
                   {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     {/* Country */}
                     <div>
-                      <label className="block text-sm font-medium mb-2">Country *</label>
+                      <label className="block text-sm font-medium mb-2">{t("checkout.country")} *</label>
                       <select
                         name="country"
                         value={formData.country}
@@ -605,7 +612,7 @@ export default function Checkout() {
 
                     {/* City */}
                     <div>
-                      <label className="block text-sm font-medium mb-2">City *</label>
+                      <label className="block text-sm font-medium mb-2">{t("checkout.city")} *</label>
                       {CITY_OPTIONS[formData.country] ? (
                         <>
                           <select
@@ -615,7 +622,7 @@ export default function Checkout() {
                             className={`w-full p-3 border rounded-lg ${errors.city ? 'border-red-500' : 'border-gray-300'} bg-white`}
                             required
                           >
-                            <option value="">Select a city</option>
+                            <option value="">{t("checkout.selectCity")}</option>
                             {CITY_OPTIONS[formData.country].map((city) => (
                               <option key={city} value={city}>
                                 {city}
@@ -630,7 +637,7 @@ export default function Checkout() {
                               value={formData.cityOther}
                               onChange={handleInputChange}
                               className={`mt-2 w-full p-3 border rounded-lg ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
-                              placeholder="Enter your city"
+                              placeholder={t("checkout.enterCity")}
                               required
                             />
                           )}
@@ -642,7 +649,7 @@ export default function Checkout() {
                           value={formData.city}
                           onChange={handleInputChange}
                           className={`w-full p-3 border rounded-lg ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
-                          placeholder="Enter your city"
+                          placeholder={t("checkout.enterCity")}
                           required
                         />
                       )}
@@ -651,7 +658,7 @@ export default function Checkout() {
 
                     {/* Postal Code */}
                     <div>
-                      <label className="block text-sm font-medium mb-2">Postal Code *</label>
+                      <label className="block text-sm font-medium mb-2">{t("checkout.postalCode")} *</label>
                       <input
                         type="text"
                         name="postalCode"
@@ -669,13 +676,13 @@ export default function Checkout() {
               {/* Outlet Selection for Pickup */}
               {formData.deliveryMethod === "pickup" && (
                 <div className="mt-6">
-                  <label className="block text-sm font-medium mb-2">Select Outlet *</label>
+                  <label className="block text-sm font-medium mb-2">{t("checkout.selectOutlet")} *</label>
                   <select
                     value={selectedOutlet}
                     onChange={(e) => setSelectedOutlet(e.target.value)}
                     className={`w-full p-3 border rounded-lg ${errors.outlet ? 'border-red-500' : 'border-gray-300'}`}
                   >
-                    <option value="">Choose an outlet</option>
+                    <option value="">{t("checkout.selectOutlet")}</option>
                     {outlets.map(outlet => (
                       <option key={outlet._id} value={outlet._id}>
                         {outlet.name} - {outlet.location}
@@ -687,14 +694,14 @@ export default function Checkout() {
                   {/* Show selected outlet details */}
                   {selectedOutlet && (
                     <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <h4 className="font-semibold text-lg text-gray-900 mb-2">Selected Outlet:</h4>
+                      <h4 className="font-semibold text-lg text-gray-900 mb-2">{t("checkout.selectedOutlet")}</h4>
                       {outlets.find(o => o._id === selectedOutlet) && (
                         <div className="text-sm text-gray-600 space-y-1">
-                          <p><strong className="text-gray-900">Name:</strong> {outlets.find(o => o._id === selectedOutlet).name}</p>
-                          <p><strong className="text-gray-900">Location:</strong> {outlets.find(o => o._id === selectedOutlet).location}</p>
-                          <p><strong className="text-gray-900">Address:</strong> {outlets.find(o => o._id === selectedOutlet).address}</p>
-                          <p><strong className="text-gray-900">Phone:</strong> {outlets.find(o => o._id === selectedOutlet).phone || 'Not provided'}</p>
-                          <p><strong className="text-gray-900">Email:</strong> {outlets.find(o => o._id === selectedOutlet).email || 'Not provided'}</p>
+                          <p><strong className="text-gray-900">{t("checkout.outletName")}:</strong> {outlets.find(o => o._id === selectedOutlet).name}</p>
+                          <p><strong className="text-gray-900">{t("checkout.outletLocation")}:</strong> {outlets.find(o => o._id === selectedOutlet).location}</p>
+                          <p><strong className="text-gray-900">{t("checkout.outletAddress")}:</strong> {outlets.find(o => o._id === selectedOutlet).address}</p>
+                          <p><strong className="text-gray-900">{t("checkout.phone")}:</strong> {outlets.find(o => o._id === selectedOutlet).phone || t("checkout.notProvided")}</p>
+                          <p><strong className="text-gray-900">{t("checkout.email")}:</strong> {outlets.find(o => o._id === selectedOutlet).email || t("checkout.notProvided")}</p>
                         </div>
                       )}
                     </div>
@@ -708,7 +715,7 @@ export default function Checkout() {
           <div className="space-y-6">
             {/* Order Summary */}
             <div className="bg-white p-6 rounded-lg border border-gray-200 sticky top-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">{t("checkout.orderSummary")}</h2>
               
               <div className="space-y-4 mb-6">
                 {cart.items.map((item, index) => {
@@ -807,7 +814,7 @@ export default function Checkout() {
                               ))}
                             </div>
                           )}
-                          <p className="text-sm text-gray-500 mt-1">Qty: {item.quantity}</p>
+                          <p className="text-sm text-gray-500 mt-1">{t("trackOrder.qty")}: {item.quantity}</p>
                         </div>
                       </div>
                       <p className="font-semibold">
@@ -820,7 +827,7 @@ export default function Checkout() {
 
               <div className="space-y-2 border-t pt-4">
                 <div className="flex justify-between">
-                  <span>Subtotal</span>
+                  <span>{t("checkout.subtotal")}</span>
                   <span>€{baseTotal.toFixed(2)}</span>
                 </div>
 
@@ -835,14 +842,14 @@ export default function Checkout() {
                         setPromoState((prev) => ({ ...prev, error: "" }));
                       }
                     }}
-                    placeholder="Enter promo code"
+                    placeholder={t("checkout.enterPromoCode")}
                     className="flex-1 px-3 py-2 border rounded-lg text-sm"
                   />
                   <button
                     type="button"
                     onClick={async () => {
                       if (!promoCode.trim()) {
-                        setPromoState((prev) => ({ ...prev, error: "Please enter a promo code." }));
+                        setPromoState((prev) => ({ ...prev, error: t("checkout.promoRequired") }));
                         return;
                       }
                       try {
@@ -885,7 +892,7 @@ export default function Checkout() {
                           },
                         });
 
-                        toast.success(`Promo code ${res.data.promo.code} applied`);
+                        toast.success(t("checkout.promoAppliedToast", { code: res.data.promo.code }));
                       } catch (error) {
                         console.error("Promo validation failed:", error);
                         setPromoState({
@@ -893,7 +900,7 @@ export default function Checkout() {
                           loading: false,
                           error:
                             error.response?.data?.message ||
-                            "Promo code is invalid or does not apply to these products.",
+                            t("checkout.promoInvalid"),
                           info: null,
                         });
                       }
@@ -901,7 +908,7 @@ export default function Checkout() {
                     className="px-4 py-2 bg-black text-white rounded-lg text-sm font-semibold hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={promoState.loading}
                   >
-                    {promoState.loading ? "Checking..." : promoState.applied ? "Applied" : "Apply"}
+                    {promoState.loading ? t("checkout.checking") : promoState.applied ? t("checkout.applied") : t("checkout.apply")}
                   </button>
                 </div>
                 {promoState.error && (
@@ -917,11 +924,11 @@ export default function Checkout() {
                 )}
 
                 <div className="flex justify-between">
-                  <span>Shipping</span>
-                  <span>{formData.deliveryMethod === "delivery" ? "Free" : "Pickup"}</span>
+                  <span>{t("checkout.shipping")}</span>
+                  <span>{formData.deliveryMethod === "delivery" ? t("checkout.free") : t("checkout.pickup")}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
-                  <span>Total</span>
+                  <span>{t("checkout.total")}</span>
                   <span>€{finalTotal.toFixed(2)}</span>
                 </div>
               </div>
@@ -935,7 +942,7 @@ export default function Checkout() {
                     disabled={loading}
                     className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? "Processing..." : "Pay Online"}
+                    {loading ? `${t("admin.processing")}...` : t("checkout.payNow")}
                   </button>
                 ) : (
                   // Pickup from Outlet - Only show order button (no payment)
@@ -944,7 +951,7 @@ export default function Checkout() {
                     disabled={loading || !selectedOutlet}
                     className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? "Placing Order..." : "Place Pickup Order"}
+                    {loading ? `${t("admin.processing")}...` : t("checkout.payAtPickup")}
                   </button>
                 )}
               </div>
@@ -952,7 +959,7 @@ export default function Checkout() {
               {/* NEW: Enhanced Payment Methods Display - Only show for delivery */}
               {formData.deliveryMethod === "delivery" && (
                 <div className="mt-5 pt-5 border-t border-gray-200">
-                  <p className="text-sm font-semibold text-gray-700 mb-3">Choose payment method at checkout:</p>
+                  <p className="text-sm font-semibold text-gray-700 mb-3">{t("checkout.paymentNote")}</p>
                   
                   {/* Payment option descriptions */}
                   <div className="space-y-2.5 mb-4">
@@ -963,7 +970,7 @@ export default function Checkout() {
                         <img src={mastercardLogo} alt="Mastercard" className="h-5 object-contain" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-800">Credit / Debit card</p>
+                        <p className="text-sm font-medium text-gray-800">{t("checkout.creditDebit")}</p>
                       </div>
                     </div>
 
@@ -971,8 +978,8 @@ export default function Checkout() {
                     <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
                       <img src={paypalLogo} alt="PayPal" className="h-5 object-contain shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-800">Pay now or in installments with PayPal</p>
-                        <p className="text-xs text-gray-500">Pay later in up to 24 monthly payments.</p>
+                        <p className="text-sm font-medium text-gray-800">{t("checkout.paypalPayNowInstallments")}</p>
+                        <p className="text-xs text-gray-500">{t("checkout.paypalPayLater")}</p>
                       </div>
                     </div>
 
@@ -980,9 +987,9 @@ export default function Checkout() {
                     <div className="flex items-center gap-3 p-3 bg-pink-50 rounded-lg border border-pink-100">
                       <img src={klarnaLogo} alt="Klarna" className="h-5 object-contain shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-800">Pay in 3 interest-free payments with Klarna</p>
+                        <p className="text-sm font-medium text-gray-800">{t("checkout.klarnaPayIn3")}</p>
                         <p className="text-xs text-gray-500">
-                          3 × €{(finalTotal / 3).toFixed(2)} — or finance 3–36 months.
+                          3 × €{(finalTotal / 3).toFixed(2)} {t("product.financeHint")}
                         </p>
                       </div>
                     </div>
@@ -1013,7 +1020,7 @@ export default function Checkout() {
                   {/* Secure payment badge */}
                   <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
                     <Lock size={12} />
-                    <span>Secure payment</span>
+                    <span>{t("product.securePayment")}</span>
                   </div>
                 </div>
               )}
@@ -1021,8 +1028,8 @@ export default function Checkout() {
               <div className="mt-4 text-center">
                 <p className="text-sm text-gray-600">
                   {formData.deliveryMethod === "delivery" 
-                    ? "Your order will be delivered to your address. Online payment required." 
-                    : "You will collect your order from the selected outlet. No payment required."}
+                    ? t("checkout.deliveryPaymentNote") 
+                    : t("checkout.pickupPaymentNote")}
                 </p>
               </div>
             </div>

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 const PriceFilter = ({ onPriceChange, resetTrigger }) => {
+  const { t } = useLanguage();
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   
@@ -49,13 +51,13 @@ const PriceFilter = ({ onPriceChange, resetTrigger }) => {
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900">PRICE RANGE</h3>
+        <h3 className="font-semibold text-gray-900">{t("productsPage.priceRangeTitle")}</h3>
         {/* NEW: Clear button when price filter is active */}
         {isPriceFilterActive && (
           <button
             onClick={handleClearPrice}
             className="p-1 hover:bg-gray-100 rounded transition-colors"
-            title="Clear price filter"
+            title={t("productsPage.clearPrice")}
           >
             <X size={16} className="text-gray-600" />
           </button>
@@ -69,7 +71,7 @@ const PriceFilter = ({ onPriceChange, resetTrigger }) => {
             type="number"
             value={minPrice}
             onChange={(e) => setMinPrice(e.target.value)}
-            placeholder="Min"
+            placeholder={t("productsPage.min")}
             className="w-full p-2 border border-gray-300 rounded text-sm"
           />
         </div>
@@ -79,7 +81,7 @@ const PriceFilter = ({ onPriceChange, resetTrigger }) => {
             type="number"
             value={maxPrice}
             onChange={(e) => setMaxPrice(e.target.value)}
-            placeholder="Max"
+            placeholder={t("productsPage.max")}
             className="w-full p-2 border border-gray-300 rounded text-sm"
           />
         </div>
@@ -89,7 +91,7 @@ const PriceFilter = ({ onPriceChange, resetTrigger }) => {
       {isPriceFilterActive && (
         <div className="mt-3 p-2 bg-gray-50 rounded flex items-center justify-between">
           <div>
-            <p className="text-xs text-gray-600">Selected Range:</p>
+            <p className="text-xs text-gray-600">{t("productsPage.selectedRange")}</p>
             <p className="text-sm font-semibold">
               €{minPrice || "0"} - €{maxPrice || "10000"}
             </p>
@@ -97,7 +99,7 @@ const PriceFilter = ({ onPriceChange, resetTrigger }) => {
           <button
             onClick={handleClearPrice}
             className="p-1 hover:bg-gray-200 rounded transition-colors ml-2"
-            title="Clear"
+            title={t("productsPage.clear")}
           >
             <X size={14} className="text-gray-600" />
           </button>

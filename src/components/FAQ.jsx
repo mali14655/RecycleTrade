@@ -1,40 +1,37 @@
 // components/FAQ.jsx - NEW FILE
 import React, { useState } from "react";
 import { Plus, Minus } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 const FAQ = () => {
+  const { t } = useLanguage();
   const [openIndex, setOpenIndex] = useState(null);
   const faqs = [
     {
       id: 0,
-      question: "What is your return policy?",
-      answer: "We offer a 30-day money-back guarantee on all our products. If you're not satisfied with your purchase, you can return it within 30 days for a full refund.",
+      question: t("faq.q1"),
+      answer: t("faq.a1"),
     },
     {
       id: 1,
-      question: "How long is the warranty period?",
-      answer: "All F&s Smartphones products come with a minimum 12-month warranty. Some products may have extended warranty periods depending on the manufacturer and product type.",
-      points: [
-        "12-month comprehensive warranty on all devices",
-        "Extended warranty options available",
-        "Coverage for manufacturing defects",
-        "Quick and easy warranty claims process",
-      ],
+      question: t("faq.q2"),
+      answer: t("faq.a2"),
+      points: t("faq.q2Points"),
     },
     {
       id: 2,
-      question: "Are the devices really refurbished?",
-      answer: "Yes, all our devices are professionally refurbished. They undergo a rigorous 40-point inspection process to ensure they meet our quality standards before being listed for sale.",
+      question: t("faq.q3"),
+      answer: t("faq.a3"),
     },
     {
       id: 3,
-      question: "Do you offer shipping internationally?",
-      answer: "Currently, we only ship within Germany. We're working on expanding our shipping options to other countries in the near future.",
+      question: t("faq.q4"),
+      answer: t("faq.a4"),
     },
     {
       id: 4,
-      question: "How can I track my order?",
-      answer: "Once your order ships, you'll receive a tracking number via email. You can also track your order by visiting the 'Track Order' page on our website and entering your order ID.",
+      question: t("faq.q5"),
+      answer: t("faq.a5"),
     },
   ];
 
@@ -46,7 +43,7 @@ const FAQ = () => {
     <div className="bg-white py-8 sm:py-12 lg:py-16">
       <div className="max-w-[90%] lg:max-w-[80%] mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-6 sm:mb-8 lg:mb-10">
-          Frequently Asked Questions
+          {t("faq.title")}
         </h2>
 
         <div className="space-y-4">

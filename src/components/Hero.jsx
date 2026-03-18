@@ -1,6 +1,7 @@
 // components/Hero.jsx - COMPACT FIXED VERSION
 import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext";
 import {
   Truck,
   RotateCcw,
@@ -17,6 +18,7 @@ import heroMobileImage from "../assets/heroMobilePhones.png";
 import heroAccessoriesImage from "../assets/heroAccessories.png";
 
 const Hero = () => {
+  const { t } = useLanguage();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   // NEW: Active promo for hero bar
@@ -163,7 +165,7 @@ const Hero = () => {
           <div className="flex flex-col items-center text-center gap-4 sm:gap-6">
             {/* Title - COMPACT */}
             <h1 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight mb-2 sm:mb-4 px-2">
-              F&s Smartphones products with at least a 12-month warranty
+              {t("hero.title")}
             </h1>
 
             {/* Categories Section */}
@@ -236,7 +238,7 @@ const Hero = () => {
                 to="/products"
                 className="bg-white text-gray-900 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors shadow-lg text-sm sm:text-base"
               >
-                Explore All Products
+                {t("hero.shopNow")}
               </Link>
               {/* COMMENTED OUT: Selling feature not available
               <Link
@@ -263,7 +265,7 @@ const Hero = () => {
                 className="text-gray-900 shrink-0"
               />
               <p className="text-xs sm:text-sm text-gray-900">
-                Shipping costs included
+                {t("hero.featureShipping")}
               </p>
             </div>
 
@@ -275,7 +277,7 @@ const Hero = () => {
                 className="text-gray-900 shrink-0"
               />
               <p className="text-xs sm:text-sm text-gray-900">
-                30-day money-back guarantee
+                {t("hero.featureReturn")}
               </p>
             </div>
 
@@ -287,7 +289,7 @@ const Hero = () => {
                 className="text-gray-900 shrink-0"
               />
               <p className="text-xs sm:text-sm text-gray-900">
-                Minimum 12-month warranty
+                {t("hero.featureWarranty")}
               </p>
             </div>
 
@@ -299,7 +301,7 @@ const Hero = () => {
                 className="text-gray-900 shrink-0"
               />
               <p className="text-xs sm:text-sm text-gray-900">
-                More environmentally friendly
+                {t("hero.featureEco")}
               </p>
             </div>
           </div>

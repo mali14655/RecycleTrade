@@ -6,8 +6,11 @@ import logo from "../assets/logo.jpeg";
 import { FiMail } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { buildApiEndpoint } from "../utils/api";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function ForgotPassword() {
+  const { language, t } = useLanguage();
+  const isDE = language === "de";
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -22,8 +25,8 @@ export default function ForgotPassword() {
           <FiMail size={16} className="text-black" />
         </div>
         <div>
-          <p className="font-medium text-gray-900">Sending Reset Link</p>
-          <p className="text-sm text-gray-600">Please wait...</p>
+          <p className="font-medium text-gray-900">{isDE ? "Link wird gesendet" : "Sending Reset Link"}</p>
+          <p className="text-sm text-gray-600">{isDE ? "Bitte warten..." : "Please wait..."}</p>
         </div>
       </div>,
       {
@@ -65,7 +68,7 @@ export default function ForgotPassword() {
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Email Not Sent</p>
+                <p className="font-medium text-gray-900">{isDE ? "E‑Mail nicht gesendet" : "Email Not Sent"}</p>
                 <p className="text-sm text-gray-600">{res.data.message || "Password reset email could not be sent. Please try again later or contact support."}</p>
               </div>
             </div>,
@@ -100,8 +103,8 @@ export default function ForgotPassword() {
               </svg>
             </div>
             <div>
-              <p className="font-medium text-gray-900">Reset Link Sent</p>
-              <p className="text-sm text-gray-600">Check your email for password reset instructions</p>
+              <p className="font-medium text-gray-900">{isDE ? "Link gesendet" : "Reset Link Sent"}</p>
+              <p className="text-sm text-gray-600">{isDE ? "Bitte prüfen Sie Ihre E‑Mails für weitere Anweisungen" : "Check your email for password reset instructions"}</p>
             </div>
           </div>,
           {
@@ -132,7 +135,7 @@ export default function ForgotPassword() {
       console.error('[FORGOT-PASSWORD] Response:', err.response);
       console.error('[FORGOT-PASSWORD] Endpoint used:', buildApiEndpoint('auth/forgot-password'));
       
-      let errorMessage = "Failed to send reset link";
+      let errorMessage = isDE ? "Link konnte nicht gesendet werden" : "Failed to send reset link";
       let errorDetails = null;
       
       if (err.response?.status === 404) {
@@ -163,7 +166,9 @@ export default function ForgotPassword() {
                 <p className="text-xs text-gray-500 mt-1">{errorDetails}</p>
               )}
               <p className="text-xs text-gray-500 mt-2">
-                💡 Check server logs or contact support. Make sure email service (Resend/Gmail) is configured.
+                {isDE
+                  ? "💡 Bitte Server-Logs prüfen oder Support kontaktieren. Stellen Sie sicher, dass der E‑Mail‑Dienst (Resend/Gmail) konfiguriert ist."
+                  : "💡 Check server logs or contact support. Make sure email service (Resend/Gmail) is configured."}
               </p>
             </div>
           </div>,
@@ -217,14 +222,14 @@ export default function ForgotPassword() {
             </span>
           </div>
           <div className="text-white text-base sm:text-lg font-medium">
-            <span>Reset Your Password</span>
+            <span>{t("auth.forgotTitle")}</span>
           </div>
         </div>
 
         <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 sm:p-10">
           <form onSubmit={submit} className="space-y-6">
             <div>
-              <label className="block text-base font-semibold text-gray-900 mb-3">Email</label>
+              <label className="block text-base font-semibold text-gray-900 mb-3">{t("auth.email")}</label>
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -240,13 +245,13 @@ export default function ForgotPassword() {
               type="submit"
               className="w-full bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-900 transition-colors mt-8 text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Sending..." : "Send Reset Link"}
+              {loading ? (isDE ? "Senden..." : "Sending...") : t("auth.sendResetLink")}
             </button>
 
             <p className="text-center text-base text-gray-700 pt-4">
-              Remember your password?{" "}
+              {isDE ? "Passwort wieder eingefallen?" : "Remember your password?"}{" "}
               <Link to="/login" className="text-black font-semibold hover:underline">
-                Sign in here
+                {t("auth.signInLink")}
               </Link>
             </p>
           </form>

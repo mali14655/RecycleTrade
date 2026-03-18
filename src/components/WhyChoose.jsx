@@ -2,26 +2,27 @@
 import React from "react";
 import { CheckCircle } from "lucide-react";
 import whyChooseImg from "../assets/whychooseImg.jpeg";
+import { useLanguage } from "../context/LanguageContext";
 
 
 const WhyChoose = () => {
+  const { t } = useLanguage();
   const features = [
     {
-      title: "Thoroughly Tested",
-      description:
-        "Each device undergoes extensive testing to ensure full functionality",
+      title: t("whyChoose.f1Title"),
+      description: t("whyChoose.f1Desc"),
     },
     {
-      title: "Professional Cleaning",
-      description: "Sanitized and cleaned to look like new",
+      title: t("whyChoose.f2Title"),
+      description: t("whyChoose.f2Desc"),
     },
     {
-      title: "Eco-Friendly Choice",
-      description: "Reduce e-waste and your carbon footprint",
+      title: t("whyChoose.f3Title"),
+      description: t("whyChoose.f3Desc"),
     },
     {
-      title: "12-Month Warranty",
-      description: "Complete peace of mind with our comprehensive warranty",
+      title: t("whyChoose.f4Title"),
+      description: t("whyChoose.f4Desc"),
     },
   ];
 
@@ -33,13 +34,11 @@ const WhyChoose = () => {
             {/* Left Content */}
             <div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
-                Why Choose F&s Smartphones?
+                {t("whyChoose.title")}
               </h2>
 
               <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 leading-relaxed">
-                Every phone we sell goes through a rigorous 40-point inspection
-                and certification process. You get the same quality as new, for
-                a fraction of the price.
+                {t("whyChoose.subtitle")}
               </p>
 
               {/* Features List */}

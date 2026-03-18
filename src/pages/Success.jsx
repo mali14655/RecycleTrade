@@ -5,8 +5,10 @@ import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import Footer from "../components/Footer";
 import Breadcrumb from "../components/Breadcrumb";
+import { useLanguage } from "../context/LanguageContext";
 
 const Success = () => {
+  const { t } = useLanguage();
   const { clearCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -65,10 +67,10 @@ const Success = () => {
 
           {/* Success Message */}
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-            Your order is successfully placed
+            {t("success.title")}
           </h1>
           <p className="text-sm md:text-base text-gray-600 max-w-md mx-auto mb-8 px-4">
-            Thank you for your purchase! Your order has been confirmed and will be processed shortly.
+            {t("success.subtitle")}
           </p>
 
           {/* Action Buttons */}
@@ -91,7 +93,7 @@ const Success = () => {
                   d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
                 />
               </svg>
-              GO TO HOME
+              {t("success.goHome")}
             </button>
 
             {/* Dashboard Button (only show if user is logged in) */}
@@ -100,7 +102,7 @@ const Success = () => {
                 onClick={handleGoToDashboard}
                 className="inline-flex items-center gap-3 px-8 py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-900 transition-colors"
               >
-                GO TO DASHBOARD
+                {t("success.trackOrder")}
               </button>
             )}
           </div>

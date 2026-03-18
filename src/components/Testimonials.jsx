@@ -4,26 +4,37 @@ import { Star } from "lucide-react";
 import janeSmithImg from '../assets/janeSmith.png';
 import tomWilliamsImg from '../assets/tomWilliams.png';
 import michealBrownImg from '../assets/michealBrown.png';
+import { useLanguage } from "../context/LanguageContext";
 
 const Testimonials = () => {
+  const { t, language } = useLanguage();
   const testimonials = [
     {
       id: 1,
-      text: "I've been using F&s Smartphones for over a year and I'm really impressed with the quality and support. The refurbished phones work perfectly and the customer service is always quick to help with any issues I have. Highly recommend!",
+      text:
+        language === "de"
+          ? "Ich nutze F&s Smartphones seit über einem Jahr und bin wirklich beeindruckt von Qualität und Support. Die generalüberholten Handys funktionieren einwandfrei und der Kundenservice hilft bei Fragen immer schnell. Sehr empfehlenswert!"
+          : "I've been using F&s Smartphones for over a year and I'm really impressed with the quality and support. The refurbished phones work perfectly and the customer service is always quick to help with any issues I have. Highly recommend!",
       rating: 5,
       name: "Jane Smith",
       image: janeSmithImg,
     },
     {
       id: 2,
-      text: "I've purchased multiple devices from F&s Smartphones and overall it's been great. The quality is good and I haven't had any major issues. The pricing is also very reasonable compared to new devices.",
+      text:
+        language === "de"
+          ? "Ich habe mehrere Geräte bei F&s Smartphones gekauft und insgesamt war alles super. Die Qualität stimmt und ich hatte keine größeren Probleme. Auch die Preise sind im Vergleich zu neuen Geräten sehr fair."
+          : "I've purchased multiple devices from F&s Smartphones and overall it's been great. The quality is good and I haven't had any major issues. The pricing is also very reasonable compared to new devices.",
       rating: 4,
       name: "Tom Williams",
       image: tomWilliamsImg,
     },
     {
       id: 3,
-      text: "Excellent service and product quality! My refurbished iPhone looks and works like new. The warranty gives me peace of mind and the environmental aspect makes me feel good about my purchase.",
+      text:
+        language === "de"
+          ? "Exzellenter Service und tolle Produktqualität! Mein generalüberholtes iPhone sieht aus und funktioniert wie neu. Die Garantie gibt mir Sicherheit und der Umweltaspekt fühlt sich bei diesem Kauf richtig gut an."
+          : "Excellent service and product quality! My refurbished iPhone looks and works like new. The warranty gives me peace of mind and the environmental aspect makes me feel good about my purchase.",
       rating: 5,
       name: "Michael Brown",
       image: michealBrownImg,
@@ -49,7 +60,7 @@ const Testimonials = () => {
           {/* Header */}
           <div className="mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-              Testimonials
+              {t("testimonials.title")}
             </h2>
             <p className="text-sm sm:text-base text-gray-600">
               Don't just take our word for it - see what actual users of our

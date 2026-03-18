@@ -1,6 +1,7 @@
 import React from "react";
 import { ArrowRight, ShieldCheck, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext";
 // NEW: Payment method icons
 import visaLogo from "../assets/cards/visa_white.svg";
 import mastercardLogo from "../assets/cards/mastercard.svg";
@@ -11,6 +12,7 @@ import paypalLogo from "../assets/cards/pay_paypal_logo.svg";
 
 const CartSummary = ({ total, onCheckout }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   
   const subtotal = total || 0;
 
@@ -27,31 +29,31 @@ const CartSummary = ({ total, onCheckout }) => {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-4">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Cart Totals</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-6">{t("cartSummary.orderSummary")}</h2>
       <div className="space-y-4 mb-6">
         {/* Sub-total */}
         <div className="flex justify-between items-center">
-          <span className="text-gray-600">Sub-total:</span>
+          <span className="text-gray-600">{t("cart.subtotal")}:</span>
           <span className="text-gray-900 font-semibold">€{subtotal.toFixed(2)}</span>
         </div>
         {/* Shipping */}
         <div className="flex justify-between items-center">
-          <span className="text-gray-600">Shipping:</span>
-          <span className="text-gray-900 font-semibold">Free</span>
+          <span className="text-gray-600">{t("cart.shipping")}:</span>
+          <span className="text-gray-900 font-semibold">{t("cart.free")}</span>
         </div>
         {/* Discount */}
         <div className="flex justify-between items-center">
-          <span className="text-gray-600">Discount:</span>
+          <span className="text-gray-600">{t("cartSummary.discount")}:</span>
           <span className="text-gray-900 font-semibold">-</span>
         </div>
         {/* Tax */}
         <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-          <span className="text-gray-600">Tax:</span>
+          <span className="text-gray-600">{t("cartSummary.tax")}:</span>
           <span className="text-gray-900 font-semibold">-</span>
         </div>
         {/* Total */}
         <div className="flex justify-between items-center pt-2">
-          <span className="text-lg font-semibold text-gray-900">Total:</span>
+          <span className="text-lg font-semibold text-gray-900">{t("cart.total")}:</span>
           <span className="text-xl font-bold text-gray-900">€{subtotal.toFixed(2)} EUR</span>
         </div>
       </div>
@@ -60,7 +62,7 @@ const CartSummary = ({ total, onCheckout }) => {
         onClick={handleCheckout}
         className="w-full bg-black text-white py-3.5 rounded-lg font-semibold hover:bg-gray-900 transition-colors flex items-center justify-center gap-2"
       >
-        <span>PROCEED TO CHECKOUT</span>
+        <span>{t("cart.proceedToCheckout")}</span>
         <ArrowRight size={20} />
       </button>
 
@@ -94,17 +96,17 @@ const CartSummary = ({ total, onCheckout }) => {
           <div className="flex items-start gap-2.5 p-2.5 bg-amber-50 rounded-lg border border-amber-100">
             <img src={paypalLogo} alt="PayPal" className="h-5 object-contain mt-0.5 shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-gray-800">Pay now or later with PayPal</p>
-              <p className="text-[11px] text-gray-500">Pay in installments up to 24 months.</p>
+              <p className="text-xs font-semibold text-gray-800">{t("cartSummary.payNowPaypal")}</p>
+              <p className="text-[11px] text-gray-500">{t("cartSummary.paypalInstallments")}</p>
             </div>
           </div>
           {/* Klarna */}
           <div className="flex items-start gap-2.5 p-2.5 bg-pink-50 rounded-lg border border-pink-100">
             <img src={klarnaLogo} alt="Klarna" className="h-5 object-contain mt-0.5 shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-gray-800">Pay in 3 interest-free payments</p>
+              <p className="text-xs font-semibold text-gray-800">{t("cartSummary.klarnaTitle")}</p>
               <p className="text-[11px] text-gray-500">
-                3 × €{klarnaInstallment} — or finance 3–36 months.
+                3 × €{klarnaInstallment} {t("product.financeHint")}
               </p>
             </div>
           </div>
@@ -113,7 +115,7 @@ const CartSummary = ({ total, onCheckout }) => {
         {/* Secure payment badge */}
         <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-400">
           <Lock size={12} />
-          <span>Secure payment</span>
+          <span>{t("cartSummary.securePayment")}</span>
         </div>
       </div>
     </div>

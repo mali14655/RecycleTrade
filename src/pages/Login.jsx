@@ -8,8 +8,10 @@ import { FiUser } from "react-icons/fi";
 import toast from 'react-hot-toast';
 import Breadcrumb from '../components/Breadcrumb';
 import { buildApiEndpoint } from '../utils/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Login() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   // NEW: Restore rememberMe preference from localStorage
@@ -226,7 +228,7 @@ export default function Login() {
           </div>
 
           <div className="text-white text-base sm:text-lg font-medium">
-            <span>Sign in to your account</span>
+            <span>{t("auth.signInTitle")}</span>
           </div>
         </div>
 
@@ -238,7 +240,7 @@ export default function Login() {
               className={`flex-1 flex justify-center items-center gap-2 py-3.5 rounded-full text-sm font-medium transition-all bg-white text-gray-900 shadow-sm`}
             >
               <FiUser size={18} />
-              <span>User Login</span>
+              <span>{t("auth.userLogin")}</span>
             </button>
           </div>
 
@@ -247,7 +249,7 @@ export default function Login() {
             {/* Email Input */}
             <div>
               <label className="block text-base font-semibold text-gray-900 mb-3">
-                Email
+                {t("auth.email")}
               </label>
               <input
                 value={email}
@@ -262,7 +264,7 @@ export default function Login() {
             {/* Password Input */}
             <div>
               <label className="block text-base font-semibold text-gray-900 mb-3">
-                Password
+                {t("auth.password")}
               </label>
               <input
                 value={password}
@@ -283,13 +285,13 @@ export default function Login() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black accent-black"
                 />
-                <span className="text-base text-gray-800">Remember me</span>
+                <span className="text-base text-gray-800">{t("auth.rememberMe")}</span>
               </label>
               <Link
                 to="/forgot-password"
                 className="text-base text-gray-900 hover:text-black font-medium"
               >
-                Forgot Password?
+                {t("auth.forgotPassword")}
               </Link>
             </div>
 
@@ -299,14 +301,14 @@ export default function Login() {
               type="submit"
               className="w-full bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-900 transition-colors mt-8 text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? `${t("auth.signIn")}...` : t("auth.signIn")}
             </button>
 
             {/* Sign Up Link */}
             <p className="text-center text-base text-gray-700 pt-4">
-              Don't have an account?{" "}
+              {t("auth.noAccount")}{" "}
               <Link to="/register" className="text-black font-semibold hover:underline">
-                Sign up here
+                {t("auth.createAccount")}
               </Link>
             </p>
           </form>
@@ -314,13 +316,13 @@ export default function Login() {
 
         {/* Footer Text */}
         <p className="text-center text-sm text-white/80 mt-10">
-          By continuing, you agree to our{" "}
+          {t("auth.agreeTerms")}{" "}
           <Link to="/terms" className="text-white font-semibold hover:underline">
-            Terms of Service
+            {t("auth.termsLink")}
           </Link>{" "}
-          and{" "}
+          {t("auth.andText")}{" "}
           <Link to="/privacy" className="text-white font-semibold hover:underline">
-            Privacy Policy
+            {t("auth.privacyLink")}
           </Link>
         </p>
       </div>

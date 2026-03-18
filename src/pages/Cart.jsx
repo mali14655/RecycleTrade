@@ -7,6 +7,7 @@ import Breadcrumb from "../components/Breadcrumb";
 import CartItem from "../components/CartItem";
 import CartSummary from "../components/CartSummary";
 import ConfirmModal from "../components/ConfirmModal";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Cart() {
   const { user } = useContext(AuthContext);
@@ -15,6 +16,7 @@ export default function Cart() {
   const [total, setTotal] = useState(0);
   const [showClearCartModal, setShowClearCartModal] = useState(false);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   // Fetch only for logged-in user
   useEffect(() => {
@@ -54,14 +56,14 @@ export default function Cart() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5.5M7 13l2.5 5.5m0 0L17 21" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Your cart is empty</h2>
-              <p className="text-gray-600 mb-8">Start shopping to add items to your cart</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">{t("cart.empty")}</h2>
+              <p className="text-gray-600 mb-8">{t("cart.emptyDesc")}</p>
               <Link
                 to="/products"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-900 transition-colors"
               >
                 <ArrowLeft size={20} />
-                <span>RETURN TO SHOP</span>
+                <span>{t("cart.startShopping")}</span>
               </Link>
             </div>
           </div>
@@ -79,22 +81,22 @@ export default function Cart() {
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Shopping Cart
+                  {t("cart.title")}
                 </h1>
                 <button
                   onClick={() => setShowClearCartModal(true)}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
                 >
-                  Clear Cart
+                  {t("cart.clearCart")}
                 </button>
               </div>
               {/* Table Header - Desktop Only */}
               <div className="hidden sm:grid sm:grid-cols-12 sm:gap-4 pb-4 border-b border-gray-200 text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                <div className="col-span-1 text-center">PRODUCTS</div>
+                <div className="col-span-1 text-center">{t("cart.productsHeader")}</div>
                 <div className="col-span-4"></div>
-                <div className="col-span-2 text-center">PRICE</div>
-                <div className="col-span-3 text-center">QUANTITY</div>
-                <div className="col-span-2 text-right">SUB-TOTAL</div>
+                <div className="col-span-2 text-center">{t("cart.priceHeader")}</div>
+                <div className="col-span-3 text-center">{t("cart.quantityHeader")}</div>
+                <div className="col-span-2 text-right">{t("cart.subTotalHeader")}</div>
               </div>
               {/* Cart Items */}
               <div className="divide-y divide-gray-200">
@@ -118,7 +120,7 @@ export default function Cart() {
                   className="flex items-center justify-center gap-2 px-6 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-900 transition-colors"
                 >
                   <ArrowLeft size={20} />
-                  <span>RETURN TO SHOP</span>
+                  <span>{t("cart.startShopping")}</span>
                 </Link>
               </div>
             </div>
@@ -141,10 +143,10 @@ export default function Cart() {
           clearCart();
           setShowClearCartModal(false);
         }}
-        title="Clear Cart"
-        message="Are you sure you want to clear your cart? This action cannot be undone and all items will be removed."
-        confirmText="Clear Cart"
-        cancelText="Cancel"
+        title={t("cart.confirmClearTitle")}
+        message={t("cart.confirmClearMessage")}
+        confirmText={t("cart.confirmClearButton")}
+        cancelText={t("cart.cancel")}
         type="danger"
       />
     </div>

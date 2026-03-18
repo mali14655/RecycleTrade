@@ -1,8 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.jpeg";
+import { useLanguage } from "../context/LanguageContext";
 
 const Privacy = () => {
+  const { language } = useLanguage();
+  const isDE = language === "de";
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -17,11 +20,11 @@ const Privacy = () => {
                 className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-lg shrink-0"
               />
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-center">
-                Privacy Policy
+                {isDE ? "Datenschutzerklärung" : "Privacy Policy"}
               </h1>
             </div>
             <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mt-4 sm:mt-6 px-4">
-              Protecting your privacy is very important to us
+              {isDE ? "Der Schutz Ihrer Privatsphäre ist uns sehr wichtig" : "Protecting your privacy is very important to us"}
             </p>
           </div>
         </div>
@@ -34,7 +37,9 @@ const Privacy = () => {
             {/* Controller Information */}
             <section className="mb-6 sm:mb-8 pb-6 border-b border-gray-200">
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
-                The controller responsible for data processing is:
+                {isDE
+                  ? "Verantwortlicher im Sinne der Datenschutzgesetze ist:"
+                  : "The controller responsible for data processing is:"}
               </h2>
               <div className="text-sm sm:text-base text-gray-700 leading-relaxed space-y-2">
                 <p>
@@ -48,7 +53,7 @@ const Privacy = () => {
                   68161 Mannheim
                 </p>
                 <p>
-                  <strong>Email:</strong>{" "}
+                  <strong>{isDE ? "E‑Mail:" : "Email:"}</strong>{" "}
                   <a
                     href="mailto:F-und-ssmartphones@web.de"
                     className="text-blue-600 hover:underline"
@@ -57,7 +62,7 @@ const Privacy = () => {
                   </a>
                 </p>
                 <p>
-                  <strong>Telephone:</strong>{" "}
+                  <strong>{isDE ? "Telefon:" : "Telephone:"}</strong>{" "}
                   <a
                     href="tel:+4917680312302"
                     className="text-blue-600 hover:underline"
@@ -68,11 +73,208 @@ const Privacy = () => {
               </div>
             </section>
 
-            <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-6 sm:mb-8">
-              We appreciate your interest in our website. Protecting your privacy is very important to us. Below, we provide detailed information about how we handle your data.
-            </p>
-
             <div className="prose prose-lg max-w-none">
+              {isDE ? (
+                <>
+                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-6 sm:mb-8">
+                    Wir freuen uns über Ihr Interesse an unserer Website. Der Schutz Ihrer Privatsphäre ist uns sehr wichtig. Nachfolgend informieren wir Sie darüber, wie wir personenbezogene Daten verarbeiten.
+                  </p>
+
+                  {/* 1. Zugriffsdaten und Hosting */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      1. Zugriffsdaten und Hosting
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Sie können unsere Website besuchen, ohne Angaben zu Ihrer Person zu machen. Bei jedem Aufruf einer Webseite speichert der Webserver automatisch eine Server‑Logdatei (z. B. Name der angeforderten Datei, IP‑Adresse, Datum/Uhrzeit, übertragene Datenmenge, anfragender Provider). Die Auswertung dient ausschließlich der Sicherstellung eines störungsfreien Betriebs und der Verbesserung unseres Angebots. Rechtsgrundlage ist Art. 6 Abs. 1 S. 1 lit. f DSGVO (berechtigtes Interesse).
+                    </p>
+
+                    <div className="mt-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        1.1 Hosting
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Hosting und Darstellung der Website erfolgen teilweise durch Dienstleister im Rahmen einer Verarbeitung in unserem Auftrag. Sofern in dieser Datenschutzerklärung nichts anderes angegeben ist, werden Zugriffsdaten sowie Formulardaten auf deren Servern verarbeitet.
+                      </p>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Dienstleister können in Staaten mit Angemessenheitsbeschluss (z. B. USA bei entsprechender Zertifizierung) eingesetzt werden. Soweit kein Angemessenheitsbeschluss besteht, erfolgt die Zusammenarbeit auf Basis der Standarddatenschutzklauseln der EU‑Kommission.
+                      </p>
+                    </div>
+
+                    <div className="mt-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        1.2 Content Delivery Network (CDN)
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Zur Verkürzung von Ladezeiten setzen wir für einzelne Inhalte ein CDN ein. Dabei werden Inhalte über regional verteilte Server externer Anbieter ausgeliefert; Zugriffsdaten werden auf deren Servern verarbeitet.
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* 2. Datenverarbeitung zur Vertragsabwicklung und Kontaktaufnahme */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      2. Datenverarbeitung zur Vertragsabwicklung und zu Kontaktzwecken
+                    </h2>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        2.1 Vertragsabwicklung
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Wir erheben personenbezogene Daten, wenn Sie uns diese im Rahmen Ihrer Bestellung oder bei Kontaktaufnahme freiwillig mitteilen. Pflichtangaben sind als solche gekennzeichnet, da wir diese Daten zur Abwicklung der Bestellung bzw. Anfrage benötigen. Rechtsgrundlage ist Art. 6 Abs. 1 S. 1 lit. b DSGVO.
+                      </p>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Nach vollständiger Vertragsabwicklung werden Ihre Daten für die weitere Verarbeitung eingeschränkt und nach Ablauf steuer‑ und handelsrechtlicher Aufbewahrungsfristen gelöscht, sofern keine Einwilligung oder eine gesetzlich erlaubte weitere Nutzung vorliegt.
+                      </p>
+                    </div>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        2.2 Kontakt
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Bei Kontaktaufnahme (z. B. Kontaktformular/E‑Mail) verarbeiten wir Ihre Angaben zur Bearbeitung der Anfrage (Art. 6 Abs. 1 S. 1 lit. b DSGVO). Nach abschließender Bearbeitung wird die Anfrage gelöscht, sofern keine weitergehende Rechtsgrundlage besteht.
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* 3. Datenverarbeitung zum Zweck der Bestellabwicklung */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      3. Datenverarbeitung zum Zweck der Bestellabwicklung
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Zur Vertragserfüllung (Art. 6 Abs. 1 S. 1 lit. b DSGVO) übermitteln wir Daten an den mit der Lieferung beauftragten Versanddienstleister, soweit dies zur Lieferung erforderlich ist.
+                    </p>
+                    <div className="mt-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        3.1 Versandankündigung
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Sofern Sie eingewilligt haben, übermitteln wir Ihre E‑Mail‑Adresse an den Versanddienstleister zur Versandankündigung (Art. 6 Abs. 1 S. 1 lit. a DSGVO). Die Einwilligung können Sie jederzeit widerrufen.
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* 4. Datenverarbeitung zur Zahlungsabwicklung */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      4. Datenverarbeitung zur Zahlungsabwicklung
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Zur Abwicklung von Zahlungen arbeiten wir mit technischen Dienstleistern, Kreditinstituten und Zahlungsdienstleistern zusammen.
+                    </p>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        4.1 Transaktionsabwicklung
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        <strong>Online‑Zahlungen (Lieferbestellungen):</strong> Wir nutzen <strong>Stripe</strong>. Dabei werden die für die Zahlung erforderlichen Daten (Bestelldaten, Betrag, E‑Mail) an Stripe übermittelt (Art. 6 Abs. 1 S. 1 lit. b DSGVO). Weitere Informationen:{" "}
+                        <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          https://stripe.com/privacy
+                        </a>
+                        .
+                      </p>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        <strong>Abholung:</strong> Bei Abholung wird keine Online‑Zahlung verarbeitet; es erfolgt daher keine Übermittlung von Zahlungsdaten an Zahlungsdienstleister.
+                      </p>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        <strong>PayPal:</strong> Bei Auswahl von PayPal werden Zahlungsdaten durch PayPal (Europe) S.à r.l. et Cie, S.C.A., 22‑24 Boulevard Royal, L‑2449 Luxembourg verarbeitet. Datenschutz:{" "}
+                        <a href="https://www.paypal.com/de/webapps/mpp/ua/privacy-full" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          https://www.paypal.com/de/webapps/mpp/ua/privacy-full
+                        </a>
+                        .
+                      </p>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Datenübermittlungen in Drittländer (z. B. USA, wo Server von Stripe/PayPal liegen können) erfolgen auf Basis eines Angemessenheitsbeschlusses (sofern anwendbar) oder der Standarddatenschutzklauseln der EU‑Kommission.
+                      </p>
+                    </div>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        4.2 Betrugsprävention/Optimierung
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Soweit erforderlich, geben wir weitere Daten zur Betrugsprävention und Optimierung von Zahlungsprozessen an Dienstleister weiter (Art. 6 Abs. 1 lit. f DSGVO).
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* 5. Cookies und andere Technologien */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      5. Cookies und andere Technologien
+                    </h2>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        5.1 Allgemeine Informationen
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Wir verwenden Cookies und ähnliche Technologien, um Funktionen bereitzustellen und die Nutzung zu verbessern. Session‑Cookies werden nach Schließen des Browsers gelöscht; persistente Cookies bleiben gespeichert, bis sie ablaufen oder gelöscht werden.
+                      </p>
+                      <div className="mt-3">
+                        <h4 className="text-base font-semibold text-gray-900 mb-2">Datenschutz auf Endgeräten</h4>
+                        <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                          Technisch notwendige Technologien zur Bereitstellung ausdrücklich gewünschter Dienste benötigen keine Einwilligung. Für nicht notwendige Funktionen ist ggf. Ihre Einwilligung erforderlich.
+                        </p>
+                      </div>
+                      <div className="mt-3">
+                        <h4 className="text-base font-semibold text-gray-900 mb-2">Cookie‑Einstellungen</h4>
+                        <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                          Sie können Cookies in den Einstellungen Ihres Browsers verwalten. Einwilligungen können Sie jederzeit mit Wirkung für die Zukunft widerrufen.
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* 6. Kontaktmöglichkeiten und Ihre Rechte */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      6. Kontaktmöglichkeiten und Ihre Rechte
+                    </h2>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        6.1 Ihre Rechte
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Als betroffene Person haben Sie insbesondere folgende Rechte (jeweils nach DSGVO):
+                      </p>
+                      <ul className="list-disc pl-5 sm:pl-6 text-sm sm:text-base text-gray-700 space-y-2 mb-3 sm:mb-4">
+                        <li>Auskunft (Art. 15),</li>
+                        <li>Berichtigung (Art. 16),</li>
+                        <li>Löschung (Art. 17),</li>
+                        <li>Einschränkung der Verarbeitung (Art. 18),</li>
+                        <li>Datenübertragbarkeit (Art. 20),</li>
+                        <li>Beschwerde bei einer Aufsichtsbehörde (Art. 77).</li>
+                      </ul>
+                      <div className="mt-4">
+                        <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Widerspruchsrecht</h4>
+                        <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                          Soweit wir Daten auf Grundlage berechtigter Interessen verarbeiten, können Sie aus Gründen, die sich aus Ihrer besonderen Situation ergeben, mit Wirkung für die Zukunft widersprechen. Bei Direktwerbung besteht das Widerspruchsrecht jederzeit.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        6.2 Kontakt
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Bei Fragen zur Verarbeitung Ihrer personenbezogenen Daten oder zur Ausübung Ihrer Rechte wenden Sie sich bitte an die Kontaktdaten in unserem{" "}
+                        <Link to="/impressum" className="text-blue-600 hover:underline">
+                          Impressum
+                        </Link>
+                        {" "}oder über unsere{" "}
+                        <Link to="/contact" className="text-blue-600 hover:underline">
+                          Kontaktseite
+                        </Link>
+                        .
+                      </p>
+                    </div>
+                  </section>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-6 sm:mb-8">
+                    We appreciate your interest in our website. Protecting your privacy is very important to us. Below, we provide detailed information about how we handle your data.
+                  </p>
               {/* 1. Access data and hosting */}
               <section className="mb-6 sm:mb-8">
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
@@ -308,6 +510,8 @@ const Privacy = () => {
                   </p>
                 </div>
               </section>
+                </>
+              )}
             </div>
 
             {/* Back to Home Link */}
@@ -316,7 +520,7 @@ const Privacy = () => {
                 to="/"
                 className="text-blue-600 hover:underline font-medium"
               >
-                ← Back to Home
+                {isDE ? "← Zurück zur Startseite" : "← Back to Home"}
               </Link>
             </div>
           </div>

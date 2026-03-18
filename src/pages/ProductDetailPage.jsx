@@ -16,6 +16,7 @@ import paypalLogo from "../assets/cards/pay_paypal_logo.svg";
 import applePayLogo from "../assets/cards/pay_apple_pay.svg";
 import googlePayLogo from "../assets/cards/pay_google_pay.svg";
 import klarnaLogo from "../assets/cards/klarna.svg";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -32,6 +33,7 @@ export default function ProductDetails() {
   // NEW: FAQ accordion state
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [showFaqs, setShowFaqs] = useState(false);
+  const { t } = useLanguage();
 
   // NEW: Delivery date window (e.g., "12 Mar - 13 Mar")
   const getDeliveryWindow = () => {
@@ -556,17 +558,17 @@ export default function ProductDetails() {
                 <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
                   <img src={paypalLogo} alt="PayPal" className="h-5 object-contain shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800">Pay now or later with PayPal</p>
-                    <p className="text-xs text-gray-500">Pay in installments up to 24 months.</p>
+                    <p className="text-sm font-medium text-gray-800">{t("product.payNowPaypal")}</p>
+                    <p className="text-xs text-gray-500">{t("product.paypalInstallments")}</p>
                   </div>
                 </div>
                 {/* Klarna */}
                 <div className="flex items-center gap-3 p-3 bg-pink-50 rounded-lg border border-pink-100">
                   <img src={klarnaLogo} alt="Klarna" className="h-5 object-contain shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800">Pay in 3 interest-free payments</p>
+                    <p className="text-sm font-medium text-gray-800">{t("product.klarnaTitle")}</p>
                     <p className="text-xs text-gray-500">
-                      3 × €{((selectedVariant ? selectedVariant.price : product.price) / 3).toFixed(2)} — or finance 3–36 months.
+                      3 × €{((selectedVariant ? selectedVariant.price : product.price) / 3).toFixed(2)} {t("product.financeHint")}
                     </p>
                   </div>
                 </div>
@@ -575,7 +577,7 @@ export default function ProductDetails() {
               {/* Secure payment badge */}
               <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-400">
                 <Lock size={12} />
-                <span>Secure payment</span>
+                <span>{t("product.securePayment")}</span>
               </div>
             </div>
           </div>
@@ -597,8 +599,8 @@ export default function ProductDetails() {
                   />
                 ))}
               </div>
-              <span className="text-sm text-gray-600">{averageRating} Star Rating</span>
-              <span className="text-sm text-gray-400">({reviews.length} reviews)</span>
+              <span className="text-sm text-gray-600">{averageRating} {t("product.starRating")}</span>
+              <span className="text-sm text-gray-400">{t("product.reviewsCount", { count: reviews.length })}</span>
             </div>
 
             {/* Product Title */}
@@ -637,10 +639,10 @@ export default function ProductDetails() {
               {(() => {
                 // Helper function to format stock message
                 const formatStockMessage = (stock) => {
-                  if (stock === 0) return "Out of Stock";
-                  if (stock === 1) return "Only 1 left";
-                  if (stock === 2) return "Only 2 left";
-                  return "In Stock";
+                  if (stock === 0) return t("product.outOfStock");
+                  if (stock === 1) return t("product.onlyLeft", { count: 1 });
+                  if (stock === 2) return t("product.onlyLeft", { count: 2 });
+                  return t("product.inStock");
                 };
 
                 // If variant is selected, show its stock status
@@ -649,7 +651,7 @@ export default function ProductDetails() {
                   const stock = selectedVariant.stock !== undefined ? selectedVariant.stock : null;
                   
                   // If stock is undefined (unlimited), show "In Stock"
-                  const displayMessage = stock !== null ? formatStockMessage(stock) : "In Stock";
+                  const displayMessage = stock !== null ? formatStockMessage(stock) : t("product.inStock");
                   
                   return (
                     <div className="flex items-center gap-2">
@@ -670,7 +672,7 @@ export default function ProductDetails() {
                   return (
                     <div className="flex items-center gap-2">
                       <span className="text-sm px-3 py-1 rounded-full font-medium bg-blue-100 text-blue-700">
-                        In Stock
+                        {t("product.inStock")}
                       </span>
                     </div>
                   );
@@ -686,7 +688,7 @@ export default function ProductDetails() {
                         ? 'bg-yellow-100 text-yellow-700'
                         : 'bg-red-100 text-red-700'
                     }`}>
-                      {hasAvailableStock ? "Select variant to see stock" : "Out of Stock"}
+                      {hasAvailableStock ? t("product.selectVariantStock") : t("product.outOfStock")}
                     </span>
                   </div>
                 );
@@ -697,7 +699,7 @@ export default function ProductDetails() {
             <div className="w-full rounded-xl bg-blue-50 px-4 py-3 flex items-center gap-2 text-sm sm:text-base text-gray-900">
               <Truck className="w-5 h-5 text-gray-700 shrink-0" />
               <span className="font-medium">
-                Free delivery: <span className="font-normal">{getDeliveryWindow()}</span>
+                {t("product.freeDelivery")}: <span className="font-normal">{getDeliveryWindow()}</span>
               </span>
             </div>
 
@@ -728,7 +730,7 @@ export default function ProductDetails() {
                             onChange={(e) => handleSpecChange(specName, e.target.value)}
                             className="w-full pl-4 pr-10 py-3 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base appearance-none cursor-pointer"
                           >
-                            <option value="">Select {specName}</option>
+                            <option value="">{t("product.selectVariantLabel")} {specName}</option>
                             {availableOptions.map(option => {
                               const stock = getVariantStockForOption(specName, option);
                               const inStock = stock !== null && (stock === undefined || stock > 0);
@@ -738,7 +740,7 @@ export default function ProductDetails() {
                                   value={option}
                                   disabled={!inStock}
                                 >
-                                  {option} {!inStock && '(Out of Stock)'}
+                                  {option} {!inStock && `(${t("product.outOfStock")})`}
                                 </option>
                               );
                             })}
@@ -786,13 +788,13 @@ export default function ProductDetails() {
               
               return (
                 <div className="p-4 border rounded-lg bg-gray-50">
-                  <h4 className="font-semibold mb-3">Product Details:</h4>
+                  <h4 className="font-semibold mb-3">{t("product.productDetails")}:</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Appearance Condition */}
                     {appearance && (
                       <div className="flex items-start gap-2">
                         <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px] flex items-center gap-1">
-                          Appearance:
+                          {t("product.appearanceLabel")}:
                           <InfoTooltip type="appearance" content={getAppearanceInfoText()} />
                         </span>
                         <span className="text-sm text-gray-900 flex-1">
@@ -805,7 +807,7 @@ export default function ProductDetails() {
                     {battery && (
                       <div className="flex items-start gap-2">
                         <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px] flex items-center gap-1">
-                          Battery Condition:
+                          {t("product.batteryConditionLabel")}:
                           <InfoTooltip content={getBatteryInfoText()} />
                         </span>
                         <span className="text-sm text-gray-900 flex-1">
@@ -866,7 +868,7 @@ export default function ProductDetails() {
                   }`}>
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-gray-600">
-                        <span className="font-medium">Availability:</span>
+                        <span className="font-medium">{t("product.availability")}</span>
                       </p>
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                         isVariantInStock(selectedVariant)
@@ -875,9 +877,9 @@ export default function ProductDetails() {
                       }`}>
                         {isVariantInStock(selectedVariant)
                           ? selectedVariant.stock !== undefined
-                            ? `${selectedVariant.stock} in stock`
-                            : "In Stock"
-                          : "Out of Stock"}
+                            ? t("product.inStockCount", { count: selectedVariant.stock })
+                            : t("product.inStock")
+                          : t("product.outOfStock")}
                       </span>
                     </div>
                   </div>
@@ -894,7 +896,7 @@ export default function ProductDetails() {
               return productSpecs && Object.keys(productSpecs).length > 0;
             })() && (
               <div className="p-4 border rounded-lg bg-gray-50">
-                <h4 className="font-semibold mb-3">Product Details:</h4>
+                <h4 className="font-semibold mb-3">{t("product.productDetails")}:</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {Object.entries(
                     product.specs instanceof Map 
@@ -943,10 +945,10 @@ export default function ProductDetails() {
               >
                 <span>
                   {product.variants && product.variants.length > 0 && !selectedVariant 
-                    ? "SELECT VARIANT"
+                    ? t("product.selectVariant")
                     : selectedVariant && !isVariantInStock(selectedVariant)
-                    ? "OUT OF STOCK"
-                    : "ADD TO CART"
+                    ? t("product.outOfStock")
+                    : t("product.addToCart")
                   }
                 </span>
                 <ShoppingCart size={20} />
@@ -959,7 +961,7 @@ export default function ProductDetails() {
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left: Description */}
           <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Description</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t("product.description")}</h2>
             
             {product.description && (() => {
               // Function to format description - convert text inside " " to headers
@@ -1052,7 +1054,7 @@ export default function ProductDetails() {
 
           {/* Right: Specifications */}
           <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Specifications</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t("product.specifications")}</h2>
             {product.specs && Object.keys(product.specs).length > 0 ? (
               <div className={`${Object.keys(product.specs).length > 10 ? 'max-h-[400px] overflow-y-auto pr-4' : ''}`}>
                 <div className="space-y-3">
@@ -1069,7 +1071,7 @@ export default function ProductDetails() {
                 </div>
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-8">No specifications available.</p>
+              <p className="text-gray-500 text-center py-8">{t("product.noSpecs")}</p>
             )}
           </div>
         </div>
@@ -1081,7 +1083,7 @@ export default function ProductDetails() {
             className="w-full flex items-center justify-between mb-6 group"
           >
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              FAQs
+              {t("product.faqTitle")}
             </h2>
             <ChevronDown 
               size={24} 
@@ -1095,42 +1097,15 @@ export default function ProductDetails() {
           }`}>
           <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-200">
             {[
-              {
-                question: `What is F&s Smartphones?`,
-                answer: `F&s Smartphones is an online marketplace for refurbished electronics. All F&s Smartphones ${product.name} function like new, but are much cheaper. How is that the case? Once sourced, experts put our products through an up to 40-step refurbishment process to ensure that all products work and look like new. This results in us offering better value products that are also more sustainable.`
-              },
-              {
-                question: `Why should I buy my ${product.name} from F&s Smartphones?`,
-                answer: `F&s Smartphones ${product.name} are great value, at up to 40% cheaper than new. Equally as important is trust. We give you a minimum 12-month warranty on each device and a 30-day free trial period, during which you can return for a full refund. This means you save money, and get to test the device to make sure it works perfectly for you.`
-              },
-              {
-                question: `Why are F&s Smartphones ${product.name} so cheap?`,
-                answer: `We are specialised in certain brands. We mostly buy exhibit and corporate phones in large quantities at low prices. Our specialisation makes the renewal processes very efficient, resulting in 100% renewed products that are up to 40% cheaper than new devices.`
-              },
-              {
-                question: `What exactly do the product grades mean?`,
-                answer: `F&s Smartphones ${product.name} function like new devices and therefore have no functional limitations. The visual condition of the devices can be selected based on your preference. What are the visual categories?\n\nPremium (AA-Grading)\nPremium ${product.name} are visually indistinguishable from new devices, without visible signs of use or wear. No scratches, scuffs, dents or marks on the housing or display.\n\nExcellent (A-Grading)\nExcellent ${product.name} have no dents, scratches or signs of use visible from a distance of 30 cm — neither on the housing nor on the display.\n\nVery Good (B-Grading)\nVery good ${product.name} may have minimal dents, scratches or wear on the housing that are visible from 30 cm away. There may be micro-scratches on the display/screen, but these are not visible when the display is switched on.\n\nGood (C-Grading)\nGood ${product.name} show visible signs of use such as scratches and/or dents on the housing. There may be micro-scratches on the display/screen, but these are not visible when the display is switched on.`
-              },
-              {
-                question: `How does the 30-day free trial work?`,
-                answer: `If you want to return your product for any reason, you can return it free of charge within 30 days. To do so, contact our team directly and let them know that you would like to exchange or return your device. You will receive a free return label from us by email. Alternatively, you can contact our F&s Smartphones customer service. We will be happy to help you.`
-              },
-              {
-                question: `What are my warranty terms?`,
-                answer: `We offer a minimum 12‑month warranty on all refurbished ${product.name}. This covers any technical defects that might occur during this period and are not caused by your own fault.\n\nExamples include:\n- The device can no longer be switched on.\n- The device cannot find a network.\n- The loudspeaker does not work.\n\nThe battery is also covered by the warranty. A distinction is made between wear and tear and technical defects. Technical defects are covered by the warranty and are characterised by abnormal behaviour. Abnormal behaviour could be, for example, that the device can only be charged up to 40%. Please note that your minimum 12‑month warranty is F&s Smartphones' voluntary commercial promise to you. This does not affect your statutory consumer rights.`
-              },
-              {
-                question: `How can F&s Smartphones guarantee the quality of your ${product.name}?`,
-                answer: `Only professional and certified partners are allowed to offer their electronic products via F&s Smartphones. We ensure this with ongoing quality tests and constant monitoring. Our partners are all located within the EU. This allows us to guarantee fast delivery times and optimal contact to always perform our best.`
-              },
-              {
-                question: `Which environmental protection projects do we invest in?`,
-                answer: `We have planted over 6.6 million trees since our founding, and we are very proud! We realised that planting trees alone does not tackle all of the environmental issues we are passionate about, however. That's why we now also support projects that\n- restore landscapes — ecosystems are repaired and jobs are created, including tree planting along the way\n- remove carbon from the atmosphere and store it permanently\n- recycle electronic waste and reuse materials`
-              },
-              {
-                question: `What does the strikethrough price mean on various devices?`,
-                answer: `Our reference prices are based on the average new device price of all offers listed on the online price comparison portal of Preisvergleich Internet Services AG ("Geizhals"), which we determine once daily at 04:15 am.`
-              }
+              { question: t("product.faqs.q1"), answer: t("product.faqs.a1", { productName: product.name }) },
+              { question: t("product.faqs.q2", { productName: product.name }), answer: t("product.faqs.a2", { productName: product.name }) },
+              { question: t("product.faqs.q3", { productName: product.name }), answer: t("product.faqs.a3", { productName: product.name }) },
+              { question: t("product.faqs.q4"), answer: t("product.faqs.a4", { productName: product.name }) },
+              { question: t("product.faqs.q5"), answer: t("product.faqs.a5") },
+              { question: t("product.faqs.q6"), answer: t("product.faqs.a6", { productName: product.name }) },
+              { question: t("product.faqs.q7", { productName: product.name }), answer: t("product.faqs.a7", { productName: product.name }) },
+              { question: t("product.faqs.q8"), answer: t("product.faqs.a8") },
+              { question: t("product.faqs.q9"), answer: t("product.faqs.a9") },
             ].map((faq, index) => (
               <div key={index}>
                 <button
@@ -1177,6 +1152,7 @@ export default function ProductDetails() {
 
 // Review Section Component
 function ReviewSection({ productId, reviews, setReviews }) {
+  const { t } = useLanguage();
   const { user } = useContext(AuthContext);
   const token = localStorage.getItem("accessToken");
   const isAdmin = user?.user?.role === "admin";
@@ -1234,7 +1210,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length + imageFiles.length > 5) {
-      toast.error("Maximum 5 images allowed");
+      toast.error(t("product.maxImages5"));
       return;
     }
     
@@ -1287,7 +1263,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
   const handleEditImageChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length + editImageUrls.length + editImageFiles.length > 5) {
-      toast.error("Maximum 5 images allowed");
+      toast.error(t("product.maxImages5"));
       return;
     }
     
@@ -1369,10 +1345,10 @@ function ReviewSection({ productId, reviews, setReviews }) {
       editImagePreviews.forEach(url => URL.revokeObjectURL(url));
       cancelEdit();
       
-      toast.success("Review updated successfully!");
+      toast.success(t("product.reviewUpdated"));
     } catch (err) {
       console.error("Error updating review:", err);
-      toast.error("Failed to update review");
+      toast.error(t("product.reviewUpdateFailed"));
     } finally {
       setEditLoading(false);
     }
@@ -1434,10 +1410,10 @@ function ReviewSection({ productId, reviews, setReviews }) {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/products/${productId}/reviews`);
       setReviews(res.data);
       
-      toast.success("Review submitted successfully!");
+      toast.success(t("product.reviewSubmitted"));
     } catch (err) {
       console.error("Error submitting review:", err);
-      toast.error("Failed to submit review");
+      toast.error(t("product.reviewSubmitFailed"));
     } finally {
       setLoading(false);
     }
@@ -1457,7 +1433,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
     <div className="mt-12 bg-white rounded-lg border border-gray-200 p-6 sm:p-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Customer Reviews</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("product.customerReviewsTitle")}</h2>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="flex gap-1">
@@ -1475,14 +1451,14 @@ function ReviewSection({ productId, reviews, setReviews }) {
               </div>
               <span className="text-lg font-semibold text-gray-900">{averageRating}</span>
             </div>
-            <span className="text-gray-600">({reviews.length} reviews)</span>
+            <span className="text-gray-600">{t("product.reviewsCount", { count: reviews.length })}</span>
           </div>
         </div>
       </div>
 
       {/* Review Form */}
       <div className="mb-8">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Write a Review</h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">{t("product.writeReview")}</h3>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Name Input */}
@@ -1492,7 +1468,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
               </div>
               <input
                 type="text"
-                placeholder="Name"
+                placeholder={t("product.namePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base"
@@ -1507,7 +1483,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
               </div>
               <input
                 type="email"
-                placeholder="Email"
+                placeholder={t("product.emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base"
@@ -1526,10 +1502,10 @@ function ReviewSection({ productId, reviews, setReviews }) {
               className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base appearance-none cursor-pointer"
               required
             >
-              <option value="">Select Rating</option>
+              <option value="">{t("product.selectRating")}</option>
               {[1, 2, 3, 4, 5].map((r) => (
                 <option key={r} value={r}>
-                  {'⭐'.repeat(r)} {r} Star{r > 1 ? "s" : ""}
+                  {'⭐'.repeat(r)} {r}
                 </option>
               ))}
             </select>
@@ -1556,7 +1532,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
               <MessageSquare size={20} />
             </div>
             <textarea
-              placeholder="Share your experience with this product..."
+              placeholder={t("product.commentPlaceholder")}
               rows={5}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -1568,7 +1544,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
           {/* NEW: Image Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Add Images (Optional, Max 5)
+              {t("product.addImagesOptional")}
             </label>
             <input
               type="file"
@@ -1586,7 +1562,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
               }`}
             >
               <ImageIcon size={20} className="text-gray-600" />
-              <span className="text-sm text-gray-700">Choose Images</span>
+              <span className="text-sm text-gray-700">{t("product.chooseImages")}</span>
             </label>
             
             {/* Image Previews */}
@@ -1625,7 +1601,9 @@ function ReviewSection({ productId, reviews, setReviews }) {
 
       {/* Display Reviews */}
       <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-6">Customer Reviews ({reviews.length})</h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-6">
+          {t("product.customerReviews", { count: reviews.length })}
+        </h3>
         
         {displayedReviews.length > 0 ? (
           <>
@@ -1646,7 +1624,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
                       // Edit Mode
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-semibold text-gray-900">Edit Review</h4>
+                          <h4 className="font-semibold text-gray-900">{t("admin.edit")}</h4>
                           <button
                             onClick={cancelEdit}
                             className="text-gray-500 hover:text-gray-700"
@@ -1657,21 +1635,21 @@ function ReviewSection({ productId, reviews, setReviews }) {
                         
                         {/* Edit Rating */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">{t("product.starRating")}</label>
                           <select
                             value={editRating}
                             onChange={(e) => setEditRating(e.target.value)}
                             className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200"
                           >
                             {[1, 2, 3, 4, 5].map((r) => (
-                              <option key={r} value={r}>{r} Star{r > 1 ? "s" : ""}</option>
+                              <option key={r} value={r}>{r} {t("product.starRating")}</option>
                             ))}
                           </select>
                         </div>
                         
                         {/* Edit Comment */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Comment</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">{t("form.comment")}</label>
                           <textarea
                             value={editComment}
                             onChange={(e) => setEditComment(e.target.value)}
@@ -1683,7 +1661,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
                         {/* Edit Images */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Images (Max 5)
+                            {t("form.images")} ({t("form.max")} 5)
                           </label>
                           <input
                             type="file"
@@ -1701,7 +1679,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
                             }`}
                           >
                             <ImageIcon size={16} className="text-gray-600" />
-                            <span className="text-sm text-gray-700">Add Images</span>
+                            <span className="text-sm text-gray-700">{t("form.addImages")}</span>
                           </label>
                           
                           {/* Existing Images */}
@@ -1759,13 +1737,13 @@ function ReviewSection({ productId, reviews, setReviews }) {
                             disabled={editLoading}
                             className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                           >
-                            {editLoading ? "Saving..." : "Save Changes"}
+                            {editLoading ? `${t("admin.save")}...` : t("admin.save")}
                           </button>
                           <button
                             onClick={cancelEdit}
                             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                           >
-                            Cancel
+                            {t("admin.cancel")}
                           </button>
                         </div>
                       </div>
@@ -1779,10 +1757,10 @@ function ReviewSection({ productId, reviews, setReviews }) {
                             </div>
                             <div>
                               <p className="font-semibold text-gray-900">
-                                {review.name || "Anonymous"}
+                                {review.name || t("form.anonymous")}
                               </p>
                               <p className="text-gray-500 text-sm">
-                                {new Date(review.createdAt).toLocaleDateString('en-US', {
+                                {new Date(review.createdAt).toLocaleDateString(undefined, {
                                   year: 'numeric',
                                   month: 'long',
                                   day: 'numeric'
@@ -1860,7 +1838,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
                   onClick={() => setShowAllReviews(true)}
                   className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                 >
-                  Show More ({sortedReviews.length - 3} more reviews)
+                  {t("product.showMoreReviews", { count: sortedReviews.length - 3 })}
                 </button>
               </div>
             )}
@@ -1872,7 +1850,7 @@ function ReviewSection({ productId, reviews, setReviews }) {
                   onClick={() => setShowAllReviews(false)}
                   className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                 >
-                  Show Less
+                  {t("general.showLess")}
                 </button>
               </div>
             )}
@@ -1882,8 +1860,8 @@ function ReviewSection({ productId, reviews, setReviews }) {
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <MessageSquare size={32} className="text-gray-400" />
             </div>
-            <p className="text-gray-500 text-lg">No reviews yet</p>
-            <p className="text-gray-400 mt-2">Be the first to share your experience!</p>
+            <p className="text-gray-500 text-lg">{t("product.noReviewsShort")}</p>
+            <p className="text-gray-400 mt-2">{t("product.noReviews")}</p>
           </div>
         )}
       </div>

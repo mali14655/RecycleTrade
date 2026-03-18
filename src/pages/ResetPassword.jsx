@@ -6,8 +6,11 @@ import logo from "../assets/logo.jpeg";
 import { FiLock } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { buildApiEndpoint } from "../utils/api";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function ResetPassword() {
+  const { language, t } = useLanguage();
+  const isDE = language === "de";
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,7 +25,7 @@ export default function ResetPassword() {
     
     if (!token) {
       console.error('[RESET-PASSWORD] No token found in URL');
-      toast.error("Invalid reset link. Please request a new one.");
+      toast.error(isDE ? "Ungültiger Link. Bitte fordern Sie einen neuen an." : "Invalid reset link. Please request a new one.");
       setTimeout(() => {
         navigate("/forgot-password");
       }, 2000);
@@ -35,12 +38,12 @@ export default function ResetPassword() {
     e.preventDefault();
 
     if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+      toast.error(isDE ? "Passwort muss mindestens 6 Zeichen haben" : "Password must be at least 6 characters");
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error(isDE ? "Passwörter stimmen nicht überein" : "Passwords do not match");
       return;
     }
 
@@ -52,8 +55,8 @@ export default function ResetPassword() {
           <FiLock size={16} className="text-black" />
         </div>
         <div>
-          <p className="font-medium text-gray-900">Resetting Password</p>
-          <p className="text-sm text-gray-600">Please wait...</p>
+          <p className="font-medium text-gray-900">{isDE ? "Passwort wird zurückgesetzt" : "Resetting Password"}</p>
+          <p className="text-sm text-gray-600">{isDE ? "Bitte warten..." : "Please wait..."}</p>
         </div>
       </div>,
       {
@@ -98,8 +101,10 @@ export default function ResetPassword() {
               </svg>
             </div>
             <div>
-              <p className="font-medium text-gray-900">Password Reset</p>
-              <p className="text-sm text-gray-600">Your password has been reset successfully</p>
+              <p className="font-medium text-gray-900">{isDE ? "Passwort zurückgesetzt" : "Password Reset"}</p>
+              <p className="text-sm text-gray-600">
+                {isDE ? "Ihr Passwort wurde erfolgreich zurückgesetzt" : "Your password has been reset successfully"}
+              </p>
             </div>
           </div>,
           {
@@ -140,7 +145,7 @@ export default function ResetPassword() {
               </svg>
             </div>
             <div>
-              <p className="font-medium text-gray-900">Error</p>
+              <p className="font-medium text-gray-900">{isDE ? "Fehler" : "Error"}</p>
               <p className="text-sm text-gray-600">{err.response?.data?.message || "Failed to reset password"}</p>
             </div>
           </div>,
@@ -194,14 +199,14 @@ export default function ResetPassword() {
             </span>
           </div>
           <div className="text-white text-base sm:text-lg font-medium">
-            <span>Set New Password</span>
+            <span>{t("auth.resetTitle")}</span>
           </div>
         </div>
 
         <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 sm:p-10">
           <form onSubmit={submit} className="space-y-6">
             <div>
-              <label className="block text-base font-semibold text-gray-900 mb-3">New Password</label>
+              <label className="block text-base font-semibold text-gray-900 mb-3">{t("auth.newPassword")}</label>
               <input
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -214,7 +219,7 @@ export default function ResetPassword() {
             </div>
 
             <div>
-              <label className="block text-base font-semibold text-gray-900 mb-3">Confirm Password</label>
+              <label className="block text-base font-semibold text-gray-900 mb-3">{t("auth.confirmPassword")}</label>
               <input
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -231,7 +236,7 @@ export default function ResetPassword() {
               type="submit"
               className="w-full bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-900 transition-colors mt-8 text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Resetting..." : "Reset Password"}
+              {loading ? (isDE ? "Zurücksetzen..." : "Resetting...") : t("auth.resetPassword")}
             </button>
 
             <p className="text-center text-base text-gray-700 pt-4">

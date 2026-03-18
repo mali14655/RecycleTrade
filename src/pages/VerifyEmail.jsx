@@ -6,8 +6,11 @@ import logo from "../assets/logo.jpeg";
 import { FiMail } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { buildApiEndpoint } from "../utils/api";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function VerifyEmail() {
+  const { language, t } = useLanguage();
+  const isDE = language === "de";
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
   const [email, setEmail] = useState("");
@@ -32,7 +35,11 @@ export default function VerifyEmail() {
       console.log('[VERIFY-EMAIL] Full URL:', window.location.href);
       
       if (!verificationToken) {
-        toast.error("No verification token found in the link. Please check your email.");
+        toast.error(
+          isDE
+            ? "Kein Verifizierungs-Token im Link gefunden. Bitte prüfen Sie Ihre E‑Mails."
+            : "No verification token found in the link. Please check your email."
+        );
         return;
       }
       
@@ -43,7 +50,7 @@ export default function VerifyEmail() {
       });
 
       setVerified(true);
-      toast.success("Email verified successfully! You can now log in.");
+      toast.success(isDE ? "E‑Mail erfolgreich bestätigt! Sie können sich jetzt anmelden." : "Email verified successfully! You can now log in.");
       
       setTimeout(() => {
         navigate("/login");
@@ -59,16 +66,16 @@ export default function VerifyEmail() {
       if (isExpired) {
         toast.error(
           <div>
-            <p className="font-semibold">Verification Link Expired</p>
-            <p className="text-sm">Please request a new verification email.</p>
+            <p className="font-semibold">{isDE ? "Link abgelaufen" : "Verification Link Expired"}</p>
+            <p className="text-sm">{isDE ? "Bitte fordern Sie eine neue Bestätigungs-E‑Mail an." : "Please request a new verification email."}</p>
           </div>,
           { duration: 5000 }
         );
       } else if (isInvalid) {
         toast.error(
           <div>
-            <p className="font-semibold">Invalid Verification Link</p>
-            <p className="text-sm">Please check your email or request a new verification link.</p>
+            <p className="font-semibold">{isDE ? "Ungültiger Link" : "Invalid Verification Link"}</p>
+            <p className="text-sm">{isDE ? "Bitte prüfen Sie Ihre E‑Mail oder fordern Sie einen neuen Link an." : "Please check your email or request a new verification link."}</p>
           </div>,
           { duration: 5000 }
         );
@@ -83,7 +90,7 @@ export default function VerifyEmail() {
   const resendVerification = async (e) => {
     e.preventDefault();
     if (!email) {
-      toast.error("Please enter your email address");
+      toast.error(isDE ? "Bitte geben Sie Ihre E‑Mail‑Adresse ein" : "Please enter your email address");
       return;
     }
 
@@ -98,7 +105,7 @@ export default function VerifyEmail() {
         withCredentials: true
       });
 
-      toast.success("Verification email sent! Please check your inbox.");
+      toast.success(isDE ? "Bestätigungs-E‑Mail gesendet! Bitte Posteingang prüfen." : "Verification email sent! Please check your inbox.");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to resend verification email");
     } finally {
@@ -121,7 +128,7 @@ export default function VerifyEmail() {
         <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-12">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 sm:p-10 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-            <p className="text-gray-700">Verifying your email...</p>
+            <p className="text-gray-700">{isDE ? "E‑Mail wird überprüft..." : "Verifying your email..."}</p>
           </div>
         </div>
       </div>
@@ -147,10 +154,12 @@ export default function VerifyEmail() {
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Email Verified!</h2>
-            <p className="text-gray-600 mb-6">Your email has been verified successfully. Redirecting to login...</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{isDE ? "E‑Mail bestätigt!" : "Email Verified!"}</h2>
+            <p className="text-gray-600 mb-6">
+              {isDE ? "Ihre E‑Mail wurde erfolgreich bestätigt. Weiterleitung zum Login..." : "Your email has been verified successfully. Redirecting to login..."}
+            </p>
             <Link to="/login" className="text-black font-semibold hover:underline">
-              Go to Login
+              {isDE ? "Zum Login" : "Go to Login"}
             </Link>
           </div>
         </div>
@@ -184,7 +193,7 @@ export default function VerifyEmail() {
             </span>
           </div>
           <div className="text-white text-base sm:text-lg font-medium">
-            <span>Verify Your Email</span>
+            <span>{t("auth.verifyTitle")}</span>
           </div>
         </div>
 
@@ -193,20 +202,22 @@ export default function VerifyEmail() {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiMail size={24} className="text-blue-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{isDE ? "E‑Mail prüfen" : "Check Your Email"}</h2>
             <p className="text-gray-600">
-              We've sent a verification link to your email address. Please click the link to verify your account.
+              {isDE
+                ? "Wir haben einen Bestätigungslink an Ihre E‑Mail‑Adresse gesendet. Bitte klicken Sie auf den Link, um Ihr Konto zu verifizieren."
+                : "We've sent a verification link to your email address. Please click the link to verify your account."}
             </p>
           </div>
 
           <form onSubmit={resendVerification} className="space-y-6">
             <div>
-              <label className="block text-base font-semibold text-gray-900 mb-3">Didn't receive the email?</label>
+              <label className="block text-base font-semibold text-gray-900 mb-3">{isDE ? "Keine E‑Mail erhalten?" : "Didn't receive the email?"}</label>
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
-                placeholder="Enter your email"
+                placeholder={isDE ? "E‑Mail eingeben" : "Enter your email"}
                 className="w-full px-5 py-4 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base text-gray-700 placeholder:text-gray-400"
                 required
               />
@@ -217,7 +228,7 @@ export default function VerifyEmail() {
               type="submit"
               className="w-full bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-900 transition-colors text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {resending ? "Sending..." : "Resend Verification Email"}
+              {resending ? (isDE ? "Senden..." : "Sending...") : t("auth.resendEmail")}
             </button>
 
             <p className="text-center text-base text-gray-700 pt-4">

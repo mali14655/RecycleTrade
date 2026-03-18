@@ -10,8 +10,10 @@ import googlePayLogo from "../assets/cards/pay_google_pay.svg";
 import klarnaLogo from "../assets/cards/klarna.svg";
 // NEW: PayPal payment icon
 import paypalLogo from "../assets/cards/pay_paypal_logo.svg";
+import { useLanguage } from "../context/LanguageContext";
 
 const Footer = () => {
+  const { t } = useLanguage();
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,14 +48,14 @@ const Footer = () => {
 
           {/* Shop Section */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Shop</h3>
+            <h3 className="font-semibold text-lg mb-4">{t("footer.shopTitle")}</h3>
             <ul className="space-y-3">
               <li>
                 <Link
                   to="/products"
                   className="text-gray-400 hover:text-white text-sm transition-colors"
                 >
-                  All Products
+                  {t("footer.allProducts")}
                 </Link>
               </li>
               <li>
@@ -61,7 +63,7 @@ const Footer = () => {
                   to="/products?category=electronics"
                   className="text-gray-400 hover:text-white text-sm transition-colors"
                 >
-                  Phones
+                  {t("footer.electronics")}
                 </Link>
               </li>
               {/* <li>
@@ -93,14 +95,14 @@ const Footer = () => {
 
           {/* Support Section */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Support</h3>
+            <h3 className="font-semibold text-lg mb-4">{t("footer.supportTitle")}</h3>
             <ul className="space-y-3">
               <li>
                 <Link
                   to="/contact"
                   className="text-gray-400 hover:text-white text-sm transition-colors"
                 >
-                  Contact Us
+                  {t("footer.contactUs")}
                 </Link>
               </li>
               <li>
@@ -108,7 +110,7 @@ const Footer = () => {
                   to="/track-order"
                   className="text-gray-400 hover:text-white text-sm transition-colors"
                 >
-                  Track Order
+                  {t("footer.trackOrder")}
                 </Link>
               </li>
             </ul>
@@ -116,14 +118,14 @@ const Footer = () => {
 
           {/* About F&s Smartphones Section */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">About F&s Smartphones</h3>
+            <h3 className="font-semibold text-lg mb-4">{t("footer.aboutTitle")}</h3>
             <ul className="space-y-3">
               <li>
                 <Link
                   to="/about"
                   className="text-gray-400 hover:text-white text-sm transition-colors"
                 >
-                  About Us
+                  {t("footer.aboutUs")}
                 </Link>
               </li>
               {/* COMMENTED OUT: Selling feature not available
@@ -142,7 +144,7 @@ const Footer = () => {
 
         {/* Payment Methods Section */}
         <div className="pt-8 border-t border-gray-800 mb-6">
-          <h4 className="text-sm font-semibold text-white mb-4">Payment Methods</h4>
+          <h4 className="text-sm font-semibold text-white mb-4">{t("footer.paymentMethods")}</h4>
           <div className="flex flex-wrap items-center gap-3">
             {/* Visa */}
             <div className="flex items-center justify-center h-10 px-3 bg-white rounded shadow-sm hover:shadow-md transition-shadow">
@@ -174,32 +176,32 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="pt-4 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-400 text-sm">
-            © {new Date().getFullYear()} F&s Smartphones. All rights reserved.
+            {t("footer.copyright", { year: new Date().getFullYear() })}
           </p>
           <div className="flex gap-6">
             <Link
               to="/privacy"
               className="text-gray-400 hover:text-white text-sm transition-colors"
             >
-              Privacy Policy
+              {t("footer.privacyPolicy")}
             </Link>
             <Link
               to="/terms"
               className="text-gray-400 hover:text-white text-sm transition-colors"
             >
-              Terms of Service
+              {t("footer.termsOfService")}
             </Link>
             <Link
               to="/return-policy"
               className="text-gray-400 hover:text-white text-sm transition-colors"
             >
-              Return Policy
+              {t("footer.returnPolicy")}
             </Link>
             <Link
               to="/impressum"
               className="text-gray-400 hover:text-white text-sm transition-colors"
             >
-              Impressum
+              {t("footer.impressum")}
             </Link>
           </div>
         </div>

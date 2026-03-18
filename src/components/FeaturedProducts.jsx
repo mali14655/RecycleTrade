@@ -4,6 +4,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Mousewheel } from "swiper/modules";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "./ProductCard";
+import { useLanguage } from "../context/LanguageContext";
 
 // Import Swiper styles
 import "swiper/css";
@@ -11,12 +12,13 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 const FeaturedProducts = ({ products = [], loading = false }) => {
+  const { t } = useLanguage();
   if (loading) {
     return (
       <div className="bg-gray-50 py-16">
         <div className="max-w-[90%] mx-auto">
           <h2 className="text-3xl font-bold text-gray-900 mb-10">
-            Featured Products
+            {t("product.featuredProductsTitle")}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, index) => (
@@ -37,10 +39,10 @@ const FeaturedProducts = ({ products = [], loading = false }) => {
       <div className="bg-gray-50 py-16">
         <div className="max-w-[90%] mx-auto">
           <h2 className="text-3xl font-bold text-gray-900 mb-10">
-            Featured Products
+            {t("product.featuredProductsTitle")}
           </h2>
           <div className="text-center py-8">
-            <p className="text-gray-600">No featured products available</p>
+            <p className="text-gray-600">{t("product.noFeaturedProducts")}</p>
           </div>
         </div>
       </div>
@@ -51,7 +53,7 @@ const FeaturedProducts = ({ products = [], loading = false }) => {
     <div className="bg-gray-50 py-16">
       <div className="max-w-[90%] mx-auto">
         <h2 className="text-3xl font-bold text-gray-900 mb-10">
-          Featured Products
+          {t("product.featuredProductsTitle")}
         </h2>
 
         <div className="relative">

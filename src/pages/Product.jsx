@@ -7,8 +7,10 @@ import CategoriesFilter from "../components/CategoriesFilter";
 import ProductHeader from "../components/ProductHeader";
 import ProductCard from "../components/ProductCard";
 import Pagination from "../components/Pagination";
+import { useLanguage } from "../context/LanguageContext";
 
 const Products = () => {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -432,8 +434,8 @@ const Products = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                       </svg>
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">No products found</h3>
-                    <p className="text-gray-600">Try adjusting your filters or search terms.</p>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">{t("productsPage.noProducts")}</h3>
+                    <p className="text-gray-600">{t("productsPage.noProductsHint")}</p>
                   </div>
                 )}
               </>

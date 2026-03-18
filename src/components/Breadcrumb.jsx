@@ -1,8 +1,10 @@
 import React from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { ChevronRight, Home } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 const Breadcrumb = ({ currentPage }) => {
+  const { t } = useLanguage();
   const location = useLocation();
   const { id } = useParams();
   const pathnames = location.pathname.split("/").filter((x) => x);
@@ -33,7 +35,7 @@ const Breadcrumb = ({ currentPage }) => {
             className="flex items-center gap-1 hover:text-gray-900 transition-colors"
           >
             <Home size={16} />
-            <span>Home</span>
+            <span>{t("breadcrumb.home")}</span>
           </Link>
 
           {/* Breadcrumb Items */}

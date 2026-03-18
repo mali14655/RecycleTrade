@@ -1,7 +1,9 @@
 import React from "react";
 import { X, Plus, Minus } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
+  const { t } = useLanguage();
   const handleDecrease = () => {
     if (item.quantity > 1) {
       onUpdateQuantity(product._id, item.quantity - 1, item.variantId || null);
@@ -253,7 +255,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity, product }) => {
             </button>
           </div>
           <div>
-            <span className="text-xs text-gray-600 mr-2">Subtotal:</span>
+            <span className="text-xs text-gray-600 mr-2">{t("cart.subtotal")}:</span>
             <span className="text-base font-bold text-gray-900">
               €{subtotal.toFixed(2)}
             </span>

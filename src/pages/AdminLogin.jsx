@@ -7,8 +7,11 @@ import logo from "../assets/logo.jpeg";
 import { FiShield } from "react-icons/fi";
 import toast from 'react-hot-toast';
 import { buildApiEndpoint } from '../utils/api';
+import { useLanguage } from "../context/LanguageContext";
 
 export default function AdminLogin() {
+  const { language, t } = useLanguage();
+  const isDE = language === "de";
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(localStorage.getItem("adminRememberMe") === "true");
@@ -40,8 +43,8 @@ export default function AdminLogin() {
           <FiShield size={16} className="text-black" />
         </div>
         <div>
-          <p className="font-medium text-gray-900">Signing In</p>
-          <p className="text-sm text-gray-600">Please wait...</p>
+          <p className="font-medium text-gray-900">{isDE ? "Anmeldung läuft" : "Signing In"}</p>
+          <p className="text-sm text-gray-600">{isDE ? "Bitte warten..." : "Please wait..."}</p>
         </div>
       </div>, 
       {
@@ -92,8 +95,8 @@ export default function AdminLogin() {
               </svg>
             </div>
             <div>
-              <p className="font-medium text-gray-900">Admin Login Successful</p>
-              <p className="text-sm text-gray-600">Welcome back, Administrator!</p>
+              <p className="font-medium text-gray-900">{isDE ? "Admin-Login erfolgreich" : "Admin Login Successful"}</p>
+              <p className="text-sm text-gray-600">{isDE ? "Willkommen zurück!" : "Welcome back, Administrator!"}</p>
             </div>
           </div>, 
           {
@@ -134,7 +137,7 @@ export default function AdminLogin() {
               </svg>
             </div>
             <div>
-              <p className="font-medium text-gray-900">Login Failed</p>
+              <p className="font-medium text-gray-900">{isDE ? "Login fehlgeschlagen" : "Login Failed"}</p>
               <p className="text-sm text-gray-600">{err.response?.data?.message || 'Unauthorized access'}</p>
             </div>
           </div>, 
@@ -191,7 +194,7 @@ export default function AdminLogin() {
           </div>
 
           <div className="text-white text-sm sm:text-base md:text-lg font-medium px-2">
-            <span>Admin Portal - Sign in</span>
+            <span>{t("auth.adminSubtitle")}</span>
           </div>
         </div>
 
@@ -203,7 +206,7 @@ export default function AdminLogin() {
               className={`flex-1 flex justify-center items-center gap-2 py-3.5 rounded-full text-sm font-medium transition-all bg-black text-white shadow-sm`}
             >
               <FiShield size={18} />
-              <span>Admin Login</span>
+              <span>{t("auth.adminLogin")}</span>
             </button>
           </div>
 
@@ -212,7 +215,7 @@ export default function AdminLogin() {
             {/* Email Input */}
             <div>
               <label className="block text-base font-semibold text-gray-900 mb-3">
-                Email
+                {t("auth.email")}
               </label>
               <input
                 value={email}
@@ -227,7 +230,7 @@ export default function AdminLogin() {
             {/* Password Input */}
             <div>
               <label className="block text-base font-semibold text-gray-900 mb-3">
-                Password
+                {t("auth.password")}
               </label>
               <input
                 value={password}
@@ -248,7 +251,7 @@ export default function AdminLogin() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black accent-black"
                 />
-                <span className="text-base text-gray-800">Remember me</span>
+                <span className="text-base text-gray-800">{t("auth.rememberMe")}</span>
               </label>
             </div>
 
@@ -258,13 +261,13 @@ export default function AdminLogin() {
               type="submit"
               className="w-full bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-900 transition-colors mt-8 text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? (isDE ? "Anmelden..." : "Signing In...") : t("auth.signIn")}
             </button>
 
             {/* Forgot Password Link */}
             <p className="text-center text-base text-gray-700 pt-4">
               <Link to="/forgot-password" className="text-black font-semibold hover:underline">
-                Forgot password?
+                {t("auth.forgotPassword")}
               </Link>
             </p>
           </form>
@@ -272,7 +275,7 @@ export default function AdminLogin() {
 
         {/* Footer Text */}
         <p className="text-center text-sm text-white/80 mt-10">
-          Admin access only. Unauthorized access is prohibited.
+          {isDE ? "Nur Admin-Zugang. Unbefugter Zugriff ist untersagt." : "Admin access only. Unauthorized access is prohibited."}
         </p>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { ShoppingCart, User, Search, Menu, LogOut } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { useSearch } from "../context/SearchContext";
+import { useLanguage } from "../context/LanguageContext";
 import axios from "axios";
 import logo from "../assets/logo.jpeg";
 
@@ -11,6 +12,7 @@ const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
   const { cart } = useContext(CartContext);
   const { searchQuery, updateSearch, clearSearch } = useSearch();
+  const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -277,17 +279,17 @@ const Navbar = () => {
 
   const navigation = [
     {
-      name: "Products",
+      name: t("nav.products"),
       href: "/products",
       current: location.pathname === "/products",
     },
     {
-      name: "About Us",
+      name: t("nav.aboutUs"),
       href: "/about",
       current: location.pathname === "/about",
     },
     {
-      name: "Track Order",
+      name: t("nav.trackOrder"),
       href: "/track-order",
       current: location.pathname === "/track-order",
     },
@@ -295,7 +297,7 @@ const Navbar = () => {
 
   if (user?.user?.role === "admin") {
     navigation.push({
-      name: "Dashboard",
+      name: t("nav.dashboard"),
       href: "/dashboard",
       current: location.pathname === "/dashboard",
     });
@@ -348,7 +350,7 @@ const Navbar = () => {
               <form onSubmit={handleSearch} className="relative w-full" ref={desktopSearchRef}>
                 <input
                   type="text"
-                  placeholder="Search products or categories..."
+                  placeholder={t("nav.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value, false)}
                   onFocus={() => {
@@ -429,7 +431,7 @@ const Navbar = () => {
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
                         >
                           <User size={16} />
-                          My Profile
+                          {t("nav.profile")}
                         </Link>
                       )}
                       {user.user?.role === "admin" && (
@@ -439,7 +441,7 @@ const Navbar = () => {
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
                         >
                           <User size={16} />
-                          Dashboard
+                          {t("nav.dashboard")}
                         </Link>
                       )}
                       <button
@@ -447,7 +449,7 @@ const Navbar = () => {
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
                       >
                         <LogOut size={16} />
-                        Sign Out
+                        {t("nav.logout")}
                       </button>
                     </div>
                   )}
@@ -460,6 +462,16 @@ const Navbar = () => {
                   <User size={20} className="sm:w-5 sm:h-5" />
                 </Link>
               )}
+
+              {/* NEW: Language Toggle - Desktop only */}
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="hidden sm:block appearance-none bg-gray-100 border border-gray-300 rounded-md px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-gray-400"
+              >
+                <option value="de">🇩🇪 DE</option>
+                <option value="en">🇬🇧 EN</option>
+              </select>
 
               {/* Cart */}
               <Link
@@ -489,7 +501,7 @@ const Navbar = () => {
             <form onSubmit={handleSearch} className="relative w-full" ref={mobileSearchRef}>
               <input
                 type="text"
-                placeholder="Search products or categories..."
+                placeholder={t("nav.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value, true)}
                 onFocus={() => {
@@ -547,6 +559,18 @@ const Navbar = () => {
                     {item.name}
                   </Link>
                 ))}
+                {/* Language Toggle - Mobile */}
+                <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                  <span className="text-sm text-gray-500">{language === "de" ? "Sprache" : "Language"}:</span>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="appearance-none bg-gray-100 border border-gray-300 rounded-md px-3 py-1.5 text-sm font-semibold text-gray-700 cursor-pointer focus:outline-none"
+                  >
+                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="en">🇬🇧 English</option>
+                  </select>
+                </div>
               </nav>
             </div>
           )}

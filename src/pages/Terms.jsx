@@ -1,8 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.jpeg";
+import { useLanguage } from "../context/LanguageContext";
 
 const Terms = () => {
+  const { language } = useLanguage();
+  const isDE = language === "de";
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -16,7 +19,7 @@ const Terms = () => {
                 className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-lg shrink-0"
               />
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight text-center">
-                General Terms and Conditions of Business
+                {isDE ? "Allgemeine Geschäftsbedingungen (AGB)" : "General Terms and Conditions of Business"}
               </h1>
             </div>
           </div>
@@ -28,6 +31,213 @@ const Terms = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 md:p-12">
             <div className="prose prose-lg max-w-none">
+              {isDE ? (
+                <>
+                  {/* 1. Geltungsbereich */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      1. Geltungsbereich
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Die nachstehenden Bedingungen gelten für alle Bestellungen, die über unseren Online‑Shop durch Verbraucher und Unternehmer erfolgen.
+                    </p>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Verbraucher ist jede natürliche Person, die ein Rechtsgeschäft zu Zwecken abschließt, die überwiegend weder ihrer gewerblichen noch ihrer selbständigen beruflichen Tätigkeit zugerechnet werden können. Unternehmer ist eine natürliche oder juristische Person oder eine rechtsfähige Personengesellschaft, die bei Abschluss eines Rechtsgeschäfts in Ausübung ihrer gewerblichen oder selbständigen beruflichen Tätigkeit handelt.
+                    </p>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Für Unternehmer gilt: Abweichende AGB des Unternehmers werden nicht Vertragsbestandteil, es sei denn, wir stimmen ihrer Geltung ausdrücklich zu.
+                    </p>
+                  </section>
+
+                  {/* 2. Vertragspartner, Vertragsschluss, Korrekturmöglichkeiten */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      2. Vertragspartner, Vertragsschluss, Korrekturmöglichkeiten
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Der Kaufvertrag kommt zustande mit <strong>F&s Smartphones Retail</strong>.
+                    </p>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Mit der Einstellung der Produkte in den Online‑Shop geben wir ein verbindliches Angebot zum Vertragsschluss ab. Sie können Produkte zunächst unverbindlich in den Warenkorb legen und Ihre Eingaben vor Absenden der Bestellung jederzeit korrigieren. Der Vertrag kommt zustande, indem Sie durch Anklicken des Bestellbuttons das Angebot annehmen. Sie erhalten unmittelbar danach eine Bestellbestätigung per E‑Mail.
+                    </p>
+                  </section>
+
+                  {/* 3. Vertragssprache, Vertragstextspeicherung */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      3. Vertragssprache, Vertragstextspeicherung
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Verfügbare Vertragssprache(n): <strong>Deutsch, Englisch</strong>
+                    </p>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Wir speichern den Vertragstext und senden Ihnen die Bestelldaten sowie unsere AGB in Textform zu. Aus Sicherheitsgründen ist der Vertragstext online nicht mehr zugänglich.
+                    </p>
+                  </section>
+
+                  {/* 4. Lieferbedingungen */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      4. Lieferbedingungen
+                    </h2>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        4.1 Lieferoptionen
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Wir liefern an die im Bestellprozess angegebene Lieferadresse.
+                      </p>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Alternativ können Sie Ihre Bestellung bei <strong>F&s Smartphones, Q1 5‑6, 68161 Mannheim, Germany</strong> zu den Geschäftszeiten <strong>10:00 bis 20:00</strong> abholen.
+                      </p>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Wir liefern nicht an Packstationen.
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* 5. Zahlung */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      5. Zahlung
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Folgende Zahlungsmethoden stehen grundsätzlich zur Verfügung.
+                    </p>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        5.1 Online‑Zahlungsmethoden
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        In Zusammenarbeit mit <strong>Stripe</strong> bieten wir folgende Zahlungsmethoden an:
+                      </p>
+                      <ul className="list-disc pl-5 sm:pl-6 text-sm sm:text-base text-gray-700 space-y-2 mb-2">
+                        <li><strong>Kredit-/Debitkarten:</strong> Visa und Mastercard über Stripes sichere Zahlungsabwicklung.</li>
+                        <li><strong>PayPal:</strong> Sofort oder in Raten zahlen (bis zu 24 Monate).</li>
+                        <li><strong>Apple Pay:</strong> Für Apple‑Geräte verfügbar.</li>
+                        <li><strong>Google Pay:</strong> Für Android‑Geräte verfügbar.</li>
+                        <li><strong>Klarna:</strong> „Buy now, pay later“‑Optionen.</li>
+                      </ul>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        <strong>Hinweis:</strong> Online‑Zahlung gilt für Lieferbestellungen. Wir speichern keine vollständigen Kartendaten.
+                      </p>
+                    </div>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        5.2 Abholung
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Bei Abholung erfolgt keine Online‑Zahlung. Sie zahlen bei Abholung (Bar oder Karte).
+                      </p>
+                    </div>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        5.3 Zukünftige Zahlungsmethoden
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Wir erweitern unsere Zahlungsoptionen fortlaufend. Neue Zahlungsmethoden werden im Checkout angezeigt.
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* 6. Widerrufsrecht */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      6. Widerrufsrecht
+                    </h2>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        6.1 Rückgabe neuer Geräte
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Rückgaben werden nicht akzeptiert, wenn die Originalverpackung geöffnet oder beschädigt wurde.
+                      </p>
+                    </div>
+                    <div className="mb-4">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                        6.2 Rückgabe gebrauchter Geräte
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2">
+                        Rückgaben sind innerhalb von 30 Tagen möglich, sofern das Gerät im gleichen Zustand wie bei Lieferung zurückgegeben wird.
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* 7–12 (Kurzfassung, inhaltlich entsprechend) */}
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      7. Eigentumsvorbehalt
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Die Ware bleibt bis zur vollständigen Bezahlung unser Eigentum.
+                    </p>
+                  </section>
+
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      8. Transportschäden
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Bei offensichtlichen Transportschäden bitten wir um zeitnahe Meldung beim Zusteller und Kontaktaufnahme mit uns. Gesetzliche Rechte bleiben unberührt.
+                    </p>
+                  </section>
+
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      9. Gewährleistung und Garantien
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Es gelten die gesetzlichen Gewährleistungsrechte, soweit nicht abweichend geregelt. Hinweise zu ggf. zusätzlichen Garantien finden Sie beim Produkt.
+                    </p>
+                  </section>
+
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      10. Haftung
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Wir haften unbeschränkt bei Vorsatz, grober Fahrlässigkeit sowie bei Verletzung von Leben, Körper oder Gesundheit. Im Übrigen ist die Haftung bei leichter Fahrlässigkeit auf den vorhersehbaren, vertragstypischen Schaden begrenzt.
+                    </p>
+                  </section>
+
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      11. Streitbeilegung
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Die EU‑Kommission stellt eine OS‑Plattform bereit:{" "}
+                      <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                        https://ec.europa.eu/consumers/odr/
+                      </a>
+                      . Wir nehmen nicht an Verbraucherschlichtungsverfahren teil.
+                    </p>
+                  </section>
+
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      12. Schlussbestimmungen
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Für Unternehmer gilt deutsches Recht unter Ausschluss des UN‑Kaufrechts.
+                    </p>
+                  </section>
+
+                  <section className="mb-6 sm:mb-8">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      Kontakt
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                      Bei Fragen kontaktieren Sie uns über{" "}
+                      <Link to="/contact" className="text-blue-600 hover:underline">Kontakt</Link>
+                      {" "}oder{" "}
+                      <Link to="/impressum" className="text-blue-600 hover:underline">Impressum</Link>.
+                    </p>
+                  </section>
+                </>
+              ) : null}
+
+              {!isDE ? (
+                <>
               {/* 1. Scope */}
               <section className="mb-6 sm:mb-8">
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">
@@ -295,6 +505,8 @@ const Terms = () => {
                   .
                 </p>
               </section>
+                </>
+              ) : null}
             </div>
 
             {/* Back to Home Link */}
@@ -303,7 +515,7 @@ const Terms = () => {
                 to="/"
                 className="text-blue-600 hover:underline font-medium"
               >
-                ← Back to Home
+                {isDE ? "← Zurück zur Startseite" : "← Back to Home"}
               </Link>
             </div>
           </div>

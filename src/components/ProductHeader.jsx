@@ -1,19 +1,21 @@
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 const ProductHeader = ({ 
   totalProducts = 0, 
   onSortChange,
   sortBy = "featured"
 }) => {
+  const { t } = useLanguage();
   const [showSortOptions, setShowSortOptions] = useState(false);
 
   const sortOptions = [
-    { value: "no-filter", label: "No Filter" },
-    { value: "newest", label: "Newest First" },
-    { value: "price-low", label: "Price: Low to High" },
-    { value: "price-high", label: "Price: High to Low" },
-    { value: "rating", label: "Highest Rated" },
+    { value: "no-filter", label: t("productsPage.sortOptions.noFilter") },
+    { value: "newest", label: t("productsPage.sortOptions.newest") },
+    { value: "price-low", label: t("productsPage.sortOptions.priceLow") },
+    { value: "price-high", label: t("productsPage.sortOptions.priceHigh") },
+    { value: "rating", label: t("productsPage.sortOptions.rating") },
   ];
 
   const handleSortChange = (value) => {
@@ -26,19 +28,19 @@ const ProductHeader = ({
       {/* Results Count */}
       <div className="flex-1">
         <p className="text-sm text-gray-600">
-          Showing <span className="font-semibold text-gray-900">{totalProducts}</span> products
+          {t("productsPage.showingProducts", { count: totalProducts })}
         </p>
       </div>
 
       {/* Sort Options */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600">Sort by:</span>
+        <span className="text-sm text-gray-600">{t("productsPage.sortBy")}:</span>
         <div className="relative">
           <button
             onClick={() => setShowSortOptions(!showSortOptions)}
             className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:border-gray-400 transition-colors"
           >
-            {sortOptions.find(opt => opt.value === sortBy)?.label || "No Filter"}
+            {sortOptions.find(opt => opt.value === sortBy)?.label || t("productsPage.sortOptions.noFilter")}
             <ChevronDown size={16} className={`transition-transform ${showSortOptions ? 'rotate-180' : ''}`} />
           </button>
 
