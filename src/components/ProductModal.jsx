@@ -102,10 +102,11 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
           
           // Initialize multiple specs from variants
           const initialMultipleSpecs = {};
-          if (product.variants && product.variants.length > 0) {
+          const activeVariantsForSpecs = (product.variants || []).filter(v => v.enabled !== false);
+          if (activeVariantsForSpecs.length > 0) {
             // Get all unique spec keys from variants
             const allSpecKeys = new Set();
-            product.variants.forEach(v => {
+            activeVariantsForSpecs.forEach(v => {
               if (v.specs) {
                 const specsObj = v.specs instanceof Map 
                   ? Object.fromEntries(v.specs)
@@ -117,7 +118,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             // Populate multiple specs with comma-separated values
             allSpecKeys.forEach(key => {
               const uniqueValues = [...new Set(
-                product.variants.map(v => {
+                activeVariantsForSpecs.map(v => {
                   const specsObj = v.specs instanceof Map 
                     ? Object.fromEntries(v.specs)
                     : v.specs;
@@ -508,10 +509,11 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
       
       // Restore multipleSpecs from variants
       const existingMultipleSpecs = {};
-      if (product.variants && product.variants.length > 0) {
-        const firstVariant = product.variants[0];
+      const activeVariantsForSpecs = (product.variants || []).filter(v => v.enabled !== false);
+      if (activeVariantsForSpecs.length > 0) {
+        const firstVariant = activeVariantsForSpecs[0];
         Object.keys(firstVariant.specs || {}).forEach(key => {
-          const uniqueValues = [...new Set(product.variants.map(v => v.specs[key]))];
+          const uniqueValues = [...new Set(activeVariantsForSpecs.map(v => v.specs[key]))];
           existingMultipleSpecs[key] = uniqueValues.join(', ');
         });
       }
@@ -621,7 +623,8 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         return {
           ...existingVariant,
           specs: combo,
-          enabled: existingVariant.enabled !== undefined ? existingVariant.enabled : true,
+          // If combo is present in current spec inputs, it should be active.
+          enabled: true,
           stock: existingVariant.stock !== undefined ? existingVariant.stock : 0
         };
       }
@@ -883,19 +886,38 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
       // NEW: Prepare final variants with proper image assignment
       let finalVariants = [];
       
-      if (selectedVariants.length > 0) {
-        // Use selected variants with their images
-        finalVariants = selectedVariants.map((variant, index) => {
+      if (selectedVariants.length > 0 || generatedVariants.length > 0) {
+        const specsKeyFor = (specs) => {
+          const specsObj = specs instanceof Map ? Object.fromEntries(specs) : (specs || {});
+          const sortedKeys = Object.keys(specsObj).sort();
+          return JSON.stringify(specsObj, sortedKeys);
+        };
+
+        // Keep enabled/disabled state based on selection while still submitting all generated variants.
+        const selectedSpecsSet = new Set(selectedVariants.map((v) => specsKeyFor(v.specs)));
+        const selectedVariantBySpecs = new Map(selectedVariants.map((v) => [specsKeyFor(v.specs), v]));
+        const uploadedVariantImagesBySpecs = new Map(
+          selectedVariants.map((variant, index) => [specsKeyFor(variant.specs), uploadedVariantImages[index] || []])
+        );
+        const sourceVariants = generatedVariants.length > 0 ? generatedVariants : selectedVariants;
+
+        finalVariants = sourceVariants.map((variant) => {
+          const variantSpecsKey = specsKeyFor(variant.specs);
+          const selectedVariantMatch = selectedVariantBySpecs.get(variantSpecsKey);
           // Priority 1: Manual variant-specific images from Step 3
-          const uploadedVariantImgs = uploadedVariantImages[index] || [];
+          const uploadedVariantImgs = uploadedVariantImagesBySpecs.get(variantSpecsKey) || [];
           
           // Priority 2: Color-specific images (if variant has Color spec)
           let colorBasedImages = [];
-          const colorKey = Object.keys(variant.specs || {}).find(key => 
+          const variantSpecsObj = variant.specs instanceof Map
+            ? Object.fromEntries(variant.specs)
+            : (variant.specs || {});
+
+          const colorKey = Object.keys(variantSpecsObj).find(key => 
             key.toLowerCase() === 'color' || key.toLowerCase() === 'colour'
           );
-          if (colorKey && variant.specs[colorKey]) {
-            const colorValue = variant.specs[colorKey];
+          if (colorKey && variantSpecsObj[colorKey]) {
+            const colorValue = variantSpecsObj[colorKey];
             // NEW: Normalize color value for consistent lookup (case-insensitive, whitespace-insensitive)
             const normalizeColorValue = (value) => {
               if (typeof value !== 'string') return value;
@@ -925,8 +947,13 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
           
           return {
             ...variant,
+            ...selectedVariantMatch,
+            specs: variantSpecsObj,
+            enabled: selectedSpecsSet.has(variantSpecsKey),
             images: variantImages,
-            stock: variant.stock !== undefined ? variant.stock : 0
+            stock: selectedVariantMatch?.stock !== undefined
+              ? selectedVariantMatch.stock
+              : (variant.stock !== undefined ? variant.stock : 0)
           };
         });
       } else {
@@ -1094,10 +1121,11 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         }
         
         // Ensure multiple specs are populated from variants
-        if (product.variants && product.variants.length > 0) {
+        const activeVariantsForSpecs = (product.variants || []).filter(v => v.enabled !== false);
+        if (activeVariantsForSpecs.length > 0) {
           const existingMultipleSpecs = {};
           
-          product.variants.forEach(v => {
+          activeVariantsForSpecs.forEach(v => {
             const specsObj = v.specs instanceof Map 
               ? Object.fromEntries(v.specs)
               : (v.specs || {});
@@ -1105,7 +1133,7 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
             Object.keys(specsObj).forEach(key => {
               if (!existingMultipleSpecs[key]) {
                 const uniqueValues = [...new Set(
-                  product.variants.map(v2 => {
+                  activeVariantsForSpecs.map(v2 => {
                     const v2Specs = v2.specs instanceof Map 
                       ? Object.fromEntries(v2.specs)
                       : (v2.specs || {});
@@ -1161,11 +1189,11 @@ export default function ProductModal({ isOpen, onClose, token, fetchProducts, pr
         };
       });
       
-      // Only update if variants haven't been set yet or if we're editing
-      if (generatedVariants.length === 0 || generatedVariants.length !== variantsWithStock.length) {
+      // Only hydrate once when entering Step 3; don't overwrite freshly regenerated local variants.
+      if (generatedVariants.length === 0) {
         setGeneratedVariants(variantsWithStock);
       }
-      if (selectedVariants.length === 0 || selectedVariants.length !== variantsWithStock.filter(v => v.enabled !== false).length) {
+      if (selectedVariants.length === 0) {
         setSelectedVariants(variantsWithStock.filter(v => v.enabled !== false) || []);
       }
     }

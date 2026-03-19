@@ -225,12 +225,22 @@ export default function Checkout() {
       const payloadItems = cart.items.map((item) => {
         // Get variant price if variant exists
         let itemPrice = item.price || item.productId?.price || 0;
+        let variantImage = item.productId?.images?.[0] || item.image;
+        let variantSpecs = null;
         if (item.variantId && item.productId?.variants) {
           const variant = item.productId.variants.find(
             v => v._id?.toString() === item.variantId?.toString()
           );
           if (variant) {
             itemPrice = variant.price;
+            if (variant.images && variant.images.length > 0) {
+              variantImage = variant.images[0];
+            }
+            if (variant.specs) {
+              variantSpecs = variant.specs instanceof Map
+                ? Object.fromEntries(variant.specs)
+                : variant.specs;
+            }
           }
         }
 
@@ -238,9 +248,10 @@ export default function Checkout() {
           productId: item.productId?._id || item._id,
           name: item.productId?.name || item.name,
           price: itemPrice,
-          image: item.productId?.images?.[0] || item.image,
+          image: variantImage,
           quantity: item.quantity || 1,
           variantId: item.variantId || null,
+          variantSpecs: variantSpecs || undefined,
           sellerId: item.productId?.sellerId?._id || item.sellerId,
           category: item.productId?.category || item.category,
         };
@@ -320,12 +331,22 @@ export default function Checkout() {
       const payloadItems = cart.items.map((item) => {
         // Get variant price if variant exists
         let itemPrice = item.price || item.productId?.price || 0;
+        let variantImage = item.productId?.images?.[0] || item.image;
+        let variantSpecs = null;
         if (item.variantId && item.productId?.variants) {
           const variant = item.productId.variants.find(
             v => v._id?.toString() === item.variantId?.toString()
           );
           if (variant) {
             itemPrice = variant.price;
+            if (variant.images && variant.images.length > 0) {
+              variantImage = variant.images[0];
+            }
+            if (variant.specs) {
+              variantSpecs = variant.specs instanceof Map
+                ? Object.fromEntries(variant.specs)
+                : variant.specs;
+            }
           }
         }
 
@@ -333,8 +354,10 @@ export default function Checkout() {
           productId: item.productId?._id || item._id,
           name: item.productId?.name || item.name,
           price: itemPrice,
+          image: variantImage,
           quantity: item.quantity || 1,
           variantId: item.variantId || null,
+          variantSpecs: variantSpecs || undefined,
           sellerId: item.productId?.sellerId?._id || item.sellerId,
           category: item.productId?.category || item.category,
         };

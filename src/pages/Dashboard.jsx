@@ -1001,6 +1001,9 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                           {order.items.map((item, index) => {
                             // Get variant image and specs
                             const getVariantImage = () => {
+                              if (item.productImage) {
+                                return item.productImage;
+                              }
                               if (item.variantId && item.productId?.variants) {
                                 const variant = item.productId.variants.find(
                                   v => v._id?.toString() === item.variantId?.toString()
@@ -1014,8 +1017,12 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
 
                             const getVariantSpecs = () => {
                               let variantSpecsObj = null;
-                              
-                              if (item.variantId && item.productId?.variants) {
+
+                              if (item.variantSpecs) {
+                                variantSpecsObj = item.variantSpecs instanceof Map
+                                  ? Object.fromEntries(item.variantSpecs)
+                                  : item.variantSpecs;
+                              } else if (item.variantId && item.productId?.variants) {
                                 const variant = item.productId.variants.find(
                                   v => v._id?.toString() === item.variantId?.toString()
                                 );
@@ -1062,12 +1069,12 @@ const OnlineOrdersManagement = ({ orders, fetchAllData, token, user }) => {
                                   <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
                                     <img
                                       src={variantImage}
-                                      alt={item.productId?.name || item.name}
+                                      alt={item.productName || item.productId?.name || item.name}
                                       className="w-full h-full object-cover"
                                     />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                    <p className="font-semibold text-gray-900">{item.productName || item.productId?.name || item.name}</p>
                                     {variantSpecs && Object.keys(variantSpecs).length > 0 && (
                                       <div className="mt-2 flex flex-wrap gap-2">
                                         {Object.entries(variantSpecs).map(([key, value]) => (
@@ -1549,12 +1556,12 @@ const PickupOrdersManagement = ({ orders, fetchAllData, token }) => {
                                     <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
                                       <img
                                         src={variantImage}
-                                        alt={item.productId?.name || item.name}
+                                        alt={item.productName || item.productId?.name || item.name}
                                         className="w-full h-full object-cover"
                                       />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                      <p className="font-semibold text-gray-900">{item.productName || item.productId?.name || item.name}</p>
                                       {variantSpecs && Object.keys(variantSpecs).length > 0 && (
                                         <div className="mt-2 flex flex-wrap gap-2">
                                           {Object.entries(variantSpecs).map(([key, value]) => (
@@ -2262,12 +2269,12 @@ const OnlinePaidProcessedOrders = ({ orders, fetchAllData, token, user }) => {
                                 <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
                                   <img
                                     src={variantImage}
-                                    alt={item.productId?.name || item.name}
+                                    alt={item.productName || item.productId?.name || item.name}
                                     className="w-full h-full object-cover"
                                   />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                  <p className="font-semibold text-gray-900">{item.productName || item.productId?.name || item.name}</p>
                                   {variantSpecs && Object.keys(variantSpecs).length > 0 && (
                                     <div className="mt-2 flex flex-wrap gap-2">
                                       {Object.entries(variantSpecs).map(([key, value]) => (
@@ -2465,6 +2472,9 @@ const CancelledOrdersManagement = ({ orders, fetchAllData, token }) => {
                         <div className="space-y-3">
                           {order.items?.map((item, index) => {
                             const getVariantImage = () => {
+                              if (item.productImage) {
+                                return item.productImage;
+                              }
                               if (item.variantId && item.productId?.variants) {
                                 const variant = item.productId.variants.find(
                                   v => v._id?.toString() === item.variantId?.toString()
@@ -2478,8 +2488,12 @@ const CancelledOrdersManagement = ({ orders, fetchAllData, token }) => {
 
                             const getVariantSpecs = () => {
                               let variantSpecsObj = null;
-                              
-                              if (item.variantId && item.productId?.variants) {
+
+                              if (item.variantSpecs) {
+                                variantSpecsObj = item.variantSpecs instanceof Map
+                                  ? Object.fromEntries(item.variantSpecs)
+                                  : item.variantSpecs;
+                              } else if (item.variantId && item.productId?.variants) {
                                 const variant = item.productId.variants.find(
                                   v => v._id?.toString() === item.variantId?.toString()
                                 );
@@ -2526,12 +2540,12 @@ const CancelledOrdersManagement = ({ orders, fetchAllData, token }) => {
                                   <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
                                     <img
                                       src={variantImage}
-                                      alt={item.productId?.name || item.name}
+                                      alt={item.productName || item.productId?.name || item.name}
                                       className="w-full h-full object-cover"
                                     />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                    <p className="font-semibold text-gray-900">{item.productName || item.productId?.name || item.name}</p>
                                     {variantSpecs && Object.keys(variantSpecs).length > 0 && (
                                       <div className="mt-2 flex flex-wrap gap-2">
                                         {Object.entries(variantSpecs).map(([key, value]) => (
@@ -2871,6 +2885,9 @@ const PickupProcessedOrders = ({ orders, fetchAllData, token }) => {
                           {order.items?.map((item, index) => {
                             // Get variant image and specs
                             const getVariantImage = () => {
+                              if (item.productImage) {
+                                return item.productImage;
+                              }
                               if (item.variantId && item.productId?.variants) {
                                 const variant = item.productId.variants.find(
                                   v => v._id?.toString() === item.variantId?.toString()
@@ -2884,8 +2901,12 @@ const PickupProcessedOrders = ({ orders, fetchAllData, token }) => {
 
                             const getVariantSpecs = () => {
                               let variantSpecsObj = null;
-                              
-                              if (item.variantId && item.productId?.variants) {
+
+                              if (item.variantSpecs) {
+                                variantSpecsObj = item.variantSpecs instanceof Map
+                                  ? Object.fromEntries(item.variantSpecs)
+                                  : item.variantSpecs;
+                              } else if (item.variantId && item.productId?.variants) {
                                 const variant = item.productId.variants.find(
                                   v => v._id?.toString() === item.variantId?.toString()
                                 );
@@ -2932,12 +2953,12 @@ const PickupProcessedOrders = ({ orders, fetchAllData, token }) => {
                                   <div className="w-20 h-20 bg-white rounded-lg overflow-hidden shrink-0 border border-gray-200">
                                     <img
                                       src={variantImage}
-                                      alt={item.productId?.name || item.name}
+                                      alt={item.productName || item.productId?.name || item.name}
                                       className="w-full h-full object-cover"
                                     />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-gray-900">{item.productId?.name || item.name}</p>
+                                    <p className="font-semibold text-gray-900">{item.productName || item.productId?.name || item.name}</p>
                                     {variantSpecs && Object.keys(variantSpecs).length > 0 && (
                                       <div className="mt-2 flex flex-wrap gap-2">
                                         {Object.entries(variantSpecs).map(([key, value]) => (
@@ -5141,3 +5162,4 @@ const PromoCodesManagement = ({ promoCodes, setPromoCodes, fetchAllData, token }
     </div>
   );
 };
+
