@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { CartContext } from "../context/CartContext";
@@ -33,7 +33,87 @@ export default function ProductDetails() {
   // NEW: FAQ accordion state
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [showFaqs, setShowFaqs] = useState(false);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isGerman = language === "de";
+
+  const toPlainObject = (value) => {
+    if (!value) return {};
+    if (value instanceof Map) return Object.fromEntries(value);
+    return value;
+  };
+
+  const localizationMaps = useMemo(() => {
+    const keyToDe = {};
+    const keyToEn = {};
+    const valueToDe = {};
+    const valueToEn = {};
+
+    const addPairs = (enObj, deObj) => {
+      const enPlain = toPlainObject(enObj);
+      const dePlain = toPlainObject(deObj);
+      const enKeys = Object.keys(enPlain || {});
+      const deKeys = Object.keys(dePlain || {});
+      enKeys.forEach((enKey, idx) => {
+        const enValue = enPlain[enKey];
+        const deKey = deKeys[idx] || null;
+        const deValue = deKey && dePlain ? dePlain[deKey] : undefined;
+
+        if (deKey) {
+          if (!keyToDe[enKey]) keyToDe[enKey] = deKey;
+          if (!keyToEn[deKey]) keyToEn[deKey] = enKey;
+        }
+        if (enValue !== undefined && deValue !== undefined) {
+          if (!valueToDe[String(enValue)]) valueToDe[String(enValue)] = String(deValue);
+          if (!valueToEn[String(deValue)]) valueToEn[String(deValue)] = String(enValue);
+        }
+      });
+    };
+
+    const specsEn = toPlainObject(product?.translations?.specs?.en);
+    const specsDe = toPlainObject(product?.translations?.specs?.de);
+    addPairs(specsEn, specsDe);
+
+    const enVariantSpecs = Array.isArray(product?.translations?.variantSpecs?.en)
+      ? product.translations.variantSpecs.en
+      : [];
+    const deVariantSpecs = Array.isArray(product?.translations?.variantSpecs?.de)
+      ? product.translations.variantSpecs.de
+      : [];
+    const variantLen = Math.min(enVariantSpecs.length, deVariantSpecs.length);
+    for (let i = 0; i < variantLen; i += 1) {
+      addPairs(enVariantSpecs[i], deVariantSpecs[i]);
+    }
+
+    return { keyToDe, keyToEn, valueToDe, valueToEn };
+  }, [product]);
+
+  const localizeSpecKey = (key) => {
+    if (isGerman) return localizationMaps.keyToDe[key] || key;
+    return localizationMaps.keyToEn[key] || key;
+  };
+
+  const localizeSpecValue = (value) => {
+    if (isGerman) return localizationMaps.valueToDe[String(value)] || value;
+    return localizationMaps.valueToEn[String(value)] || value;
+  };
+
+  const getLocalizedDescription = () => {
+    if (!product) return "";
+    const localized = isGerman
+      ? product.translations?.description?.de
+      : product.translations?.description?.en;
+    return localized || product.description || "";
+  };
+
+  const getLocalizedProductSpecs = () => {
+    const localizedSpecs = isGerman
+      ? toPlainObject(product?.translations?.specs?.de)
+      : toPlainObject(product?.translations?.specs?.en);
+    if (localizedSpecs && Object.keys(localizedSpecs).length > 0) return localizedSpecs;
+    return toPlainObject(product?.specs);
+  };
+
+  const localizedProductSpecs = getLocalizedProductSpecs();
 
   // NEW: Delivery date window (e.g., "12 Mar - 13 Mar")
   const getDeliveryWindow = () => {
@@ -715,7 +795,7 @@ export default function ProductDetails() {
                     const isBattery = specName === 'Battery Condition' || specName === 'Battery' || specName === 'battery';
                     
                     // Display label without "(Phone Condition)" for appearance
-                    const displayLabel = isAppearance ? 'Appearance' : specName;
+                    const displayLabel = isAppearance ? 'Appearance' : localizeSpecKey(specName);
                     
                     return (
                       <div key={specName} className="space-y-2">
@@ -730,7 +810,7 @@ export default function ProductDetails() {
                             onChange={(e) => handleSpecChange(specName, e.target.value)}
                             className="w-full pl-4 pr-10 py-3 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all text-base appearance-none cursor-pointer"
                           >
-                            <option value="">{t("product.selectVariantLabel")} {specName}</option>
+                            <option value="">{t("product.selectVariantLabel")} {displayLabel}</option>
                             {availableOptions.map(option => {
                               const stock = getVariantStockForOption(specName, option);
                               const inStock = stock !== null && (stock === undefined || stock > 0);
@@ -740,7 +820,7 @@ export default function ProductDetails() {
                                   value={option}
                                   disabled={!inStock}
                                 >
-                                  {option} {!inStock && `(${t("product.outOfStock")})`}
+                                  {localizeSpecValue(option)} {!inStock && `(${t("product.outOfStock")})`}
                                 </option>
                               );
                             })}
@@ -798,7 +878,7 @@ export default function ProductDetails() {
                           <InfoTooltip type="appearance" content={getAppearanceInfoText()} />
                         </span>
                         <span className="text-sm text-gray-900 flex-1">
-                          {appearance}
+                          {localizeSpecValue(appearance)}
                         </span>
                       </div>
                     )}
@@ -811,7 +891,7 @@ export default function ProductDetails() {
                           <InfoTooltip content={getBatteryInfoText()} />
                         </span>
                         <span className="text-sm text-gray-900 flex-1">
-                          {battery}
+                          {localizeSpecValue(battery)}
                         </span>
                       </div>
                     )}
@@ -826,10 +906,10 @@ export default function ProductDetails() {
                       .map(([key, value]) => (
                         <div key={key} className="flex items-start gap-2">
                           <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px]">
-                            {key}:
+                            {localizeSpecKey(key)}:
                           </span>
                           <span className="text-sm text-gray-900 flex-1">
-                            {value}
+                            {localizeSpecValue(value)}
                           </span>
                         </div>
                       ))}
@@ -837,10 +917,8 @@ export default function ProductDetails() {
                     {Object.keys(variantSpecs).filter(key => {
                       const keyLower = key.toLowerCase();
                       return !['Appearance (Phone Condition)', 'Appearance', 'appearance', 'Battery Condition', 'Battery', 'battery'].includes(key);
-                    }).length < (appearance || battery ? 4 : 6) && product.specs && (() => {
-                      const productSpecs = product.specs instanceof Map 
-                        ? Object.fromEntries(product.specs) 
-                        : product.specs;
+                    }).length < (appearance || battery ? 4 : 6) && localizedProductSpecs && (() => {
+                      const productSpecs = localizedProductSpecs;
                       const variantSpecKeys = Object.keys(variantSpecs);
                       const filteredVariantKeys = variantSpecKeys.filter(key => {
                         const keyLower = key.toLowerCase();
@@ -853,10 +931,10 @@ export default function ProductDetails() {
                         .map(([key, value]) => (
                           <div key={key} className="flex items-start gap-2">
                             <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px]">
-                              {key}:
+                              {localizeSpecKey(key)}:
                             </span>
                             <span className="text-sm text-gray-900 flex-1">
-                              {value}
+                              {localizeSpecValue(value)}
                             </span>
                           </div>
                         ));
@@ -890,19 +968,13 @@ export default function ProductDetails() {
 
             {/* Product Specs Display - When no variants at all */}
             {!showVariantSelection && !selectedVariant && (() => {
-              const productSpecs = product.specs instanceof Map 
-                ? Object.fromEntries(product.specs) 
-                : product.specs;
+              const productSpecs = localizedProductSpecs;
               return productSpecs && Object.keys(productSpecs).length > 0;
             })() && (
               <div className="p-4 border rounded-lg bg-gray-50">
                 <h4 className="font-semibold mb-3">{t("product.productDetails")}:</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {Object.entries(
-                    product.specs instanceof Map 
-                      ? Object.fromEntries(product.specs) 
-                      : product.specs
-                  ).slice(0, 6).map(([key, value]) => (
+                  {Object.entries(localizedProductSpecs).slice(0, 6).map(([key, value]) => (
                     <div key={key} className="flex items-start gap-2">
                       <span className="text-sm font-medium text-gray-700 capitalize min-w-[100px]">
                         {key}:
@@ -963,7 +1035,7 @@ export default function ProductDetails() {
           <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">{t("product.description")}</h2>
             
-            {product.description && (() => {
+            {getLocalizedDescription() && (() => {
               // Function to format description - convert text inside " " to headers
               const formatDescription = (text) => {
                 if (!text) return [];
@@ -1016,8 +1088,8 @@ export default function ProductDetails() {
                 return parts;
               };
               
-              const formattedParts = formatDescription(product.description);
-              const specsCount = product.specs ? Object.keys(product.specs).length : 0;
+              const formattedParts = formatDescription(getLocalizedDescription());
+              const specsCount = localizedProductSpecs ? Object.keys(localizedProductSpecs).length : 0;
               const specsHasScroll = specsCount > 10;
               
               // Helper to render parts
@@ -1055,10 +1127,10 @@ export default function ProductDetails() {
           {/* Right: Specifications */}
           <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">{t("product.specifications")}</h2>
-            {product.specs && Object.keys(product.specs).length > 0 ? (
-              <div className={`${Object.keys(product.specs).length > 10 ? 'max-h-[400px] overflow-y-auto pr-4' : ''}`}>
+            {localizedProductSpecs && Object.keys(localizedProductSpecs).length > 0 ? (
+              <div className={`${Object.keys(localizedProductSpecs).length > 10 ? 'max-h-[400px] overflow-y-auto pr-4' : ''}`}>
                 <div className="space-y-3">
-                  {Object.entries(product.specs).map(([key, value]) => (
+                  {Object.entries(localizedProductSpecs).map(([key, value]) => (
                     <div key={key} className="flex justify-between items-start py-2 border-b border-gray-100 last:border-b-0">
                       <span className="text-sm font-medium text-gray-700 capitalize flex-1">
                         {key}
@@ -1080,14 +1152,14 @@ export default function ProductDetails() {
         <div className="mt-12">
           <button
             onClick={() => { setShowFaqs(!showFaqs); if (showFaqs) setOpenFaqIndex(null); }}
-            className="w-full flex items-center justify-between mb-6 group"
+            className="w-full flex items-center justify-between gap-3 mb-6 group"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <h2 className="flex-1 min-w-0 text-left text-2xl sm:text-3xl font-bold leading-tight text-gray-900 break-words">
               {t("product.faqTitle")}
             </h2>
             <ChevronDown 
               size={24} 
-              className={`text-gray-500 group-hover:text-gray-900 transition-transform duration-300 ${
+              className={`shrink-0 text-gray-500 group-hover:text-gray-900 transition-transform duration-300 ${
                 showFaqs ? 'rotate-180' : ''
               }`} 
             />
